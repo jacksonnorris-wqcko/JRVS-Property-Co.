@@ -1,6 +1,6 @@
 {
-  "version": "0.0.7",
+  "version": "0.0.7.1",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "Finance foundations: income and expense transactions, job links, paid/unpaid income, outstanding totals and net cash position. Update checker hardened against refresh loops."
+  "notes": "Corrected visible app version; job records show linked finance summaries and job detail view includes linked income, expenses and quotations."
 }
