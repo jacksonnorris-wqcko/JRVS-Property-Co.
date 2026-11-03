@@ -1,6 +1,6 @@
 {
-  "version": "0.1.8",
+  "version": "0.1.8.1",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-04",
-  "notes": "Business Calendar: month/week/day views, manual appointments and tasks, automatically linked job shoot dates, quote expiry dates and unpaid invoice due dates, dashboard upcoming schedule, local calendar storage and .ics export for Apple Calendar, Google Calendar and Outlook. Existing business and photo storage preserved."
+  "notes": "Calendar refinement: calendar links are jobs only; quotes and invoices removed from calendar event sources; event selection opens an in-calendar details panel and never navigates to another app section."
 }

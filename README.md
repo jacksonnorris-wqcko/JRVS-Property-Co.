@@ -27,3 +27,11 @@ The `.ics` export is a portable calendar file. This release does not yet impleme
 
 ## Testing
 JavaScript syntax and ZIP integrity should be checked before deployment. Browser/device testing is still required for actual calendar interactions and local data behaviour.
+
+
+## V0.1.8.1 Calendar refinement
+- Calendar links now offer jobs only.
+- Quote expiry and invoice due-date records are no longer automatically added to the calendar.
+- Selecting any calendar event opens an in-calendar details panel; it does not navigate to Jobs, Clients, Quotes or Invoices.
+- Manually created calendar events can still be edited or deleted from the calendar.
+- Automatically generated job shoot entries are informational and remain controlled by the linked job date.
