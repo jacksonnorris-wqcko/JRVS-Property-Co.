@@ -475,7 +475,7 @@ input,select,textarea,.field input,.field select,.field textarea{font-size:13px;
         <div id="financeList"></div>
       </div>
     </section>
-    <section class="page" id="page-settings"><div class="panel"><h3>Application settings</h3><div class="row-card" style="margin-top:14px"><div><strong>Application version</strong><small>Use this to confirm updates are being received.</small></div><span class="pill" id="settingsVersion">V0.1.5</span></div><div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div><div class="row-card"><div><strong>Data storage</strong><small>V0.1.5 stores business records in this browser on this device.</small></div><span class="pill">Local</span></div><div class="settings-note">Important: browser data is not yet cloud-synchronised. Keep backups of anything important. Automatic app updates do not replace or delete your saved records.</div></div></section>
+    <section class="page" id="page-settings"><div class="panel"><h3>Application settings</h3><div class="row-card" style="margin-top:14px"><div><strong>Application version</strong><small>Use this to confirm updates are being received.</small></div><span class="pill" id="settingsVersion">V0.1.5</span></div><div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div><div class="row-card"><div><strong>Install JRVS as a desktop app</strong><small>Install a standalone window and launch JRVS from your Windows Start menu or desktop.</small></div><button class="primary" id="installAppButton" type="button" onclick="installJRVSApp()" hidden>Install app</button><span class="pill" id="installAppStatus">Use browser install menu</span></div><div class="settings-note">Chrome or Edge: open JRVS, then select the install icon at the right of the address bar, or open the browser menu and choose “Install JRVS Property Co.” Once installed, launch it from your desktop or Start menu. This app continues to use browser-local storage on this device.</div><div class="row-card"><div><strong>Data storage</strong><small>V0.1.5 stores business records in this browser on this device.</small></div><span class="pill">Local</span></div><div class="settings-note">Important: browser data is not yet cloud-synchronised. Keep backups of anything important. Automatic app updates do not replace or delete your saved records.</div></div></section>
     <div class="footer">JRVS Property Co. · <span id="footerVersion">V0.1.5</span> · Built for better business days.</div>
   </main>
 </div>
@@ -573,7 +573,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.1.6';
+const APP_VERSION='0.1.6.1';
 const pageInfo={dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -1174,6 +1174,27 @@ async function checkForUpdates(manual=false){
  }catch(e){if(status)status.textContent='Update check unavailable right now. Your current version is still usable.'}
  finally{updateCheckRunning=false}
 }
+
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+ e.preventDefault();deferredInstallPrompt=e;
+ const b=document.getElementById('installAppButton'),s=document.getElementById('installAppStatus');
+ if(b)b.hidden=false;if(s)s.textContent='Ready to install';
+});
+window.addEventListener('appinstalled',()=>{
+ deferredInstallPrompt=null;
+ const b=document.getElementById('installAppButton'),s=document.getElementById('installAppStatus');
+ if(b)b.hidden=true;if(s)s.textContent='Installed — launch JRVS from your desktop';
+});
+async function installJRVSApp(){
+ if(!deferredInstallPrompt){showToast('Use Chrome or Edge menu → Install JRVS Property Co.');return}
+ deferredInstallPrompt.prompt();
+ const choice=await deferredInstallPrompt.userChoice;
+ if(choice?.outcome==='accepted'){const s=document.getElementById('installAppStatus');if(s)s.textContent='Installation accepted';}
+ deferredInstallPrompt=null;
+ const b=document.getElementById('installAppButton');if(b)b.hidden=true;
+}
+
 if('serviceWorker'in navigator&&location.protocol!=='file:'){window.addEventListener('load',async()=>{try{await navigator.serviceWorker.register('./sw.js');}catch(e){}checkForUpdates()})}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUpdates()});
 </script>

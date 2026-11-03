@@ -1,16 +1,53 @@
 {
-  "name": "JRVS Property Co. Business Hub",
-  "short_name": "JRVS",
+  "id": "./",
+  "name": "JRVS Property Co. \u2014 Business Hub",
+  "short_name": "JRVS Property Co.",
+  "description": "Property photography business workspace for jobs, clients, photos, quotations and invoices.",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
   "background_color": "#F7F1DF",
   "theme_color": "#899B68",
+  "categories": [
+    "business",
+    "productivity",
+    "photo"
+  ],
   "icons": [
     {
-      "src": "assets/jrvs-logo.png",
-      "sizes": "any",
+      "src": "assets/jrvs-app-192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "assets/jrvs-app-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/jrvs-app-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "./"
+    },
+    {
+      "name": "Photo library",
+      "short_name": "Photos",
+      "url": "./"
     }
   ]
 }

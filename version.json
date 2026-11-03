@@ -1,6 +1,6 @@
 {
-  "version": "0.1.6",
+  "version": "0.1.6.1",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "Photo editor upgrade: auto enhance, property presets, perspective skew correction, batch edits, export profiles, experimental exposure fusion and RAW file preservation."
+  "notes": "Desktop PWA install update: standalone app manifest, correctly sized branded icons, install prompt in Settings, desktop launch support and refreshed service worker."
 }
