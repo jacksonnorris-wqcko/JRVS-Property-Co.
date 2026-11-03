@@ -649,7 +649,13 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 <div class="editor-top"><div><div class="eyebrow">PHOTO WORKSPACE</div><h2 id="editorTitle">Edit photograph</h2><div class="muted" id="editorSubtitle">Original remains unchanged</div></div><button class="secondary" onclick="closeEditor()">← Back to gallery</button></div>
 <div class="editor-layout"><div class="editor-stage"><canvas id="editorCanvas"></canvas></div><aside class="editor-panel">
 <div><strong>Property editing tools</strong><div class="editor-help">Non-destructive editing. Your original photo is always preserved.</div></div>
-<div class="editor-control"><label>Property presets</label><select id="editorPreset" onchange="applyEditorPreset(this.value)"><option value="none">No preset</option><option value="natural">Natural property</option><option value="bright">Bright interior</option><option value="warm">Warm & welcoming</option><option value="exterior">Exterior clarity</option></select><div class="editor-tools"><button class="secondary" type="button" onclick="autoEnhanceEditor()">✨ Auto enhance</button></div></div>
+<div class="editor-control"><label>Property presets</label><select id="editorPreset" onchange="applyEditorPreset(this.value)">
+<option value="none">No preset — original</option>
+<optgroup label="Interior · Professional">
+<option value="natural">Natural Listing</option><option value="bright">Bright &amp; Airy</option><option value="window">Window Balanced</option><option value="warm">Warm Lifestyle</option><option value="modern">Crisp Modern</option><option value="soft">Soft Neutral</option><option value="luxury">Luxury Contrast</option><option value="wood">Wood &amp; Stone</option><option value="bathroom">Bathroom Clean</option>
+</optgroup><optgroup label="Exterior · Professional">
+<option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option><option value="twilight">Twilight Mood</option>
+</optgroup></select><div class="editor-tools"><button class="secondary" type="button" onclick="autoEnhanceEditor()">✨ Auto enhance</button></div></div>
 <div class="editor-control"><label>Brightness <span id="brightnessVal">0</span></label><input id="brightness" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
 <div class="editor-control"><label>Contrast <span id="contrastVal">0</span></label><input id="contrast" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
 <div class="editor-control"><label>Saturation <span id="saturationVal">0</span></label><input id="saturation" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
@@ -1369,15 +1375,26 @@ async function createFullQualityEditorBlob(mime,quality){
 function drawEditorHistogram(hist){const c=document.getElementById('editorHistogram');if(!c||!hist)return;const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);const max=Math.max(1,...hist);x.fillStyle='#a9bd83';hist.forEach((n,i)=>{const h=n/max*(c.height-8);x.fillRect(i*c.width/64,c.height-h,(c.width/64)-1,h)})}
 
 function applyEditorPreset(name){
+ // JRVS original presets: restrained starting points for property listings.
+ // Presets set global adjustments only; they never alter source photos.
  const presets={
-  none:{brightness:0,contrast:0,saturation:0,warmth:0,highlights:0,shadows:0},
-  natural:{brightness:4,contrast:8,saturation:4,warmth:1,highlights:-8,shadows:12},
-  bright:{brightness:13,contrast:5,saturation:2,warmth:0,highlights:-15,shadows:22},
-  warm:{brightness:5,contrast:7,saturation:8,warmth:10,highlights:-8,shadows:10},
-  exterior:{brightness:5,contrast:12,saturation:6,warmth:-2,highlights:-12,shadows:14}
+  none:{},
+  natural:{brightness:5,contrast:7,saturation:1,warmth:0,highlights:-18,shadows:18,exposure:0.10,whites:7,blacks:-5,temperature:-2,tint:0,vibrance:3,clarity:5,sharpening:12,vignette:0},
+  bright:{brightness:10,contrast:3,saturation:0,warmth:-1,highlights:-24,shadows:28,exposure:0.22,whites:12,blacks:-4,temperature:-3,tint:0,vibrance:2,clarity:3,sharpening:10,vignette:0},
+  window:{brightness:5,contrast:5,saturation:0,warmth:0,highlights:-42,shadows:32,exposure:0.08,whites:5,blacks:-7,temperature:-2,tint:0,vibrance:2,clarity:5,sharpening:10,vignette:0},
+  warm:{brightness:5,contrast:6,saturation:3,warmth:5,highlights:-20,shadows:16,exposure:0.08,whites:6,blacks:-7,temperature:5,tint:1,vibrance:5,clarity:4,sharpening:10,vignette:0},
+  modern:{brightness:3,contrast:12,saturation:-2,warmth:-2,highlights:-22,shadows:14,exposure:0.04,whites:8,blacks:-12,temperature:-5,tint:0,vibrance:1,clarity:10,sharpening:18,vignette:0},
+  soft:{brightness:8,contrast:-3,saturation:-4,warmth:2,highlights:-26,shadows:24,exposure:0.12,whites:5,blacks:4,temperature:1,tint:1,vibrance:-1,clarity:-3,sharpening:7,vignette:0},
+  luxury:{brightness:1,contrast:17,saturation:-3,warmth:1,highlights:-30,shadows:12,exposure:0,whites:8,blacks:-18,temperature:-1,tint:0,vibrance:0,clarity:12,sharpening:20,vignette:4},
+  wood:{brightness:4,contrast:8,saturation:2,warmth:4,highlights:-22,shadows:18,exposure:0.06,whites:6,blacks:-8,temperature:3,tint:0,vibrance:3,clarity:8,sharpening:14,vignette:0},
+  bathroom:{brightness:9,contrast:4,saturation:-5,warmth:-4,highlights:-32,shadows:24,exposure:0.16,whites:14,blacks:-5,temperature:-7,tint:1,vibrance:-1,clarity:6,sharpening:14,vignette:0},
+  exterior:{brightness:4,contrast:11,saturation:4,warmth:-2,highlights:-24,shadows:18,exposure:0.04,whites:8,blacks:-10,temperature:-3,tint:0,vibrance:8,clarity:9,sharpening:18,vignette:0},
+  sunny:{brightness:5,contrast:8,saturation:5,warmth:2,highlights:-34,shadows:16,exposure:0.04,whites:10,blacks:-8,temperature:1,tint:0,vibrance:9,clarity:8,sharpening:16,vignette:0},
+  twilight:{brightness:-5,contrast:15,saturation:4,warmth:3,highlights:-36,shadows:12,exposure:-0.12,whites:3,blacks:-16,temperature:-3,tint:1,vibrance:7,clarity:10,sharpening:16,vignette:7}
  };
  const p=presets[name]||presets.none;
- Object.entries(p).forEach(([k,v])=>document.getElementById(k).value=v);
+ const defaults={brightness:0,contrast:0,saturation:0,warmth:0,highlights:0,shadows:0,perspectiveV:0,perspectiveH:0,exposure:0,whites:0,blacks:0,temperature:0,tint:0,vibrance:0,clarity:0,sharpening:0,vignette:0};
+ Object.entries({...defaults,...p}).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=v});
  drawEditor();captureEditorHistory();
 }
 function autoEnhanceEditor(){

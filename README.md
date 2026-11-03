@@ -9,3 +9,9 @@ Changes:
 
 Deploy:
 Extract the ZIP and upload all files into the existing GitHub Pages repository root, replacing prior files. Do not clear browser/site data.
+
+
+V0.1.9.6 – Professional Preset Library
+- Added 12 original JRVS presets for interior and exterior property photography.
+- Presets use existing editor controls and work with the fast preview/full-resolution export pipeline.
+- Presets are starting points; exposure and white balance should still be checked per image.
