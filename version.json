@@ -1,6 +1,6 @@
 {
-  "version": "0.1.3.1",
+  "version": "0.1.4",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "Hotfix: corrected application version constant to match 0.1.3 release metadata and implemented clickable recent job project cards with cover image, status, photo count and financial summary. Dashboard refreshes after photo library loads."
+  "notes": "Introduces global search across jobs, clients, quotations, income and expenses. Search results open the relevant job/client profile, quote editor or finance record. Ctrl+K focuses search."
 }

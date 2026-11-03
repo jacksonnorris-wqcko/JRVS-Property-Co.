@@ -65,7 +65,7 @@
 .finance-amount{text-align:right;font-weight:800}.finance-status{font-size:10px;color:#596747;background:#edf0e5;border-radius:20px;padding:4px 8px;display:inline-block;margin-top:5px}
 @media(max-width:760px){.finance-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.finance-row{align-items:flex-start;flex-direction:column}.finance-amount{text-align:left}}
 .job-finance-link{display:block!important;color:#66764f!important;font-weight:650;margin-top:5px}
-/* V0.1.1 structured job details */
+/* V0.1.4 structured job details */
 .job-detail-modal{width:min(900px,calc(100vw - 32px));max-height:88vh;overflow:auto}
 .job-detail-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px}
 .job-detail-title{font-size:22px;font-weight:800;letter-spacing:-.4px}.job-detail-sub{font-size:12px;color:var(--muted);margin-top:5px}
@@ -84,7 +84,7 @@
 .job-detail-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 @media(max-width:650px){.job-detail-grid{grid-template-columns:1fr}.job-detail-info{grid-template-columns:1fr}.job-detail-header{flex-direction:column}}
 
-/* V0.1.1 Pricing & Quotes visual system */
+/* V0.1.4 Pricing & Quotes visual system */
 #page-quotes{max-width:1260px}
 .quote-welcome{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin:2px 0 23px}
 .quote-welcome h2{font-size:23px;letter-spacing:-.65px;margin:5px 0 6px}.quote-welcome p{color:var(--muted);font-size:13px;margin:0;max-width:620px;line-height:1.55}
@@ -137,7 +137,7 @@
 @media(max-width:850px){.quote-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.package-grid{grid-template-columns:1fr}}
 @media(max-width:650px){.quote-welcome{align-items:flex-start;flex-direction:column}.quote-create-main{width:100%}.quote-panel{padding:16px}.quote-panel-head{align-items:flex-start;flex-direction:column}.quote-list-tools{width:100%;flex-direction:column;align-items:stretch}.quote-list-tools input,.quote-list-tools select{width:100%;max-width:none}.quote-card-top{flex-direction:column}.quote-card-total{text-align:left}.quote-card-total .quote-status-pill{margin-left:0}.quote-stats{gap:9px}.quote-stat{padding:13px}.quote-stat-value{font-size:21px}}
 
-/* V0.1.1 Client profile */
+/* V0.1.4 Client profile */
 .client-detail-modal{width:min(860px,calc(100vw - 32px));max-height:88vh;overflow:auto}
 .client-profile-hero{display:flex;align-items:center;gap:14px;padding:15px;background:#f4f5ed;border:1px solid var(--line);border-radius:13px;margin:4px 0 16px}
 .client-avatar{width:46px;height:46px;border-radius:13px;background:#e2e8d6;color:#596c43;display:grid;place-items:center;font-weight:850;font-size:17px;flex:none}
@@ -156,7 +156,7 @@
 .client-profile-notes{white-space:pre-wrap;border:1px solid var(--line);background:#fffefa;border-radius:10px;padding:12px;font-size:12px;line-height:1.55}
 @media(max-width:650px){.client-contact-grid{grid-template-columns:1fr}.client-profile-stats{grid-template-columns:1fr}.client-profile-hero{align-items:flex-start}}
 
-/* V0.1.1 workflow foundation */
+/* V0.1.4 workflow foundation */
 .workflow-panel{margin:0 0 16px;padding:18px 20px}
 .workflow-count{display:inline-grid;place-items:center;min-width:27px;height:27px;border-radius:9px;background:#edf0e5;color:#596d43;font-weight:800;font-size:12px;padding:0 7px}
 .attention-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
@@ -166,7 +166,7 @@
 .workflow-stage{display:inline-flex;padding:4px 8px;border-radius:20px;background:#edf0e5;color:#596d43;font-size:10px;font-weight:750}
 @media(max-width:700px){.attention-list{grid-template-columns:1fr}}
 
-/* V0.1.3.1 dashboard project cards */
+/* V0.1.4 dashboard project cards */
 #page-dashboard .welcome{padding:25px 28px;min-height:112px;box-shadow:0 10px 28px rgba(46,55,34,.08)}
 #page-dashboard .stats{gap:14px;margin:18px 0}
 #page-dashboard .stat{padding:20px 21px;transition:transform .16s,border-color .16s}
@@ -189,6 +189,27 @@
 #page-dashboard .settings-note{margin-top:15px;line-height:1.5}
 @media(max-width:850px){#page-dashboard .stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){#page-dashboard .welcome{padding:20px;gap:10px;flex-direction:column;align-items:flex-start}#page-dashboard .content-grid{grid-template-columns:1fr}.recent-job-cover,.recent-job-placeholder{width:49px;height:49px}.recent-job-meta{gap:6px}}
+
+/* V0.1.4 global search */
+.top-tools{display:flex;align-items:center;gap:12px;min-width:0}
+.global-search{position:relative;width:min(390px,38vw);min-width:220px;display:flex;align-items:center;gap:8px;padding:0 11px;height:42px;border:1px solid var(--line);border-radius:11px;background:#fffefa;box-shadow:0 2px 8px rgba(39,45,28,.025);z-index:30}
+.global-search:focus-within{border-color:#9baa7c;box-shadow:0 0 0 3px rgba(137,155,104,.13)}
+.global-search .search-icon{font-size:21px;line-height:1;color:#7d8966}
+.global-search input{border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;min-width:0;flex:1;height:100%;padding:0!important;font:inherit;font-size:12px;color:var(--ink)}
+.global-search kbd{font-size:9px;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:3px 5px;white-space:nowrap;background:#f8f8f1}
+.global-search-results{position:absolute;top:calc(100% + 8px);right:0;width:min(460px,calc(100vw - 30px));max-height:440px;overflow:auto;background:#fffefa;border:1px solid var(--line);border-radius:13px;box-shadow:0 18px 48px rgba(34,40,26,.16);padding:7px;z-index:100}
+.global-search-results[hidden]{display:none}
+.search-result{display:flex;align-items:center;gap:10px;width:100%;padding:10px;border:0;border-radius:9px;background:transparent;text-align:left;color:var(--ink);cursor:pointer;font:inherit}
+.search-result:hover,.search-result:focus-visible{background:#f0f2e8;outline:0}
+.search-result-icon{width:32px;height:32px;border-radius:9px;background:#edf0e5;color:#687b4f;display:grid;place-items:center;flex:none;font-size:14px}
+.search-result-copy{min-width:0;flex:1}
+.search-result-copy strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.search-result-copy small{display:block;font-size:10px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.search-result-type{font-size:9px;color:#74815d;background:#f0f2e8;border-radius:20px;padding:4px 7px;white-space:nowrap}
+.search-empty{padding:18px 11px;font-size:11px;color:var(--muted);text-align:center}
+.search-hint{padding:8px 10px;border-top:1px solid #efefe8;margin-top:5px;font-size:9px;color:var(--muted)}
+@media(max-width:780px){.top-tools{width:100%;justify-content:space-between}.global-search{width:auto;min-width:0;flex:1}.top{flex-wrap:wrap;gap:12px}}
+@media(max-width:480px){.global-search kbd{display:none}.global-search-results{right:-55px}}
 </style>
 </head>
 <body>
@@ -204,10 +225,10 @@
       <button class="nav-btn" data-page="finances"><span>◫</span>Finances</button>
       <button class="nav-btn" data-page="settings"><span>⚙</span>Settings</button>
     </nav></div>
-    <div class="side-bottom"><b>JRVS PROPERTY CO.</b><br>Simple tools for better property photography.<br><br><span id="sideVersion">V0.1.1</span></div>
+    <div class="side-bottom"><b>JRVS PROPERTY CO.</b><br>Simple tools for better property photography.<br><br><span id="sideVersion">V0.1.4</span></div>
   </aside>
   <main>
-    <header class="top"><div><div class="eyebrow">Business workspace</div><h1 id="pageTitle">Dashboard</h1><p class="sub" id="pageSub">A clear view of what's happening in your business.</p></div><div class="version" id="versionBadge">● V0.1.1</div></header>
+    <header class="top"><div><div class="eyebrow">Business workspace</div><h1 id="pageTitle">Dashboard</h1><p class="sub" id="pageSub">A clear view of what's happening in your business.</p></div><div class="top-tools"><div class="global-search" id="globalSearchWrap"><span class="search-icon">⌕</span><input id="globalSearchInput" type="search" placeholder="Search jobs, clients, quotes..." autocomplete="off" aria-label="Search all JRVS records"><kbd>Ctrl K</kbd><div class="global-search-results" id="globalSearchResults" hidden></div></div><div class="version" id="versionBadge">● V0.1.4</div></div></header>
     <section class="page active" id="page-dashboard">
       <div class="welcome"><div><h2>Good to see you.</h2><p>Your business, organised in one place.</p></div><div class="date" id="today"></div></div>
       <div class="stats">
@@ -245,8 +266,8 @@
         <div id="financeList"></div>
       </div>
     </section>
-    <section class="page" id="page-settings"><div class="panel"><h3>Application settings</h3><div class="row-card" style="margin-top:14px"><div><strong>Application version</strong><small>Use this to confirm updates are being received.</small></div><span class="pill" id="settingsVersion">V0.1.1</span></div><div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div><div class="row-card"><div><strong>Data storage</strong><small>V0.1.1 stores business records in this browser on this device.</small></div><span class="pill">Local</span></div><div class="settings-note">Important: browser data is not yet cloud-synchronised. Keep backups of anything important. Automatic app updates do not replace or delete your saved records.</div></div></section>
-    <div class="footer">JRVS Property Co. · <span id="footerVersion">V0.1.1</span> · Built for better business days.</div>
+    <section class="page" id="page-settings"><div class="panel"><h3>Application settings</h3><div class="row-card" style="margin-top:14px"><div><strong>Application version</strong><small>Use this to confirm updates are being received.</small></div><span class="pill" id="settingsVersion">V0.1.4</span></div><div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div><div class="row-card"><div><strong>Data storage</strong><small>V0.1.4 stores business records in this browser on this device.</small></div><span class="pill">Local</span></div><div class="settings-note">Important: browser data is not yet cloud-synchronised. Keep backups of anything important. Automatic app updates do not replace or delete your saved records.</div></div></section>
+    <div class="footer">JRVS Property Co. · <span id="footerVersion">V0.1.4</span> · Built for better business days.</div>
   </main>
 </div>
 
@@ -301,14 +322,55 @@
 <div class="modal-backdrop" id="photoPreviewBackdrop" onclick="if(event.target===this)closePhotoPreview()"><div class="modal preview-wrap"><div class="modal-head"><h2>Photo preview</h2><button class="close" onclick="closePhotoPreview()">×</button></div><img id="photoPreviewImage" class="photo-preview" alt="Selected property photograph"><div id="photoPreviewName" class="preview-name"></div></div></div>
 <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h2 id="modalTitle">New record</h2><button class="close" onclick="closeModal()">×</button></div><form id="recordForm"><div id="formFields" class="form-grid"></div><div style="display:flex;justify-content:flex-end;gap:9px;margin-top:18px"><button type="button" class="secondary" onclick="closeModal()">Cancel</button><button class="primary" type="submit">Save</button></div></form></div></div>
 <script>
-const APP_VERSION='0.1.3.1';
+const APP_VERSION='0.1.4';
 const pageInfo={dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
 if(!Array.isArray(data.packages))data.packages=[];if(!Array.isArray(data.quotes))data.quotes=[];if(!Array.isArray(data.income))data.income=[];if(!Array.isArray(data.expenses))data.expenses=[];
 const save=()=>localStorage.setItem('jrvs-data',JSON.stringify(data));
-function showPage(name){if(name==='quotes')renderQuotes();if(name==='finances')renderFinances();document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.page===name));document.getElementById('pageTitle').textContent=pageInfo[name][0];document.getElementById('pageSub').textContent=pageInfo[name][1];}
+function showPage(name){if(name==='quotes')renderQuotes();if(name==='finances')renderFinances();document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');
+// Global search across core business records.
+function buildGlobalSearchResults(query){
+ const q=query.trim().toLowerCase();if(!q)return [];
+ const matches=[];
+ const add=(type,id,title,subtitle,icon,action,haystack)=>{
+  if((haystack||'').toLowerCase().includes(q))matches.push({type,id,title,subtitle,icon,action});
+ };
+ data.jobs.forEach(j=>add('Job',j.id,j.name,`${j.client||'No client'} · ${j.address||'Address not entered'} · ${j.status||'Enquiry'}`,'▣',()=>viewJob(j.id),[j.name,j.client,j.address,j.status,j.date,j.notes].join(' ')));
+ data.clients.forEach(c=>add('Client',c.id,c.name,`${c.company||'Private client'} · ${c.email||'No email'} · ${c.phone||'No phone'}`,'♙',()=>viewClient(c.id),[c.name,c.company,c.email,c.phone,c.notes].join(' ')));
+ data.quotes.forEach(qt=>add('Quote',qt.id,qt.number||'Quotation',`${qt.clientName||'Client'} · ${qt.status||'Draft'} · ${money(qt.total)}`,'＄',()=>editQuote(qt.id),[qt.number,qt.clientName,qt.jobName,qt.status,qt.notes].join(' ')));
+ (data.income||[]).forEach(x=>add('Income',x.id,x.description||'Income record',`${money(x.amount)} · ${x.date||'No date'} · ${x.status||'Paid'}`,'↗',()=>{showPage('finances');editFinance(x.id,'income')},[x.description,x.category,x.date,x.status,x.amount].join(' ')));
+ (data.expenses||[]).forEach(x=>add('Expense',x.id,x.description||'Expense record',`${money(x.amount)} · ${x.date||'No date'} · ${x.category||'Expense'}`,'↘',()=>{showPage('finances');editFinance(x.id,'expense')},[x.description,x.category,x.date,x.amount].join(' ')));
+ return matches.slice(0,12);
+}
+function runGlobalSearch(){
+ const input=document.getElementById('globalSearchInput'),panel=document.getElementById('globalSearchResults');
+ if(!input||!panel)return;
+ const query=input.value.trim();
+ if(!query){panel.hidden=true;panel.innerHTML='';return}
+ const results=buildGlobalSearchResults(query);
+ panel.innerHTML=results.length?results.map((r,i)=>`<button class="search-result" type="button" data-search-index="${i}"><span class="search-result-icon">${r.icon}</span><span class="search-result-copy"><strong>${esc(r.title)}</strong><small>${esc(r.subtitle)}</small></span><span class="search-result-type">${r.type}</span></button>`).join('')+`<div class="search-hint">Showing up to 12 matches · Select a result to open it</div>`:`<div class="search-empty">No matches found for “${esc(query)}”.</div>`;
+ panel.hidden=false;
+ panel.querySelectorAll('[data-search-index]').forEach((button,i)=>button.addEventListener('click',()=>{
+  const chosen=results[i];panel.hidden=true;input.value='';input.blur();chosen.action();
+ }));
+}
+function closeGlobalSearch(){const p=document.getElementById('globalSearchResults');if(p)p.hidden=true}
+document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.page===name));document.getElementById('pageTitle').textContent=pageInfo[name][0];document.getElementById('pageSub').textContent=pageInfo[name][1];}
 document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
+const globalSearchInput=document.getElementById('globalSearchInput');
+if(globalSearchInput){
+ globalSearchInput.addEventListener('input',runGlobalSearch);
+ globalSearchInput.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeGlobalSearch();globalSearchInput.blur()}
+  if(e.key==='Enter'){const first=document.querySelector('#globalSearchResults [data-search-index="0"]');if(first)first.click()}
+ });
+ document.addEventListener('click',e=>{if(!document.getElementById('globalSearchWrap')?.contains(e.target))closeGlobalSearch()});
+ document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();globalSearchInput.focus();globalSearchInput.select()}
+ });
+}
+
 function openModal(type,id=null){
  const fields=document.getElementById('formFields'),existing=id?(type==='job'?data.jobs:data.clients).find(x=>x.id===id):null;
  document.getElementById('modalTitle').textContent=(existing?'Edit ':'Create a ')+(type==='job'?'job':'client');
