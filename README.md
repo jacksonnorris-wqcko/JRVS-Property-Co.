@@ -1,20 +1,16 @@
-# JRVS Property Co. — V0.0.3 Beta
+# JRVS Property Co. — V0.0.4 Beta
 
-Upload the contents of this folder to the root of the existing GitHub repository, replacing matching files. Keep the assets folder.
+## What's new
+- The Photo Library's **All projects** view now displays one cover image per project instead of every photo.
+- Each project card shows its name, client and total photo count.
+- Open a project to view its complete photo gallery.
+- Set any photo as that project's cover image.
+- The first imported photo automatically becomes the default cover.
+- If a cover photo is deleted, the next available photo automatically becomes the cover.
+- Existing jobs, clients and photo records are retained.
 
-## New photo library
-- Import multiple image files into a selected job.
-- View job-linked photo thumbnails and full previews.
-- Mark imports as Original or Edited.
-- Track statuses: Imported, Selected, Editing, Edited, Delivered.
-- Delete individual photo records.
-- Photo image blobs are stored in IndexedDB on the current browser/device.
+## Install / update
+Upload the contents of this ZIP to the root of the existing GitHub Pages repository, replacing the previous files. Keep the same repository and browser profile. The app checks `version.json` for updates and the service worker cache is updated to V0.0.4.
 
-## Existing data
-The existing `jrvs-data` localStorage key and jobs/clients are retained. Photos use a separate IndexedDB database `jrvs-photo-library`.
-
-## Automatic updates
-Version 0.0.3 appears in the UI and version.json; service-worker cache is `jrvs-property-co-v0.0.3`. After publishing, reopen the site. Updates are checked on load and when the tab becomes visible.
-
-## Limitations
-This is local device storage, not cloud sync or backup. Keep camera originals backed up separately. This release organises and previews images; pixel editing, ZIP packages and email delivery are future features.
+## Important storage note
+Jobs and clients remain in browser local storage; photos remain in IndexedDB on that device/browser. This release does not add cloud sync. Do not clear browser site data if you want to keep local records and photographs. Keep independent backups of important originals.
