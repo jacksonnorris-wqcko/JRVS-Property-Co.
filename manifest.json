@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "JRVS Property Co. \u2014 Business Hub",
-  "short_name": "JRVS Property Co.",
+  "name": "JRVS Property Co.",
+  "short_name": "JRVS",
   "description": "Property photography business workspace for jobs, clients, photos, quotations and invoices.",
   "start_url": "./",
   "scope": "./",

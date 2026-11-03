@@ -1,6 +1,6 @@
 {
-  "version": "0.2.5",
+  "version": "0.3.0",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-04",
-  "notes": "Photo metadata resilience: repairs legacy cloud photo paths when a stable photo ID exists, skips and records individual unavailable cloud photos instead of aborting business sync, and preserves local photos. No deletion sync."
+  "notes": "Desktop workspace refresh: refined JRVS visual identity using the approved sage and cream palette, improved navigation hierarchy, dashboard readability, responsive desktop spacing, and persistent quick actions for new jobs and quotes. Existing business logic, local storage, photo library, and cloud sync retained from v0.2.5."
 }
