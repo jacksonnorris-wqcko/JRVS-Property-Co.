@@ -1,6 +1,6 @@
 {
-  "version": "0.0.2",
+  "version": "0.0.3",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "Jobs and clients now support editing, deletion, detail views and linked job history."
+  "notes": "Job-linked photo importing, gallery previews, Original/Edited categories and photo workflow status."
 }

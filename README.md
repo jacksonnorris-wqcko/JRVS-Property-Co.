@@ -1,18 +1,20 @@
-# JRVS Property Co. — V0.0.2 Beta
+# JRVS Property Co. — V0.0.3 Beta
 
-Upload the contents of this folder to the root of your existing GitHub repository, replacing the matching files. Keep the `assets` folder.
+Upload the contents of this folder to the root of the existing GitHub repository, replacing matching files. Keep the assets folder.
 
-## V0.0.2 changes
-- Edit and delete jobs and clients.
-- View job details.
-- View client profiles with linked job history.
-- Add property address and client company fields.
-- Updated version display, version.json and service-worker cache.
+## New photo library
+- Import multiple image files into a selected job.
+- View job-linked photo thumbnails and full previews.
+- Mark imports as Original or Edited.
+- Track statuses: Imported, Selected, Editing, Edited, Delivered.
+- Delete individual photo records.
+- Photo image blobs are stored in IndexedDB on the current browser/device.
 
 ## Existing data
-The app retains the same `jrvs-data` browser storage key and existing jobs/clients arrays. It does not intentionally clear local records. Existing jobs without the new address field remain supported.
+The existing `jrvs-data` localStorage key and jobs/clients are retained. Photos use a separate IndexedDB database `jrvs-photo-library`.
 
 ## Automatic updates
-The version is 0.0.2 in the interface and version.json. The service worker cache is `jrvs-property-co-v0.0.2`. After publishing, open the app and allow it to refresh; use Settings → Check now if needed.
+Version 0.0.3 appears in the UI and version.json; service-worker cache is `jrvs-property-co-v0.0.3`. After publishing, reopen the site. Updates are checked on load and when the tab becomes visible.
 
-This remains a local browser prototype. There is no cloud sync yet. Back up important data.
+## Limitations
+This is local device storage, not cloud sync or backup. Keep camera originals backed up separately. This release organises and previews images; pixel editing, ZIP packages and email delivery are future features.
