@@ -1,6 +1,6 @@
 {
-  "version": "0.1.5.3",
+  "version": "0.1.5.4",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "Readability and scrolling refinement; invoice search added. Existing data preserved."
+  "notes": "Restores invoice creation with a dedicated picker and supports additional invoices from accepted quotations."
 }
