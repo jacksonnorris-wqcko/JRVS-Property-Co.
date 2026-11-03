@@ -1,6 +1,6 @@
 {
-  "version": "0.1.5",
+  "version": "0.1.5.1",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "Document generation milestone: print-ready branded quotation PDFs, accepted-quote to invoice conversion, invoice status tracking, and browser-local records. Built on the V0.1.4.2 stability baseline; existing localStorage and photo IndexedDB keys preserved."
+  "notes": "Logo hotfix: quotation and invoice print documents embed an optimized copy of the approved JRVS logo directly, so the logo renders even when the print window cannot resolve relative asset paths. All V0.1.5 document generation features and existing local storage remain unchanged."
 }
