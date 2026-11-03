@@ -1,12 +1,22 @@
-JRVS Property Co. V0.1.9 – Finance integration foundation
+JRVS Property Co. — V0.1.9.2
 
-Deploy all ZIP contents into the existing GitHub Pages repository root.
-Finance now derives invoice income, paid amounts and outstanding balances directly from existing invoices, and displays accepted quote totals separately. Existing manual income and expense records remain available. No invoice data is copied into the income store, preventing duplicate transaction entries.
+Release: Pricing & Quotes / Finance separation
 
-This is the first finance integration release. Partial payment capture, recurring expense automation, bank imports/reconciliation and full GST/BAS reporting are not included yet. Existing local storage keys and photo library remain unchanged. Back up browser data before deployment; do not clear site data.
+What changed
+- Pricing & Quotes is now explicitly the sales workspace: packages, quotations and invoices.
+- Its summary cards remain focused on service packages, quotes created, accepted quotes and total quoted value. These are sales metrics, not accounting figures.
+- Finance is the single home for payments received, outstanding invoice balances, expenses, net cash position and transaction management.
+- Removed the duplicated business-activity summary from Finance so the dashboard is cleaner and avoids repeating the same received/outstanding figures.
+- Invoices continue to feed Finance automatically.
 
+Data safety
+- Existing localStorage key jrvs-data is unchanged.
+- Existing calendar key jrvs-calendar is unchanged.
+- Existing photo database jrvs-photo-library and photos object store are unchanged.
+- No data reset or destructive migration is performed.
 
-## V0.1.9.1 Finance visual refresh
-- Reworked Finance layout, hierarchy, summary cards and transaction list styling.
-- Added responsive layouts for smaller screens.
-- No changes to business data storage keys or photo/calendar storage.
+Deployment
+Extract the ZIP and upload all files/folders into the root of the existing GitHub Pages repository, replacing matching files. Do not upload the ZIP itself or place its contents inside a nested folder. Keep using the same browser/profile and do not clear site data.
+
+Testing note
+Static release checks only; live browser testing against the hosted site has not been performed.
