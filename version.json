@@ -1,6 +1,6 @@
 {
-  "version": "0.0.8",
+  "version": "0.0.9",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "Rebuilt job details as a clean structured modal with property/client information, income, expenses, linked quotations and edit actions. Corrected visible version labels."
+  "notes": "Complete Pricing & Quotes visual refresh: labelled summary cards, polished package cards, quote search and status filters, improved quotation cards, responsive layout and preserved quote functionality."
 }
