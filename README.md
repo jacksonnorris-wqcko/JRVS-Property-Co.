@@ -1,12 +1,12 @@
-# JRVS Property Co. V0.3.0 – Desktop Workspace Refresh
+# JRVS Property Co. V0.3.1.1 – List Limits Fix
 
-This release refreshes the desktop workspace while retaining the approved JRVS sage/cream brand palette and the existing business functionality. It improves the desktop navigation hierarchy, typography, dashboard cards, forms, panels, spacing and search presentation. Persistent header shortcuts provide direct access to creating a new job and a new quote.
+Corrects V0.3.1 list behaviour. Jobs, clients, service packages, quotes and invoices show the five most recent/matching entries by default. Search reveals up to ten matching entries and displays a count with guidance to refine the search for older records. This avoids unbounded scrolling while keeping records discoverable. Dashboard recent jobs remain limited to five. Upcoming events remain limited to today through the next seven days.
 
 ## Install
-Extract the ZIP and upload all files and folders into the existing GitHub repository root, replacing matching files. Do not upload the ZIP itself. Keep the same GitHub Pages URL and browser profile. No SQL changes are required.
+Extract the ZIP and upload all files/folders into the existing GitHub repository root, replacing matching files. Do not upload the ZIP itself. No SQL changes are required.
 
-## Data and sync safety
-This is a visual/workflow refresh based on V0.2.5. It does not intentionally change the localStorage keys, photo IndexedDB database/store, Supabase schema, or cloud-sync behaviour. Existing local data and photos should remain in place. Continue using dummy records while validating sync.
+## Data safety
+This is a UI/list rendering change. It retains the existing localStorage keys, photo IndexedDB database/store, Supabase schema and cloud-sync code from V0.3.1. No records are deleted; items beyond the display limit remain stored and searchable.
 
 ## Validation
-Package integrity and version/cache consistency should be checked before deployment. This release has not been live-tested in the user's browser; verify the desktop pages, forms, photo editor, and cloud sync after deployment.
+Static checks only; live browser and Supabase workflows have not been exercised in this build.

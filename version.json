@@ -1,6 +1,6 @@
 {
-  "version": "0.3.0",
+  "version": "0.3.1.1",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-04",
-  "notes": "Desktop workspace refresh: refined JRVS visual identity using the approved sage and cream palette, improved navigation hierarchy, dashboard readability, responsive desktop spacing, and persistent quick actions for new jobs and quotes. Existing business logic, local storage, photo library, and cloud sync retained from v0.2.5."
+  "notes": "Corrected list workflow: show five recent items by default across jobs, clients, packages, quotes and invoices; searching reveals up to ten matching results with a clear count and guidance. Retains seven-day upcoming events."
 }
