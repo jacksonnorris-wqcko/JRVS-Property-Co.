@@ -324,6 +324,34 @@ input,select,textarea,.field input,.field select,.field textarea{font-size:13px;
  .quote-list-tools input,.quote-list-tools select{width:100%;max-width:none}
 }
 
+
+/* V0.1.5.5 photo preview: use the available viewport instead of the generic 520px modal. */
+#photoPreviewBackdrop{padding:18px}
+#photoPreviewBackdrop .modal.preview-wrap{
+ width:min(1100px,calc(100vw - 36px));
+ max-width:1100px;
+ max-height:calc(100vh - 36px);
+ overflow:auto;
+ padding:20px;
+ box-sizing:border-box;
+}
+#photoPreviewBackdrop .photo-preview{
+ display:block;
+ width:auto;
+ height:auto;
+ max-width:100%;
+ max-height:calc(100vh - 150px);
+ object-fit:contain;
+ margin:0 auto;
+}
+#photoPreviewBackdrop .modal-head{margin-bottom:14px}
+#photoPreviewBackdrop .preview-name{font-size:13px;padding-top:6px}
+@media(max-width:600px){
+ #photoPreviewBackdrop{padding:8px}
+ #photoPreviewBackdrop .modal.preview-wrap{width:calc(100vw - 16px);max-height:calc(100vh - 16px);padding:13px}
+ #photoPreviewBackdrop .photo-preview{max-height:calc(100vh - 125px)}
+}
+
 </style>
 </head>
 <body>
@@ -475,7 +503,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.1.5.4';
+const APP_VERSION='0.1.5.5';
 const pageInfo={dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
