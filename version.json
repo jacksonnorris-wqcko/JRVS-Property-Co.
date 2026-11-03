@@ -1,6 +1,6 @@
 {
-  "version": "0.1.5.8",
+  "version": "0.1.6",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "Pricing workspace refined: quote creation moved into quotes, cleaner tabs, four most recent records per section with full search."
+  "notes": "Photo editor upgrade: auto enhance, property presets, perspective skew correction, batch edits, export profiles, experimental exposure fusion and RAW file preservation."
 }
