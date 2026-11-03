@@ -483,6 +483,54 @@ main{margin:0 auto;align-self:start;min-height:100vh}
   .finance-page-head,.toolbar,.calendar-toolbar{justify-content:flex-end}
 }
 
+
+/* JRVS Media Workspace refresh — V0.1.9.7 */
+#page-photos .media-workspace{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow)}
+#page-photos .media-toolbar{display:flex;justify-content:space-between;align-items:end;gap:18px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+#page-photos .media-filters{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+#page-photos .media-field{display:grid;gap:6px;min-width:210px}
+#page-photos .media-field span,#page-photos .photo-status-field span{font-size:9px;font-weight:850;letter-spacing:1.35px;color:#89917e}
+#page-photos .media-field select{width:100%;min-height:43px;padding:10px 13px;border:1px solid #dfe2d6;border-radius:11px;background:#fffefa;color:var(--ink);font-size:13px}
+#page-photos .media-toolbar-actions{display:flex;align-items:center;gap:12px}
+#page-photos .media-count{font-size:11px;font-weight:750;color:#65705a;background:#edf0e5;border-radius:30px;padding:8px 11px;white-space:nowrap}
+#page-photos .media-import{min-height:43px;padding:10px 17px;white-space:nowrap}
+#page-photos .media-guidance{display:flex;align-items:center;gap:10px;padding:14px 2px 18px;color:var(--muted);font-size:12px}
+#page-photos .media-guidance-icon{width:27px;height:27px;border-radius:8px;background:#edf0e5;color:var(--sage-dark);display:grid;place-items:center;font-size:16px;flex:none}
+#page-photos .project-grid{grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px}
+#page-photos .project-card{border-radius:16px;transition:transform .18s ease,box-shadow .18s ease}
+#page-photos .project-card:hover{transform:translateY(-2px);box-shadow:0 16px 34px #35422a18}
+#page-photos .project-cover,#page-photos .project-placeholder{height:190px}
+#page-photos .project-info{padding:15px 16px 17px}
+#page-photos .project-meta{font-size:11px;margin:5px 0 13px}
+#page-photos .project-actions .primary{width:100%;min-height:40px}
+#page-photos .photo-grid{grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:18px}
+#page-photos .gallery-heading{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:2px 0 3px;margin-bottom:2px}
+#page-photos .gallery-heading strong{display:block;font-size:19px;letter-spacing:-.35px;margin:2px 0}
+#page-photos .gallery-kicker{font-size:9px;letter-spacing:1.5px;font-weight:850;color:var(--sage-dark)}
+#page-photos .gallery-back{white-space:nowrap}
+#page-photos .photo-card{border-radius:16px;box-shadow:0 5px 18px #35422a0b;transition:transform .18s ease,box-shadow .18s ease}
+#page-photos .photo-card:hover{transform:translateY(-2px);box-shadow:0 14px 30px #35422a16}
+#page-photos .photo-image-wrap{height:190px;position:relative;background:#eceee5;overflow:hidden}
+#page-photos .photo-thumb{height:100%;width:100%;object-fit:cover;transition:transform .3s ease}
+#page-photos .photo-card:hover .photo-thumb{transform:scale(1.025)}
+#page-photos .photo-preview-action{position:absolute;right:10px;top:10px;width:31px;height:31px;border:1px solid #ffffffaa;border-radius:9px;background:#fffdf0e8;color:#394332;font-weight:800;opacity:0;transition:opacity .15s}
+#page-photos .photo-card:hover .photo-preview-action{opacity:1}
+#page-photos .photo-cover-badge{position:absolute;left:10px;bottom:10px;background:#f7f1dfed;color:#596747;border:1px solid #ffffff99;padding:5px 9px;border-radius:20px;font-size:10px;font-weight:800}
+#page-photos .photo-info{padding:14px}
+#page-photos .photo-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:9px}
+#page-photos .photo-title-row strong{font-size:12px;line-height:1.4;overflow-wrap:anywhere;min-width:0}
+#page-photos .photo-file-type{font-size:9px;flex:none;border-radius:20px;padding:4px 7px;background:#edf0e5;color:#65734f;font-weight:750}
+#page-photos .photo-meta{font-size:10px;margin:6px 0 13px;display:flex;gap:6px;align-items:center}
+#page-photos .photo-status-field{display:grid;gap:5px;margin-bottom:12px}
+#page-photos .photo-status-field select{width:100%;min-width:0;padding:9px 10px;border:1px solid #e1e4d9;border-radius:9px;background:#fffefa;color:#56614d;font-size:11px}
+#page-photos .photo-actions{display:grid;grid-template-columns:minmax(0,1fr) auto 38px;gap:7px;align-items:center}
+#page-photos .photo-edit-btn{min-height:38px;padding:8px 12px;font-size:11px}
+#page-photos .photo-cover-btn{min-height:38px;padding:8px 10px;font-size:10px;white-space:nowrap}
+#page-photos .photo-delete-btn{height:38px;width:38px;padding:0;font-size:16px}
+#page-photos .photo-actions button:disabled{opacity:.55;cursor:default}
+@media(max-width:700px){#page-photos .media-workspace{padding:14px;border-radius:15px}#page-photos .media-toolbar{align-items:stretch;flex-direction:column}#page-photos .media-filters{display:grid;grid-template-columns:1fr 1fr}#page-photos .media-field{min-width:0}#page-photos .media-toolbar-actions{justify-content:space-between}#page-photos .project-grid,#page-photos .photo-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}#page-photos .project-cover,#page-photos .project-placeholder,#page-photos .photo-image-wrap{height:175px}#page-photos .gallery-heading{align-items:flex-start}#page-photos .photo-preview-action{opacity:1}}
+@media(max-width:420px){#page-photos .media-filters{grid-template-columns:1fr}#page-photos .project-grid,#page-photos .photo-grid{grid-template-columns:1fr}#page-photos .media-toolbar-actions{gap:8px}#page-photos .media-import{flex:1}}
+
   </style>
 </head>
 <body>
@@ -538,7 +586,11 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 
     <section class="page" id="page-jobs"><div class="toolbar"><div><h2 style="margin:0">Jobs</h2><div class="muted">Manage property photography work.</div></div><button class="primary" onclick="openModal('job')">＋ New job</button></div><div id="jobsList" class="list"></div></section>
     <section class="page" id="page-clients"><div class="toolbar"><div><h2 style="margin:0">Clients</h2><div class="muted">Keep client contact details together.</div></div><button class="primary" onclick="openModal('client')">＋ Add client</button></div><div id="clientsList" class="list"></div></section>
-    <section class="page" id="page-photos"><div class="panel"><div class="panel-head"><div><h3>Photo library</h3><div class="muted">Browse projects, choose a cover image and manage each project’s full photo gallery.</div></div><span class="pill" id="photoCount">0 photos</span></div><div class="photo-toolbar"><select id="photoJobFilter" aria-label="Filter photos by job"><option value="all">All projects</option></select><select id="photoKind" aria-label="Photo type"><option value="Original">Original photos</option><option value="Edited">Edited photos</option></select><button class="primary" onclick="document.getElementById('photoFiles').click()">＋ Import photos</button><input id="photoFiles" type="file" accept="image/*,.cr2,.cr3,.nef,.arw,.dng,.raf,.orf,.rw2,.pef,.srw" multiple hidden></div><div class="muted" style="margin-bottom:13px">In All jobs, each project appears once with its cover photo. Select a project to view its full gallery. Photos stay stored in this browser on this device.</div><div id="photoGrid" class="project-grid"><div class="empty" style="grid-column:1/-1"><b>No photos imported yet</b>Select a job and import your first property photos.</div></div></div></section>
+    <section class="page" id="page-photos"><div class="media-workspace">
+      <div class="media-toolbar"><div class="media-filters"><label class="media-field"><span>PROJECT</span><select id="photoJobFilter" aria-label="Filter photos by job"><option value="all">All projects</option></select></label><label class="media-field"><span>LIBRARY</span><select id="photoKind" aria-label="Photo type"><option value="Original">Original photos</option><option value="Edited">Edited photos</option></select></label></div><div class="media-toolbar-actions"><span class="media-count" id="photoCount">0 photos</span><button class="primary media-import" onclick="document.getElementById('photoFiles').click()">＋ Import photos</button><input id="photoFiles" type="file" accept="image/*,.cr2,.cr3,.nef,.arw,.dng,.raf,.orf,.rw2,.pef,.srw" multiple hidden></div></div>
+      <div class="media-guidance"><span class="media-guidance-icon">▧</span><span>Manage your property galleries, choose hero images and edit photos without leaving the workspace.</span></div>
+      <div id="photoGrid" class="project-grid"><div class="empty" style="grid-column:1/-1"><b>No photos imported yet</b>Select a job and import your first property photos.</div></div>
+    </div></section>
     <section class="page" id="page-quotes">
       <div class="quote-welcome"><div><div class="eyebrow">SALES WORKSPACE</div><h2>Pricing &amp; quoting</h2><p>Manage your services, prepare client quotes and issue invoices. Financial performance and expenses are managed separately in Finance.</p></div></div>
       <div id="quoteStats" class="quote-stats" aria-label="Pricing and sales activity"></div>
@@ -717,7 +769,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.1.9.5';
+const APP_VERSION='0.1.9.7';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -1070,11 +1122,11 @@ async function renderPhotos(){
  grid.className='photo-grid';
  const job=data.jobs.find(j=>j.id===f);
  const rows=getProjectPhotos(f);
- const back=`<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:10px"><div><strong>${esc(job?.name||'Project gallery')}</strong><div class="muted">${rows.length} photos in this project</div></div><button class="tiny-btn" onclick="showAllProjects()">← All projects</button></div>`;
+ const back=`<div class="gallery-heading"><div><div class="gallery-kicker">PROJECT GALLERY</div><strong>${esc(job?.name||'Project gallery')}</strong><div class="muted">${rows.length} ${rows.length===1?'photo':'photos'} · Original files are kept safe</div></div><button class="secondary gallery-back" onclick="showAllProjects()">← All projects</button></div>`;
  if(!rows.length){grid.innerHTML=back+'<div class="empty" style="grid-column:1/-1"><b>No photos in this project yet</b>Import photos using the button above.</div>';return}
  grid.innerHTML=back+rows.map(p=>{
    const u=URL.createObjectURL(p.blob);photoUrls.push(u);
-   return `<article class="photo-card"><img class="photo-thumb" src="${u}" alt="${esc(p.name)}" onclick="previewPhoto('${p.id}')"><div class="photo-info"><strong>${esc(p.name)} ${p.isCover?'<span class="cover-tag">Cover</span>':''}</strong><div class="photo-meta">${esc(p.type)} · ${bytes(p.size)}</div><div class="photo-controls"><select aria-label="Photo status" onchange="updatePhotoStatus('${p.id}',this.value)">${['Imported','Selected','Editing','Edited','Delivered'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}</select><button class="tiny-btn" onclick="openEditor('${p.id}')">Edit</button><button class="tiny-btn" onclick="setProjectCover('${p.id}')" ${p.isCover?'disabled':''}>${p.isCover?'Cover':'Set cover'}</button><button class="tiny-btn danger" onclick="deletePhoto('${p.id}')">Delete</button></div></div></article>`;
+   return `<article class="photo-card"><div class="photo-image-wrap"><img class="photo-thumb" src="${u}" alt="${esc(p.name)}" onclick="previewPhoto('${p.id}')"><button class="photo-preview-action" onclick="previewPhoto('${p.id}')" aria-label="Preview photo">↗</button>${p.isCover?'<span class="photo-cover-badge">★ Cover image</span>':''}</div><div class="photo-info"><div class="photo-title-row"><strong title="${esc(p.name)}">${esc(p.name)}</strong><span class="photo-file-type">${esc(p.type)}</span></div><div class="photo-meta">${bytes(p.size)} <span>·</span> ${new Date(p.addedAt||Date.now()).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div><label class="photo-status-field"><span>WORKFLOW STATUS</span><select aria-label="Photo status" onchange="updatePhotoStatus('${p.id}',this.value)">${['Imported','Selected','Editing','Edited','Delivered'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}</select></label><div class="photo-actions"><button class="primary photo-edit-btn" onclick="openEditor('${p.id}')">✎ Edit photo</button><button class="tiny-btn photo-cover-btn" onclick="setProjectCover('${p.id}')" ${p.isCover?'disabled':''}>${p.isCover?'✓ Cover':'Set cover'}</button><button class="tiny-btn danger photo-delete-btn" onclick="deletePhoto('${p.id}')" aria-label="Delete photo" title="Delete photo">⌫</button></div></div></article>`;
  }).join('');
 }
 async function updatePhotoStatus(id,status){const p=photoRecords.find(x=>x.id===id);if(p){p.status=status;await photoRequest('readwrite','put',p);await loadPhotos()}}

@@ -1,6 +1,6 @@
 {
-  "version": "0.1.9.6",
+  "version": "0.1.9.7",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-04",
-  "notes": "Added 12 original professional property photo presets for interiors and exteriors. Presets apply non-destructive global adjustments and preserve original photos."
+  "notes": "Redesigned the Photo Library as a professional Media Workspace with larger gallery cards, clearer filters, structured photo actions and responsive layouts. Preserved existing photo and business data."
 }
