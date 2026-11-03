@@ -1121,7 +1121,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.3.0';
+const APP_VERSION='0.3.1';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -1189,7 +1189,8 @@ function renderCalendar(){
   const dayEvents=events.filter(e=>e.date===calDate(calendarCursor));
   grid.className='';grid.innerHTML=`<div class="cal-day-list">${dayEvents.map(eventButton).join('')||'<div class="agenda-empty">Nothing scheduled. Add an event to plan your day.</div>'}</div><button class="secondary" style="margin-top:10px" onclick="openCalendarEvent('${calDate(calendarCursor)}')">＋ Add to this day</button>`;
  }
- const upcoming=events.filter(e=>e.date>=today).slice(0,8);
+ const upcomingEnd=calDate(new Date(new Date(today+'T12:00:00').getTime()+7*86400000));
+ const upcoming=events.filter(e=>e.date>=today&&e.date<=upcomingEnd).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.startTime||'').localeCompare(b.startTime||''));
  document.getElementById('agendaHeading').textContent='Upcoming events';
  document.getElementById('calendarAgenda').innerHTML=upcoming.length?upcoming.map(e=>`<div class="agenda-item"><div><strong>${calSafe(e.title)}</strong><small>${new Date(e.date+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}${e.startTime?' · '+calSafe(e.startTime):''} · ${calSafe(e.subtitle||e.location||'JRVS event')}</small></div><button class="tiny-btn" onclick="openCalendarItem('${calSafe(e.id)}')">Open</button></div>`).join(''):'<div class="agenda-empty">No upcoming events. Add your first appointment or schedule a job.</div>';
 }
@@ -1423,7 +1424,7 @@ function render(){
  document.getElementById('clientsList').innerHTML=data.clients.map(c=>{const count=data.jobs.filter(j=>(j.client||'').toLowerCase()===c.name.toLowerCase()).length;return `<div class="row-card"><div style="min-width:0"><strong>${esc(c.name)}</strong><small>${esc(c.company||'')}${c.company?' · ':''}${esc(c.email||'No email')} · ${esc(c.phone||'No phone')} · ${count} linked job${count===1?'':'s'}</small></div><div class="row-actions"><button class="tiny-btn" onclick="viewClient('${c.id}')">Profile</button><button class="tiny-btn" onclick="openModal('client','${c.id}')">Edit</button><button class="tiny-btn danger" onclick="deleteRecord('client','${c.id}')">Delete</button></div></div>`}).join('')||'<div class="empty"><b>No clients yet</b>Add a client to get started.</div>';
  renderAttention();
  const schedule=document.getElementById('dashboardSchedule');
- if(schedule){const today=calDate(new Date());const upcoming=calendarAllEvents().filter(e=>e.date>=today).slice(0,4);schedule.innerHTML=upcoming.length?upcoming.map(e=>`<div class="row-card"><div><strong>${calSafe(e.title)}</strong><small>${new Date(e.date+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}${e.startTime?' · '+calSafe(e.startTime):''} · ${calSafe(e.subtitle||e.location||'JRVS event')}</small></div><button class="tiny-btn" onclick="showPage('calendar');openCalendarItem('${calSafe(e.id)}')">Open</button></div>`).join(''):'<div class="empty">Nothing scheduled yet. Add an event in your calendar.</div>'}
+ if(schedule){const today=calDate(new Date());const upcomingEnd=calDate(new Date(new Date(today+'T12:00:00').getTime()+7*86400000));const upcoming=calendarAllEvents().filter(e=>e.date>=today&&e.date<=upcomingEnd).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.startTime||'').localeCompare(b.startTime||''));schedule.innerHTML=upcoming.length?upcoming.map(e=>`<div class="row-card"><div><strong>${calSafe(e.title)}</strong><small>${new Date(e.date+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}${e.startTime?' · '+calSafe(e.startTime):''} · ${calSafe(e.subtitle||e.location||'JRVS event')}</small></div><button class="tiny-btn" onclick="showPage('calendar');openCalendarItem('${calSafe(e.id)}')">Open</button></div>`).join(''):'<div class="empty">Nothing scheduled yet. Add an event in your calendar.</div>'}
 }
 function esc(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
@@ -1555,9 +1556,9 @@ function renderQuotes(){
  const pl=document.getElementById('packageList');
  const packageTerm=(document.getElementById('packageSearch')?.value||'').trim().toLowerCase();
  const matchingPackages=active.filter(p=>[p.name,p.description,p.isExtra?'Optional extra':'Service package',p.price].join(' ').toLowerCase().includes(packageTerm)).sort((a,b)=>(b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||''));
- const visiblePackages=matchingPackages.slice(0,4);
+ const visiblePackages=matchingPackages;
  const packageNote=document.getElementById('packageLimitNote');
- if(packageNote)packageNote.textContent=matchingPackages.length>4?`Showing 4 of ${matchingPackages.length} matching packages. Search to find older packages.`:'';
+ if(packageNote)packageNote.textContent=matchingPackages.length?`${matchingPackages.length} package${matchingPackages.length===1?'':'s'} shown.`:'';
  pl.innerHTML=visiblePackages.length?visiblePackages.map(p=>`<div class="package-card"><div class="package-card-main"><div><div class="package-name">${esc(p.name)}</div><div class="package-description">${esc(p.description||'No description added yet.')}</div><span class="package-tag">${p.isExtra?'OPTIONAL EXTRA':'SERVICE PACKAGE'}</span></div><div class="package-price">${money(p.price)}</div></div><div class="package-actions"><button class="tiny-btn" onclick="editPackage('${p.id}')">Edit package</button><button class="tiny-btn danger" onclick="deletePackage('${p.id}')">Delete</button></div></div>`).join(''):`<div class="quote-empty"><strong>${active.length?'No matching packages':'No service packages yet'}</strong><span>${active.length?'Try another package name or description.':'Add your first package to make creating quotes quicker.'}</span></div>`;
  const ql=document.getElementById('quoteList');
  const search=(document.getElementById('quoteSearch')?.value||'').toLowerCase().trim();
@@ -1567,9 +1568,9 @@ function renderQuotes(){
   const hay=[q.number,q.clientName,client?.name,client?.company,client?.email,q.jobName,job?.name,job?.address,job?.client,job?.status,q.status,q.date].join(' ').toLowerCase();
   return (!search||hay.includes(search))&&(filter==='all'||q.status===filter);
  });
- const shown=matchingQuotes.slice(0,4);
+ const shown=matchingQuotes;
  const quoteNote=document.getElementById('quoteLimitNote');
- if(quoteNote)quoteNote.textContent=matchingQuotes.length>4?`Showing the 4 most recent of ${matchingQuotes.length} matching quotations. Search by client or property to find older quotes.`:'';
+ if(quoteNote)quoteNote.textContent=matchingQuotes.length?`${matchingQuotes.length} quotation${matchingQuotes.length===1?'':'s'} shown.`:'';
  ql.innerHTML=shown.length?shown.map(q=>{
   const client=data.clients.find(c=>c.id===q.clientId),job=data.jobs.find(j=>j.id===q.jobId);
   const clientName=client?.name||q.clientName||'Client not linked',jobName=job?.name||q.jobName||'No job linked';
@@ -1662,9 +1663,9 @@ function renderInvoices(){
   const haystack=[inv.number,inv.clientName,client?.name,client?.company,client?.email,inv.jobName,job?.name,job?.address,job?.client,inv.status,status,inv.date,inv.dueDate,inv.notes].join(' ').toLowerCase();
   return matchesStatus&&(!term||haystack.includes(term));
  });
- const rows=matchingRows.slice(0,4);
+ const rows=matchingRows;
  const invoiceNote=document.getElementById('invoiceLimitNote');
- if(invoiceNote)invoiceNote.textContent=matchingRows.length>4?`Showing the 4 most recent of ${matchingRows.length} matching invoices. Search by client or property to find older invoices.`:'';
+ if(invoiceNote)invoiceNote.textContent=matchingRows.length?`${matchingRows.length} invoice${matchingRows.length===1?'':'s'} shown.`:'';
  host.innerHTML=rows.length?rows.map(inv=>{const overdue=invoiceIsOverdue(inv)&&inv.status!=='Paid';const st=inv.status==='Paid'?'Paid':overdue?'Overdue':'Unpaid';return `<div class="quote-card"><div class="quote-card-top"><div><div class="quote-card-ref">${esc(inv.number||'Invoice')}</div><div class="quote-card-client">${esc(inv.clientName||'Client')}</div><div class="quote-card-meta"><span class="quote-meta-chip">${esc(inv.jobName||'No property linked')}</span><span class="quote-meta-chip">Issued: ${esc(inv.date||'—')}</span><span class="quote-meta-chip">Due: ${esc(inv.dueDate||'—')}</span></div></div><div class="quote-card-total">${money(inv.total)}<br><span class="invoice-status-pill ${st.toLowerCase()}">${st}</span></div></div><div class="quote-card-actions"><button class="tiny-btn" onclick="printBusinessDocument('invoice','${inv.id}')">Download / print PDF</button>${inv.status!=='Paid'?`<button class="tiny-btn" onclick="markInvoicePaid('${inv.id}')">Mark paid</button>`:''}<button class="tiny-btn danger" onclick="deleteInvoice('${inv.id}')">Delete</button></div></div>`}).join(''):`<div class="quote-empty"><strong>${data.invoices.length?'No matching invoices':'No invoices yet'}</strong><span>${data.invoices.length?'Try another client, property or invoice number.':'Accept a quotation, then create an invoice from it.'}</span></div>`;
 }
 function invoiceIsOverdue(inv){return !!(inv.dueDate&&inv.status!=='Paid'&&inv.dueDate<new Date().toISOString().slice(0,10))}
