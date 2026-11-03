@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="JRVS Property Co.">
+  <link rel="apple-touch-icon" href="assets/jrvs-app-192.png">
   <meta name="theme-color" content="#899B68">
   <meta name="description" content="JRVS Property Co. business management">
   <title>JRVS Property Co. — Business Hub</title>
@@ -453,7 +457,7 @@ input,select,textarea,.field input,.field select,.field textarea{font-size:13px;
 @media(max-width:650px){#page-finances{gap:12px}.finance-page-head{align-items:flex-start;flex-direction:column}.finance-head-actions{width:100%}.finance-head-actions button{flex:1}.finance-stats{gap:8px}.finance-stat{padding:13px}.finance-stat-value{font-size:21px}.finance-linked-panel,.finance-transactions-panel{padding:14px}.finance-linked-grid{gap:7px}.finance-linked-card{padding:10px}.finance-toolbar{align-items:stretch;flex-direction:column}.finance-filters select{flex:1;min-width:0}.finance-list-head{display:none}.finance-row{grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:13px 4px}.finance-row>div:last-child{grid-column:2;grid-row:1}.finance-amount{text-align:right}.finance-row-actions{max-width:190px}.finance-panel-head{flex-direction:column}}
 
 
-/* V0.1.9.5 — consistent page start and single global page heading */
+/* V0.2.0 — consistent page start and single global page heading */
 .shell{align-items:start}
 main{margin:0 auto;align-self:start;min-height:100vh}
 .top{align-items:flex-start;margin-bottom:24px;padding-top:2px}
@@ -484,7 +488,7 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 }
 
 
-/* JRVS Media Workspace refresh — V0.1.9.7 */
+/* JRVS Media Workspace refresh — V0.2.0 */
 #page-photos .media-workspace{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow)}
 #page-photos .media-toolbar{display:flex;justify-content:space-between;align-items:end;gap:18px;padding-bottom:18px;border-bottom:1px solid var(--line)}
 #page-photos .media-filters{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
@@ -531,6 +535,116 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 @media(max-width:700px){#page-photos .media-workspace{padding:14px;border-radius:15px}#page-photos .media-toolbar{align-items:stretch;flex-direction:column}#page-photos .media-filters{display:grid;grid-template-columns:1fr 1fr}#page-photos .media-field{min-width:0}#page-photos .media-toolbar-actions{justify-content:space-between}#page-photos .project-grid,#page-photos .photo-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}#page-photos .project-cover,#page-photos .project-placeholder,#page-photos .photo-image-wrap{height:175px}#page-photos .gallery-heading{align-items:flex-start}#page-photos .photo-preview-action{opacity:1}}
 @media(max-width:420px){#page-photos .media-filters{grid-template-columns:1fr}#page-photos .project-grid,#page-photos .photo-grid{grid-template-columns:1fr}#page-photos .media-toolbar-actions{gap:8px}#page-photos .media-import{flex:1}}
 
+/* JRVS Property Co. v0.2.0 — iPhone-first responsive layer. Desktop rules remain unchanged. */
+@media (max-width: 680px) {
+  :root { --mobile-nav-height: 104px; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body { min-width: 320px; overflow-x: hidden; padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom)); }
+  .shell { display:block; min-height:100svh; min-height:100dvh; }
+  .shell > aside { position:fixed; z-index:100; inset:auto 0 0 0; width:100%; height:calc(var(--mobile-nav-height) + env(safe-area-inset-bottom)); padding:7px 8px calc(7px + env(safe-area-inset-bottom)); margin:0; display:flex; flex-direction:column; justify-content:center; gap:0; background:rgba(247,241,223,.97); border:0; border-top:1px solid #dedbc9; box-shadow:0 -8px 28px rgba(45,53,37,.09); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
+  .shell > aside > .brand, .shell > aside .nav-label, .shell > aside .side-bottom { display:none !important; }
+  .shell > aside > div:nth-child(2) { width:100%; }
+  .shell > aside nav { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-rows:repeat(2,43px); gap:3px 5px; width:100%; overflow:visible; }
+  .shell > aside .nav-btn { min-width:0; min-height:42px; padding:3px 2px; margin:0; border-radius:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:1px; white-space:normal; text-align:center; font-size:10px; line-height:1.15; font-weight:700; color:#65705a; -webkit-tap-highlight-color:transparent; }
+  .shell > aside .nav-btn span:first-child { display:block; width:auto; font-size:17px; line-height:1.15; }
+  .shell > aside .nav-btn.active { background:#e3e8d8; color:#34412c; box-shadow:inset 0 0 0 1px #d7dfc9; }
+  main { width:100%; max-width:none; margin:0; padding:calc( max(12px, env(safe-area-inset-top)) + 8px ) 13px 24px; }
+  .top { align-items:flex-start; gap:9px; margin:0 0 17px; padding:2px 1px 12px; border-bottom:1px solid #e8e6da; }
+  .top h1 { margin:2px 0 1px; font-size:25px; line-height:1.15; letter-spacing:-.6px; }
+  .top .eyebrow { font-size:9px; letter-spacing:1.45px; }
+  .top .sub { font-size:12px; line-height:1.35; }
+  .top-tools { width:auto; min-width:0; flex:0 0 auto; gap:6px; }
+  .global-search { width:38px !important; min-width:38px !important; height:38px; flex:0 0 38px !important; overflow:hidden; border-radius:11px; }
+  .global-search:focus-within { position:absolute; z-index:20; left:13px; right:13px; top:12px; width:auto !important; height:44px; background:var(--paper); box-shadow:0 5px 22px #20271d22; }
+  .global-search input { min-width:0; font-size:16px !important; }
+  .version { display:none; }
+  .welcome { margin-bottom:14px; padding:18px; border-radius:15px; }
+  .welcome h2 { font-size:19px; }
+  .stats { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-bottom:14px; }
+  .stat { min-width:0; padding:12px; border-radius:13px; }
+  .stat-label { font-size:10px; }
+  .stat-value { font-size:22px; overflow-wrap:anywhere; }
+  .panel { padding:14px; border-radius:14px; }
+  .content-grid { grid-template-columns:minmax(0,1fr); gap:11px; }
+  .toolbar { align-items:flex-start; gap:9px; flex-wrap:wrap; }
+  .toolbar > div { min-width:0; flex:1 1 100%; }
+  .toolbar > button { min-height:42px; width:100%; }
+  .row-card { align-items:flex-start; padding:13px; flex-wrap:wrap; }
+  .row-card > div { min-width:0; flex:1 1 65%; }
+  .row-card button { min-height:40px; }
+  .form-grid, .quote-form-grid { grid-template-columns:minmax(0,1fr) !important; }
+  .field.full { grid-column:auto; }
+  input, select, textarea { max-width:100%; }
+  .field input, .field select, .field textarea, input, select, textarea { font-size:16px; }
+  button, .tiny-btn, .secondary, .primary { touch-action:manipulation; }
+  .primary, .secondary { min-height:42px; }
+  .tiny-btn { min-height:38px; padding:8px 10px; }
+  .modal-backdrop { align-items:flex-end; padding:0; padding-bottom:env(safe-area-inset-bottom); }
+  .modal { width:100%; max-width:none; max-height: min(88dvh, 820px); overflow:auto; border-radius:20px 20px 0 0; padding:18px 16px calc(20px + env(safe-area-inset-bottom)); }
+  .modal-head { position:sticky; top:-18px; z-index:2; background:var(--paper); padding:6px 0 12px; }
+  .modal form > div[style*="justify-content:flex-end"] { position:sticky; bottom:-20px; background:var(--paper); padding:12px 0 calc(4px + env(safe-area-inset-bottom)); }
+  .project-grid, .photo-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:9px !important; }
+  .project-card, .photo-card { min-width:0; border-radius:12px; }
+  .project-cover, .project-placeholder { height:118px !important; }
+  #page-photos .media-workspace { padding:11px; }
+  #page-photos .media-toolbar { gap:9px; }
+  #page-photos .media-filters { grid-template-columns:1fr 1fr; gap:7px; }
+  #page-photos .media-field select { width:100%; min-width:0; font-size:14px; }
+  #page-photos .media-toolbar-actions { display:flex; align-items:center; gap:8px; }
+  #page-photos .media-import { flex:1; }
+  #page-photos .photo-image-wrap { height:120px !important; }
+  #page-photos .photo-info { padding:9px; }
+  #page-photos .photo-title-row { flex-wrap:wrap; gap:4px; }
+  #page-photos .photo-title-row strong { font-size:11px; }
+  #page-photos .photo-meta { font-size:9px; }
+  #page-photos .photo-actions { display:grid; grid-template-columns:minmax(0,1fr) 38px; gap:6px; }
+  #page-photos .photo-edit-btn { grid-column:1/-1; min-height:40px; }
+  #page-photos .photo-cover-btn { min-height:38px; }
+  #page-photos .photo-delete-btn { min-height:38px; }
+  .editor-backdrop { padding-bottom:env(safe-area-inset-bottom); }
+  .editor-shell { padding:calc(10px + env(safe-area-inset-top)) 11px 16px; }
+  .editor-top { align-items:flex-start; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .editor-top h2 { font-size:18px; }
+  .editor-top > button { min-height:40px; }
+  .editor-layout { grid-template-columns:minmax(0,1fr) !important; gap:10px; }
+  .editor-stage { min-height:230px; max-height:44dvh; padding:7px; border-radius:12px; }
+  .editor-stage canvas { max-width:100%; max-height:42dvh; height:auto; object-fit:contain; }
+  .editor-panel { max-height:none !important; overflow:visible !important; padding:13px !important; border-radius:13px; }
+  .editor-panel input, .editor-panel select { min-height:42px; }
+  .editor-panel .editor-control { margin-bottom:12px; }
+  .editor-history button { min-height:40px; }
+  .calendar-controls, .calendar-toolbar { gap:8px; }
+  .calendar-view-switch { width:100%; display:grid; grid-template-columns:repeat(3,1fr); }
+  .calendar-view-switch button { min-height:40px; }
+  .cal-cell { min-height:64px; }
+  .pricing-tabs { position:sticky; top:0; z-index:4; background:#f4f3eb; }
+  .pricing-tab { min-width:0; overflow-wrap:anywhere; }
+  .quote-panel, .finance-transactions-panel, .finance-linked-panel { padding:12px; }
+  .quote-panel-head, .finance-panel-head { gap:10px; }
+  .quote-list-tools { width:100%; }
+  .quote-list-tools > * { min-width:0; }
+  .finance-stats, .quote-stats { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .finance-linked-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .footer { padding:5px 0 10px; }
+  table { display:block; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .toast-stack { bottom:calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 10px); top:auto; left:10px; right:10px; }
+}
+@media (max-width: 380px) {
+  .shell > aside nav { grid-template-rows:repeat(2,41px); }
+  .shell > aside .nav-btn { font-size:9px; }
+  .project-grid, .photo-grid { grid-template-columns:minmax(0,1fr) !important; }
+  #page-photos .photo-image-wrap { height:180px !important; }
+  .top h1 { font-size:23px; }
+}
+@media (max-width: 680px) and (orientation: landscape) {
+  :root { --mobile-nav-height: 58px; }
+  .shell > aside { height:calc(var(--mobile-nav-height) + env(safe-area-inset-bottom)); }
+  .shell > aside nav { grid-template-columns:repeat(8,minmax(0,1fr)); grid-template-rows:44px; }
+  .shell > aside .nav-btn { font-size:9px; }
+  .shell > aside .nav-btn span:first-child { font-size:15px; }
+  body { padding-bottom:calc(var(--mobile-nav-height) + env(safe-area-inset-bottom)); }
+}
+
   </style>
 </head>
 <body>
@@ -547,7 +661,7 @@ main{margin:0 auto;align-self:start;min-height:100vh}
       <button class="nav-btn" data-page="finances"><span>◫</span>Finances</button>
       <button class="nav-btn" data-page="settings"><span>⚙</span>Settings</button>
     </nav></div>
-    <div class="side-bottom"><b>JRVS PROPERTY CO.</b><br>Simple tools for better property photography.<br><br><span id="sideVersion">V0.1.9.5</span></div>
+    <div class="side-bottom"><b>JRVS PROPERTY CO.</b><br>Simple tools for better property photography.<br><br><span id="sideVersion">V0.2.0</span></div>
   </aside>
   <main>
     <header class="top"><div><div class="eyebrow" id="pageEyebrow">Business workspace</div><h1 id="pageTitle">Dashboard</h1><p class="sub" id="pageSub">A clear view of what's happening in your business.</p></div><div class="top-tools"><div class="global-search" id="globalSearchWrap"><span class="search-icon">⌕</span><input id="globalSearchInput" type="search" placeholder="Search jobs, clients, quotes..." autocomplete="off" aria-label="Search all JRVS records"><div class="global-search-results" id="globalSearchResults" hidden></div></div><div class="version" id="versionBadge">● V0.1.5</div></div></header>
@@ -623,8 +737,8 @@ main{margin:0 auto;align-self:start;min-height:100vh}
       <div id="financeStats" class="finance-stats"></div>
       <div class="finance-transactions-panel"><div class="finance-panel-head"><div><h3>Transactions</h3><p>Invoice income is linked automatically. Add expenses and other income as they occur.</p></div></div><div class="finance-toolbar"><div class="finance-filters"><select id="financeTypeFilter" onchange="renderFinances()"><option value="all">All transactions</option><option value="income">Income</option><option value="expense">Expenses</option></select><select id="financeStatusFilter" onchange="renderFinances()"><option value="all">All statuses</option><option value="Paid">Paid / received</option><option value="Unpaid">Unpaid / outstanding</option></select></div></div><div class="finance-list-head"><span>Transaction</span><span style="text-align:right">Amount</span><span style="text-align:right">Actions</span></div><div id="financeList"></div></div>
     </section>
-    <section class="page" id="page-settings"><div class="panel"><h3>Application settings</h3><div class="row-card" style="margin-top:14px"><div><strong>Application version</strong><small>Use this to confirm updates are being received.</small></div><span class="pill" id="settingsVersion">V0.1.9.5</span></div><div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div><div class="row-card"><div><strong>Install JRVS as a desktop app</strong><small>Install a standalone window and launch JRVS from your Windows Start menu or desktop.</small></div><button class="primary" id="installAppButton" type="button" onclick="installJRVSApp()" hidden>Install app</button><span class="pill" id="installAppStatus">Use browser install menu</span></div><div class="settings-note">Chrome or Edge: open JRVS, then select the install icon at the right of the address bar, or open the browser menu and choose “Install JRVS Property Co.” Once installed, launch it from your desktop or Start menu. This app continues to use browser-local storage on this device.</div><div class="row-card"><div><strong>Data storage</strong><small>V0.1.5 stores business records in this browser on this device.</small></div><span class="pill">Local</span></div><div class="settings-note">Important: browser data is not yet cloud-synchronised. Keep backups of anything important. Automatic app updates do not replace or delete your saved records.</div></div></section>
-    <div class="footer">JRVS Property Co. · <span id="footerVersion">V0.1.9.5</span> · Built for better business days.</div>
+    <section class="page" id="page-settings"><div class="panel"><h3>Application settings</h3><div class="row-card" style="margin-top:14px"><div><strong>Application version</strong><small>Use this to confirm updates are being received.</small></div><span class="pill" id="settingsVersion">V0.2.0</span></div><div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div><div class="row-card"><div><strong>Install JRVS as a desktop app</strong><small>Install a standalone window and launch JRVS from your Windows Start menu or desktop.</small></div><button class="primary" id="installAppButton" type="button" onclick="installJRVSApp()" hidden>Install app</button><span class="pill" id="installAppStatus">Add to Home Screen on iPhone</span></div><div class="settings-note">iPhone: open this site in Safari, tap Share, then Add to Home Screen. Windows: use the Chrome or Edge install option. Launch JRVS from its home-screen or desktop icon. This app continues to use browser-local storage on this device.</div><div class="row-card"><div><strong>Data storage</strong><small>V0.1.5 stores business records in this browser on this device.</small></div><span class="pill">Local</span></div><div class="settings-note">Important: browser data is not yet cloud-synchronised. Keep backups of anything important. Automatic app updates do not replace or delete your saved records.</div></div></section>
+    <div class="footer">JRVS Property Co. · <span id="footerVersion">V0.2.0</span> · Built for better business days.</div>
   </main>
 </div>
 
@@ -769,7 +883,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.1.9.7';
+const APP_VERSION='0.2.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
