@@ -1,6 +1,6 @@
 {
-  "version": "0.1.5.2",
+  "version": "0.1.5.3",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "Global compact-layout and notification hotfix: denser layouts across tabs, side-by-side pricing workspace on desktop, in-app toast notifications and styled confirmation dialogs. Preserves all existing localStorage and photo IndexedDB data."
+  "notes": "Readability and scrolling refinement; invoice search added. Existing data preserved."
 }

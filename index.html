@@ -270,6 +270,60 @@ button.primary,button.secondary{padding:8px 12px}
 @media(max-width:900px){.shell{grid-template-columns:1fr}aside{padding:9px 11px;gap:8px}main{padding:16px 13px}.top{margin-bottom:14px}.quote-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.top{align-items:flex-start;flex-direction:column}.top-tools{width:100%}.global-search{min-width:0;width:100%}.stats{gap:8px}.stat{padding:11px}.stat-value{font-size:22px}.quote-welcome{align-items:flex-start;flex-direction:column}.quote-list-tools{flex-wrap:wrap}.toast-stack{right:10px;top:10px}}
 
+
+/* V0.1.5.3 usability refinement: compact without shrinking readability. */
+:root{font-size:15px}
+body{font-size:14px}
+main{padding:24px 28px}
+.page{gap:16px}
+.page h1{font-size:27px}
+.page h2{font-size:21px}
+.page h3{font-size:17px}
+.page p,.muted{font-size:13px;line-height:1.45}
+button,.tiny-btn{font-size:12px}
+input,select,textarea,.field input,.field select,.field textarea{font-size:13px;min-height:38px}
+.stat,.panel{padding:17px}
+.stat-label,.quote-section-kicker{font-size:11px}
+.stat-value{font-size:27px}
+.quote-panel{padding:17px}
+.quote-card{padding:15px 16px}
+.quote-card-ref{font-size:14px}
+.quote-card-client{font-size:13px}
+.quote-meta-chip{font-size:11px;padding:6px 9px}
+.quote-card-total{font-size:18px}
+.quote-status-pill,.invoice-status-pill{font-size:11px;padding:6px 10px}
+.quote-card-actions button{font-size:11px;padding:7px 10px}
+.quote-list-tools input,.quote-list-tools select{min-height:38px;font-size:12px}
+.package-card{padding:15px}
+.package-card strong{font-size:14px}
+/* Never trap the user in nested scrolling panels. Let the page scroll naturally. */
+#page-quotes>.quote-list-panel:not([style]),
+#page-quotes>.quote-list-panel[style]{
+ max-height:none!important;
+ height:auto!important;
+ overflow:visible!important;
+}
+#page-quotes .quote-list-panel .quote-panel-head{position:static}
+#page-quotes>.quote-panel[style]{margin-top:0!important}
+#page-quotes.active{grid-template-columns:minmax(280px,.78fr) minmax(0,1.55fr);gap:16px}
+#page-quotes>.quote-welcome,#page-quotes>#quoteStats{grid-column:1/-1}
+#page-quotes>.quote-panel:not(.quote-list-panel){grid-column:1;grid-row:3}
+#page-quotes>.quote-list-panel:not([style]){grid-column:2;grid-row:3}
+#page-quotes>.quote-list-panel[style]{grid-column:1/-1;grid-row:4}
+@media(max-width:1050px){
+ #page-quotes.active{grid-template-columns:1fr}
+ #page-quotes>.quote-panel:not(.quote-list-panel),
+ #page-quotes>.quote-list-panel:not([style]),
+ #page-quotes>.quote-list-panel[style]{grid-column:1;grid-row:auto}
+}
+@media(max-width:900px){main{padding:18px 16px}}
+@media(max-width:560px){
+ main{padding:14px 12px}
+ .quote-card{padding:13px}
+ .quote-card-actions button{font-size:11px}
+ .quote-list-tools input,.quote-list-tools select{width:100%;max-width:none}
+}
+
 </style>
 </head>
 <body>
@@ -318,7 +372,7 @@ button.primary,button.secondary{padding:8px 12px}
         <div id="quoteList" class="quote-list"></div>
       </div>
       <div class="panel quote-panel quote-list-panel" style="margin-top:17px">
-        <div class="quote-panel-head"><div><div class="quote-section-kicker">ACCOUNTS RECEIVABLE</div><h3>Invoices</h3><p class="muted">Create invoices from accepted quotations and track payment status.</p></div><div class="quote-list-tools"><select id="invoiceStatusFilter" onchange="renderInvoices()"><option value="all">All invoice statuses</option><option>Unpaid</option><option>Paid</option><option>Overdue</option></select></div></div>
+        <div class="quote-panel-head"><div><div class="quote-section-kicker">ACCOUNTS RECEIVABLE</div><h3>Invoices</h3><p class="muted">Create invoices from accepted quotations and track payment status.</p></div><div class="quote-list-tools"><input id="invoiceSearch" type="search" placeholder="Search invoices…" oninput="renderInvoices()"><select id="invoiceStatusFilter" onchange="renderInvoices()"><option value="all">All invoice statuses</option><option>Unpaid</option><option>Paid</option><option>Overdue</option></select></div></div>
         <div id="invoiceList" class="quote-list"></div>
       </div>
     </section>
@@ -420,7 +474,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.1.5.2';
+const APP_VERSION='0.1.5.3';
 const pageInfo={dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -784,7 +838,14 @@ if(!Array.isArray(data.invoices))data.invoices=[];
 function renderInvoices(){
  const host=document.getElementById('invoiceList');if(!host)return;
  const filter=document.getElementById('invoiceStatusFilter')?.value||'all';
- const rows=data.invoices.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).filter(inv=>filter==='all'||(inv.status||'Unpaid')===filter||((filter==='Overdue')&&invoiceIsOverdue(inv)));
+ const term=(document.getElementById('invoiceSearch')?.value||'').trim().toLowerCase();
+ const rows=data.invoices.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).filter(inv=>{
+  const overdue=invoiceIsOverdue(inv)&&inv.status!=='Paid';
+  const status=inv.status==='Paid'?'Paid':overdue?'Overdue':'Unpaid';
+  const matchesStatus=filter==='all'||status===filter;
+  const haystack=[inv.number,inv.clientName,inv.jobName,inv.status,status,inv.date,inv.dueDate,inv.notes].join(' ').toLowerCase();
+  return matchesStatus&&(!term||haystack.includes(term));
+ });
  host.innerHTML=rows.length?rows.map(inv=>{const overdue=invoiceIsOverdue(inv)&&inv.status!=='Paid';const st=inv.status==='Paid'?'Paid':overdue?'Overdue':'Unpaid';return `<div class="quote-card"><div class="quote-card-top"><div><div class="quote-card-ref">${esc(inv.number||'Invoice')}</div><div class="quote-card-client">${esc(inv.clientName||'Client')}</div><div class="quote-card-meta"><span class="quote-meta-chip">${esc(inv.jobName||'No property linked')}</span><span class="quote-meta-chip">Issued: ${esc(inv.date||'—')}</span><span class="quote-meta-chip">Due: ${esc(inv.dueDate||'—')}</span></div></div><div class="quote-card-total">${money(inv.total)}<br><span class="invoice-status-pill ${st.toLowerCase()}">${st}</span></div></div><div class="quote-card-actions"><button class="tiny-btn" onclick="printBusinessDocument('invoice','${inv.id}')">Download / print PDF</button>${inv.status!=='Paid'?`<button class="tiny-btn" onclick="markInvoicePaid('${inv.id}')">Mark paid</button>`:''}<button class="tiny-btn danger" onclick="deleteInvoice('${inv.id}')">Delete</button></div></div>`}).join(''):'<div class="quote-empty"><strong>No invoices yet</strong><span>Accept a quotation, then create an invoice from it.</span></div>';
 }
 function invoiceIsOverdue(inv){return !!(inv.dueDate&&inv.status!=='Paid'&&inv.dueDate<new Date().toISOString().slice(0,10))}

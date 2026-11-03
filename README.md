@@ -1,9 +1,11 @@
-# JRVS Property Co. — V0.1.5.2 UI & notification hotfix
+# JRVS Property Co. V0.1.5.3
+Usability refinement hotfix.
 
-Built on V0.1.5.1. This release reduces unnecessary vertical scrolling with a denser workspace layout, compact cards and controls, and a two-column Pricing & Quotes layout on desktop. On smaller screens the layout stacks responsively.
+- Restores readable text and control sizing after the overly compressed V0.1.5.2 layout.
+- Removes nested scrolling from the Pricing & Quotes page so the page scrolls naturally.
+- Keeps packages and quotations side-by-side on desktop, with invoices in a full-width section below.
+- Adds invoice search matching invoice number, client, property, status, issue/due date and notes.
+- Preserves existing localStorage and IndexedDB storage keys and data structures.
+- No storage reset or migration is performed.
 
-Native browser alert pop-ups have been replaced with in-app toast notifications. Native confirmation prompts have been replaced with a branded in-app confirmation dialog. PDF generation still opens a separate print window because the browser print dialog is required for Save as PDF.
-
-Existing data keys are unchanged: `jrvs-data` in localStorage and `jrvs-photo-library` in IndexedDB. No data migration, clearing or photo deletion is performed.
-
-Upload all six files from this ZIP to the existing GitHub Pages repository root, replacing matching files. Continue using the same browser profile and GitHub Pages URL.
+Upload all files in this ZIP to the existing GitHub Pages repository root, replacing matching files.
