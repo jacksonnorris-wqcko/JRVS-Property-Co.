@@ -55,6 +55,15 @@
 .package-card,.quote-card{border:1px solid var(--line);border-radius:12px;padding:13px;margin:9px 0;background:var(--paper)}
 .package-card .muted,.quote-card .muted{font-size:12px}.quote-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
 @media(max-width:650px){.quote-form-grid{grid-template-columns:1fr}.quote-line{grid-template-columns:minmax(0,1fr) 65px 90px 30px;gap:5px}.quote-line input{font-size:12px;padding:8px}}
+
+.finance-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.finance-stat{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:15px;box-shadow:var(--shadow)}
+.finance-stat-label{font-size:12px;color:var(--muted);font-weight:650}.finance-stat-value{font-size:23px;font-weight:800;margin-top:7px}.finance-stat-note{font-size:11px;color:var(--muted);margin-top:3px}
+.finance-buttons,.finance-filters,.finance-row-actions{display:flex;gap:8px;flex-wrap:wrap}.finance-filters{margin:12px 0}.finance-filters select{max-width:220px}
+.finance-row{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:14px 2px;border-bottom:1px solid var(--line)}
+.finance-row:last-child{border-bottom:0}.finance-row strong{font-size:13px}.finance-meta{font-size:11px;color:var(--muted);margin-top:4px}
+.finance-amount{text-align:right;font-weight:800}.finance-status{font-size:10px;color:#596747;background:#edf0e5;border-radius:20px;padding:4px 8px;display:inline-block;margin-top:5px}
+@media(max-width:760px){.finance-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.finance-row{align-items:flex-start;flex-direction:column}.finance-amount{text-align:left}}
 </style>
 </head>
 <body>
@@ -101,13 +110,30 @@
         <div id="quoteList" class="list-stack"></div>
       </div>
     </section>
-    <section class="page" id="page-finances"><div class="panel"><h3>Finances</h3><p class="muted">A simple place to understand money coming in and going out.</p><div class="empty"><b>Finance tracking coming next</b>Income, expenses, payment status and reporting will be developed in a later release.</div></div></section>
+    <section class="page" id="page-finances">
+      <div id="financeStats" class="finance-stats"></div>
+      <div class="panel">
+        <div class="panel-head"><div><h3>Transactions</h3><p class="muted">Record payments received, outstanding income and business expenses.</p></div><div class="finance-buttons"><button class="secondary" onclick="openFinanceForm('expense')">＋ Expense</button><button class="primary" onclick="openFinanceForm('income')">＋ Record income</button></div></div>
+        <div class="finance-filters"><select id="financeTypeFilter" onchange="renderFinances()"><option value="all">All transactions</option><option value="income">Income</option><option value="expense">Expenses</option></select><select id="financeStatusFilter" onchange="renderFinances()"><option value="all">All statuses</option><option value="Paid">Paid / received</option><option value="Unpaid">Unpaid / outstanding</option></select></div>
+        <div id="financeList"></div>
+      </div>
+    </section>
     <section class="page" id="page-settings"><div class="panel"><h3>Application settings</h3><div class="row-card" style="margin-top:14px"><div><strong>Application version</strong><small>Use this to confirm updates are being received.</small></div><span class="pill" id="settingsVersion">V0.0.6</span></div><div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div><div class="row-card"><div><strong>Data storage</strong><small>V0.0.6 saves demo records in this browser on this device.</small></div><span class="pill">Local</span></div><div class="settings-note">Important: browser data is not yet cloud-synchronised. Keep backups of anything important. Automatic app updates do not replace or delete your saved records.</div></div></section>
     <div class="footer">JRVS Property Co. · <span id="footerVersion">V0.0.6</span> · Built for better business days.</div>
   </main>
 </div>
 
 
+<div class="modal-backdrop" id="financeModalBackdrop"><div class="modal"><div class="modal-head"><h2 id="financeModalTitle">Record transaction</h2><button class="close" onclick="closeFinanceModal()">×</button></div><form id="financeForm" onsubmit="saveFinanceForm(event)"><div class="form-grid">
+<div class="field"><label>Type</label><select id="fType" onchange="updateFinanceForm()"><option value="income">Income</option><option value="expense">Expense</option></select></div>
+<div class="field"><label>Date</label><input id="fDate" type="date" required></div>
+<div class="field full"><label>Description</label><input id="fDescription" required placeholder="e.g. Property photography — 12 Ocean Street"></div>
+<div class="field"><label>Category</label><select id="fCategory"></select></div>
+<div class="field"><label>Amount (AUD)</label><input id="fAmount" type="number" min="0.01" step="0.01" required></div>
+<div class="field full"><label>Linked job (optional)</label><select id="fJob"></select></div>
+<div class="field" id="fStatusWrap"><label>Payment status</label><select id="fStatus"><option>Paid</option><option>Unpaid</option></select></div>
+<div class="field full"><label>Notes (optional)</label><textarea id="fNotes" rows="2"></textarea></div>
+</div><div style="display:flex;justify-content:flex-end;gap:9px;margin-top:18px"><button type="button" class="secondary" onclick="closeFinanceModal()">Cancel</button><button class="primary" type="submit">Save transaction</button></div></form></div></div>
 <div class="modal-backdrop" id="quoteModalBackdrop"><div class="modal" style="max-width:760px"><div class="modal-head"><h2 id="quoteModalTitle">Create quote</h2><button class="close" onclick="closeQuoteModal()">×</button></div>
 <form id="quoteForm" onsubmit="saveQuoteForm(event)"><div class="quote-form-grid">
 <div class="field"><label>Client</label><select id="qClient" required></select></div><div class="field"><label>Job / property</label><select id="qJob"></select></div>
@@ -141,9 +167,9 @@ const APP_VERSION='0.0.6';
 const pageInfo={dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
-if(!Array.isArray(data.packages))data.packages=[];if(!Array.isArray(data.quotes))data.quotes=[];
+if(!Array.isArray(data.packages))data.packages=[];if(!Array.isArray(data.quotes))data.quotes=[];if(!Array.isArray(data.income))data.income=[];if(!Array.isArray(data.expenses))data.expenses=[];
 const save=()=>localStorage.setItem('jrvs-data',JSON.stringify(data));
-function showPage(name){if(name==='quotes')renderQuotes();document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.page===name));document.getElementById('pageTitle').textContent=pageInfo[name][0];document.getElementById('pageSub').textContent=pageInfo[name][1];}
+function showPage(name){if(name==='quotes')renderQuotes();if(name==='finances')renderFinances();document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.page===name));document.getElementById('pageTitle').textContent=pageInfo[name][0];document.getElementById('pageSub').textContent=pageInfo[name][1];}
 document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
 function openModal(type,id=null){
  const fields=document.getElementById('formFields'),existing=id?(type==='job'?data.jobs:data.clients).find(x=>x.id===id):null;
@@ -250,6 +276,47 @@ async function renderPhotos(){
 async function updatePhotoStatus(id,status){const p=photoRecords.find(x=>x.id===id);if(p){p.status=status;await photoRequest('readwrite','put',p);await loadPhotos()}}
 async function deletePhoto(id){const p=photoRecords.find(x=>x.id===id);if(p&&confirm('Delete '+p.name+' from the photo library?')){const wasCover=!!p.isCover;await photoRequest('readwrite','delete',id);if(wasCover){const next=photoRecords.filter(x=>x.jobId===p.jobId&&x.id!==id).sort((a,b)=>new Date(a.addedAt||0)-new Date(b.addedAt||0))[0];if(next){next.isCover=true;await photoRequest('readwrite','put',next)}}await loadPhotos()}}
 
+
+
+let editingFinanceId=null;
+function ensureFinanceData(){if(!Array.isArray(data.income))data.income=[];if(!Array.isArray(data.expenses))data.expenses=[]}
+function financeAll(){ensureFinanceData();return [...data.income.map(x=>({...x,type:'income'})),...data.expenses.map(x=>({...x,type:'expense'}))]}
+function renderFinances(){
+ ensureFinanceData();const inc=data.income.filter(x=>x.status==='Paid').reduce((s,x)=>s+(Number(x.amount)||0),0);
+ const outstanding=data.income.filter(x=>x.status!=='Paid').reduce((s,x)=>s+(Number(x.amount)||0),0);
+ const expenses=data.expenses.reduce((s,x)=>s+(Number(x.amount)||0),0),profit=inc-expenses;
+ const stats=[['Income received',money(inc),'Payments marked received'],['Outstanding',money(outstanding),'Unpaid income'],['Expenses',money(expenses),'Recorded expenses'],['Net cash position',money(profit),'Received income less expenses']];
+ document.getElementById('financeStats').innerHTML=stats.map(x=>`<div class="finance-stat"><div class="finance-stat-label">${x[0]}</div><div class="finance-stat-value">${x[1]}</div><div class="finance-stat-note">${x[2]}</div></div>`).join('');
+ const type=document.getElementById('financeTypeFilter')?.value||'all',status=document.getElementById('financeStatusFilter')?.value||'all';
+ const rows=financeAll().filter(x=>(type==='all'||x.type===type)&&(status==='all'||x.status===status)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ const list=document.getElementById('financeList');
+ list.innerHTML=rows.length?rows.map(x=>{const job=data.jobs.find(j=>j.id===x.jobId);return `<div class="finance-row"><div><strong>${x.type==='income'?'Income':'Expense'} · ${esc(x.description)}</strong><div class="finance-meta">${esc(x.date||'No date')} · ${esc(x.category||'Uncategorised')}${job?' · '+esc(job.name):''}</div><span class="finance-status">${esc(x.status||'Paid')}</span></div><div><div class="finance-amount" style="color:${x.type==='income'?'#596f43':'inherit'}">${x.type==='expense'?'-':'+'}${money(x.amount)}</div><div class="finance-row-actions"><button class="tiny-btn" onclick="editFinance('${x.id}','${x.type}')">Edit</button>${x.type==='income'&&x.status!=='Paid'?`<button class="tiny-btn" onclick="markIncomePaid('${x.id}')">Mark received</button>`:''}<button class="tiny-btn danger" onclick="deleteFinance('${x.id}','${x.type}')">Delete</button></div></div></div>`}).join(''):'<div class="empty"><b>No transactions yet</b>Record income or add a business expense to start tracking your finances.</div>';
+}
+function openFinanceForm(type='income',id=null){
+ ensureFinanceData();editingFinanceId=id;const rec=id?(type==='income'?data.income:data.expenses).find(x=>x.id===id):null;
+ document.getElementById('financeModalTitle').textContent=rec?'Edit transaction':type==='income'?'Record income':'Add expense';
+ document.getElementById('fType').value=type;document.getElementById('fDate').value=rec?.date||new Date().toISOString().slice(0,10);
+ document.getElementById('fDescription').value=rec?.description||'';document.getElementById('fAmount').value=rec?.amount??'';
+ document.getElementById('fNotes').value=rec?.notes||'';document.getElementById('fStatus').value=rec?.status||'Paid';
+ document.getElementById('fJob').innerHTML='<option value="">No job linked</option>'+data.jobs.map(j=>`<option value="${j.id}">${esc(j.name)}</option>`).join('');document.getElementById('fJob').value=rec?.jobId||'';
+ updateFinanceForm(rec?.category);document.getElementById('financeModalBackdrop').classList.add('show');
+}
+function updateFinanceForm(selected=''){
+ const type=document.getElementById('fType').value,opts=type==='income'?['Photography services','Other income']:['Travel & fuel','Equipment','Software & subscriptions','Insurance','Marketing & advertising','Office & administration','Other expense'];
+ document.getElementById('fCategory').innerHTML=opts.map(x=>`<option>${x}</option>`).join('');if(selected&&opts.includes(selected))document.getElementById('fCategory').value=selected;
+ document.getElementById('fStatusWrap').style.display=type==='income'?'':'none';
+}
+function closeFinanceModal(){document.getElementById('financeModalBackdrop').classList.remove('show')}
+function saveFinanceForm(e){
+ e.preventDefault();ensureFinanceData();const type=fType.value,arr=type==='income'?data.income:data.expenses;
+ const rec={id:editingFinanceId||'txn-'+Date.now(),date:fDate.value,description:fDescription.value.trim(),category:fCategory.value,amount:Number(fAmount.value),jobId:fJob.value||null,status:type==='income'?fStatus.value:'Paid',notes:fNotes.value.trim()};
+ if(editingFinanceId){const oldArr=type==='income'?data.income:data.expenses,idx=oldArr.findIndex(x=>x.id===editingFinanceId);if(idx>=0)oldArr[idx]=rec}
+ else arr.push(rec);
+ save();closeFinanceModal();renderFinances();render();
+}
+function editFinance(id,type){openFinanceForm(type,id)}
+function markIncomePaid(id){const x=data.income.find(x=>x.id===id);if(x){x.status='Paid';x.paidDate=new Date().toISOString().slice(0,10);save();renderFinances();render()}}
+function deleteFinance(id,type){if(!confirm('Delete this transaction?'))return;const arr=type==='income'?data.income:data.expenses;const idx=arr.findIndex(x=>x.id===id);if(idx>=0)arr.splice(idx,1);save();renderFinances();render()}
 
 let editingQuoteId=null,editingPackageId=null,quoteLineCounter=0;
 const money=n=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(n)||0);
@@ -377,9 +444,30 @@ document.getElementById('photoFiles').addEventListener('change',e=>{if(e.target.
 document.getElementById('photoJobFilter').addEventListener('change',renderPhotos);
 document.getElementById('today').textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 ['versionBadge','sideVersion','settingsVersion','footerVersion'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=(id==='versionBadge'?'● Version ':'V')+APP_VERSION});
-render();loadPhotos();renderQuotes();
-async function checkForUpdates(manual=false){const status=document.getElementById('updateStatus');if(status)status.textContent='Checking GitHub for a newer version…';try{const r=await fetch('./version.json?check='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('Version file unavailable');const remote=await r.json();if(remote.version&&remote.version!==APP_VERSION){if(status)status.textContent='A newer version ('+remote.version+') is available. Refreshing…';if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.getRegistration();if(reg)await reg.update()}setTimeout(()=>location.reload(),700)}else if(status)status.textContent='You are up to date · Version '+APP_VERSION;if(manual&&!remote.version)status.textContent='Could not read the version file.'}catch(e){if(status)status.textContent='Update check unavailable right now. Your current version is still usable.'}}
-if('serviceWorker'in navigator&&location.protocol!=='file:'){window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('./sw.js');reg.update();reg.addEventListener('updatefound',()=>{const w=reg.installing;if(w)w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)location.reload()})})}catch(e){}checkForUpdates()})}
+render();loadPhotos();renderQuotes();renderFinances();
+function compareVersions(a,b){const aa=String(a).split('.').map(Number),bb=String(b).split('.').map(Number);for(let i=0;i<Math.max(aa.length,bb.length);i++){const x=aa[i]||0,y=bb[i]||0;if(x>y)return 1;if(x<y)return -1}return 0}
+let updateCheckRunning=false;
+async function checkForUpdates(manual=false){
+ if(updateCheckRunning)return;updateCheckRunning=true;
+ const status=document.getElementById('updateStatus');
+ try{
+  const r=await fetch('./version.json?check='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('Version file unavailable');
+  const remote=await r.json(),rv=remote.version;
+  if(rv&&compareVersions(rv,APP_VERSION)>0){
+   const guard='jrvs-update-attempt-'+rv;
+   if(localStorage.getItem(guard)==='1'){if(status)status.textContent='Update '+rv+' was detected but has not completed. Current version '+APP_VERSION+' is being kept open to prevent a refresh loop.';return}
+   localStorage.setItem(guard,'1');
+   if(status)status.textContent='A newer version ('+rv+') is available. Refreshing once…';
+   if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.getRegistration();if(reg)await reg.update()}
+   setTimeout(()=>location.reload(),900);
+  }else{
+   Object.keys(localStorage).filter(k=>k.startsWith('jrvs-update-attempt-')).forEach(k=>localStorage.removeItem(k));
+   if(status)status.textContent='You are up to date · Version '+APP_VERSION;
+  }
+ }catch(e){if(status)status.textContent='Update check unavailable right now. Your current version is still usable.'}
+ finally{updateCheckRunning=false}
+}
+if('serviceWorker'in navigator&&location.protocol!=='file:'){window.addEventListener('load',async()=>{try{await navigator.serviceWorker.register('./sw.js');}catch(e){}checkForUpdates()})}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUpdates()});
 </script>
 </body></html>
