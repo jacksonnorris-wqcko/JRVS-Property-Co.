@@ -1,19 +1,18 @@
-# JRVS Property Co. — V0.0.5 Beta
+# JRVS Property Co. — V0.0.6 Beta
 
-## What's new: dedicated photo editing workspace
-- Open a photo in a separate editing workspace from its project gallery.
-- Adjust brightness, contrast, saturation, warmth, highlights and shadows.
-- Rotate photos left or right.
-- Apply centred crop ratios: original, 4:3, 3:2, 16:9 or square.
-- Reset adjustments at any time.
-- Save an edited copy as a new photo in the same project. The original is never overwritten.
-- Edited copies are marked Edited and remain separate from original photos.
+## What's new: Pricing & quotations
+- Create reusable photography packages and optional extras.
+- Edit and delete packages.
+- Create quotations linked to an existing client and optionally a job.
+- Add package items or custom line items, quantities and unit prices.
+- Calculate subtotal, GST and total in AUD.
+- GST modes: add 10% GST, prices GST-inclusive, or no GST.
+- Quote dates, validity dates, notes and statuses (Draft, Sent, Accepted, Declined).
+- Edit, change status and delete saved quotes.
+- Quote and package data is saved alongside existing app data in browser local storage.
 
 ## Install / update
-Upload the contents of this ZIP to the root of the existing GitHub Pages repository, replacing the previous files. Keep the same repository and browser profile. The app checks `version.json` for updates and the service worker cache is updated to V0.0.5.
+Upload the contents of this ZIP to the root of the existing GitHub Pages repository, replacing the previous files. Keep the same repository and browser profile. The app checks `version.json` for updates and the service worker cache is updated to V0.0.6.
 
-## Storage
-Jobs and clients remain in browser local storage; photos and edited copies remain in IndexedDB on that device/browser. This release does not add cloud sync. Do not clear browser site data if you want to keep local records and photographs. Keep independent backups of important originals.
-
-## Notes
-Crop uses a centred fixed aspect ratio; freeform crop positioning is not included yet. Editing is performed locally in the browser.
+## Storage and limitations
+Jobs, clients, packages and quotes remain in browser local storage. Photos remain in IndexedDB on that device/browser. This release does not add cloud sync, PDF quote generation, invoicing or payment processing. GST settings are calculation options; confirm your business GST registration and tax treatment with an accountant before issuing real quotes.

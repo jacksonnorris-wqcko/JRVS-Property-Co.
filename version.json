@@ -1,6 +1,6 @@
 {
-  "version": "0.0.5",
+  "version": "0.0.6",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "Dedicated photo editor with non-destructive edited copies, brightness, contrast, saturation, warmth, highlights, shadows, rotate and centred crop ratios."
+  "notes": "Business foundations: reusable photography packages and extras, client/job-linked quotations, editable quote line items, GST calculations and quote statuses."
 }
