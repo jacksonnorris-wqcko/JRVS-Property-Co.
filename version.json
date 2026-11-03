@@ -1,6 +1,6 @@
 {
-  "version": "0.2.1.1",
+  "version": "0.2.2",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-04",
-  "notes": "Safer cloud backup foundation: verified photo downloads before restore, local pre-restore backup, additive photo restore, and no overwrite of an existing cloud snapshot."
+  "notes": "Two-way additive cloud merge for new business records, calendar events and photos. Existing records are not blindly restored over local data; same-ID conflicts are preserved locally for review. Deletions are not yet synchronised."
 }

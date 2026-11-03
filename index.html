@@ -917,78 +917,88 @@ async function jrvsCloudSignOut(){
  const {error}=await jrvsSupabase.auth.signOut();if(error)return jrvsCloudMessage(error.message,true);
  jrvsCloudSession=null;jrvsCloudUi();jrvsCloudMessage('Signed out. Local data remains on this device.');
 }
+function jrvsMergeRecords(localRows, cloudRows, label, conflicts){
+ const out=new Map();
+ (Array.isArray(cloudRows)?cloudRows:[]).forEach(x=>{if(x&&x.id!=null)out.set(String(x.id),x)});
+ (Array.isArray(localRows)?localRows:[]).forEach(x=>{
+  if(!x||x.id==null)return;
+  const id=String(x.id),old=out.get(id);
+  if(!old){out.set(id,x);return;}
+  if(JSON.stringify(old)===JSON.stringify(x))return;
+  const oldTime=Date.parse(old.updatedAt||old.modifiedAt||old.updated_at||old.modified_at||old.createdAt||old.addedAt||'')||0;
+  const newTime=Date.parse(x.updatedAt||x.modifiedAt||x.updated_at||x.modified_at||x.createdAt||x.addedAt||'')||0;
+  if(newTime>oldTime)out.set(id,x);
+  else if(newTime===oldTime){conflicts.push({type:label,id,local:x,cloud:old});}
+ });
+ return [...out.values()];
+}
+function jrvsMergeBusiness(local,cloud,conflicts){
+ const result={...(cloud||{}),...(local||{})};
+ const arrayKeys=new Set(['jobs','clients','quotes','income','expenses','packages','attentionCleared']);
+ for(const key of arrayKeys){
+  if(Array.isArray(local?.[key])||Array.isArray(cloud?.[key]))result[key]=jrvsMergeRecords(local?.[key],cloud?.[key],key,conflicts);
+ }
+ return result;
+}
 async function jrvsCloudSync(){
  if(!jrvsSupabase||!jrvsCloudSession||jrvsCloudBusy)return;
  jrvsCloudBusy=true;jrvsCloudUi();
  const userId=jrvsCloudSession.user.id;
  try{
-  jrvsCloudMessage('Checking your cloud account…');
+  jrvsCloudMessage('Reading cloud records…');
   const {data:remote,error:readError}=await jrvsSupabase.from('jrvs_user_state').select('payload,updated_at').eq('user_id',userId).maybeSingle();
   if(readError)throw readError;
-
-  // A populated cloud snapshot is never overwritten in this foundation release.
-  // The user can restore it, or cancel and leave both copies untouched.
-  if(remote){
-   const restore=window.confirm('A cloud backup already exists. Press OK to RESTORE it onto this device. Your current local business data will be backed up on this device first, and existing photos will not be deleted. Press Cancel to stop without changing anything.');
-   if(!restore){jrvsCloudMessage('No changes made. Cloud and local data are unchanged.');return;}
-   const payload=remote.payload||{};
-   const cloudPhotos=Array.isArray(payload.photos)?payload.photos:[];
-   const downloaded=[];
-   // Download and validate every cloud photo before writing any local records.
-   for(let i=0;i<cloudPhotos.length;i++){
-    const meta=cloudPhotos[i];
-    if(!meta||!meta.storage_path||!meta.id)throw new Error('Cloud photo record '+(i+1)+' is missing required information. No local records were changed.');
-    jrvsCloudMessage('Verifying cloud photo '+(i+1)+' of '+cloudPhotos.length+'…');
-    const {data:blob,error}=await jrvsSupabase.storage.from('jrvs-photos').download(meta.storage_path);
-    if(error)throw error;
-    if(!(blob instanceof Blob)||blob.size===0)throw new Error('A cloud photo could not be verified. No local records were changed.');
-    const rec={...meta,blob};delete rec.storage_path;downloaded.push(rec);
-   }
-   const localBusiness=localStorage.getItem('jrvs-data')||'{}';
-   const localCalendar=localStorage.getItem('jrvs-calendar')||'[]';
-   // Keep a recoverable snapshot before replacing the two small JSON stores.
-   const backupKey='jrvs-pre-cloud-restore-'+Date.now();
-   localStorage.setItem(backupKey,JSON.stringify({createdAt:new Date().toISOString(),business:localBusiness,calendar:localCalendar}));
-   const existing=await photoRequest('readonly','all')||[];
-   const existingIds=new Set(existing.map(x=>String(x.id)));
-   // Add missing photos only. Never clear the store or overwrite an existing local photo.
-   for(let i=0;i<downloaded.length;i++){
-    const rec=downloaded[i];
-    if(existingIds.has(String(rec.id)))continue;
-    jrvsCloudMessage('Adding verified photo '+(i+1)+' of '+downloaded.length+'…');
-    await photoRequest('readwrite','put',rec);
-    existingIds.add(String(rec.id));
-   }
-   if(payload.business&&typeof payload.business==='object')localStorage.setItem('jrvs-data',JSON.stringify(payload.business));
-   if(Array.isArray(payload.calendar))localStorage.setItem('jrvs-calendar',JSON.stringify(payload.calendar));
-   jrvsCloudMessage('Restore complete. Local pre-restore data is backed up on this device.');
-   showToast('Cloud backup restored. Reloading JRVS…');
-   setTimeout(()=>location.reload(),1000);
-   return;
-  }
-
-  // First upload only creates a cloud snapshot when none exists.
-  jrvsCloudMessage('Preparing local records and photos for first upload…');
-  const photos=await photoRequest('readonly','all')||[],photoMeta=[];
-  for(let i=0;i<photos.length;i++){
-   const p=photos[i];
-   if(!p||!p.id||!(p.blob instanceof Blob))throw new Error('Local photo '+(p?.name||i+1)+' is missing its original image data. Nothing was uploaded to the database.');
+  const localBusiness=JSON.parse(localStorage.getItem('jrvs-data')||'{}');
+  const localCalendar=JSON.parse(localStorage.getItem('jrvs-calendar')||'[]');
+  const localPhotos=await photoRequest('readonly','all')||[];
+  const cloudPayload=remote?.payload||{};
+  const conflicts=[];
+  const mergedBusiness=jrvsMergeBusiness(localBusiness,cloudPayload.business||{},conflicts);
+  const mergedCalendar=jrvsMergeRecords(localCalendar,cloudPayload.calendar||[],'calendar',conflicts);
+  const cloudPhotoMeta=Array.isArray(cloudPayload.photos)?cloudPayload.photos:[];
+  const mergedPhotoMeta=jrvsMergeRecords(localPhotos.map(p=>{const m={...p};delete m.blob;return m}),cloudPhotoMeta,'photos',conflicts);
+  const localPhotoIds=new Set(localPhotos.map(p=>String(p.id)));
+  const cloudPhotoIds=new Set(cloudPhotoMeta.map(p=>String(p.id)));
+  // Upload local-only photos first. Never delete local or cloud files during sync.
+  for(let i=0;i<localPhotos.length;i++){
+   const p=localPhotos[i];if(!p?.id||!(p.blob instanceof Blob))throw new Error('Photo '+(p?.name||i+1)+' is missing its image data. Sync stopped without deleting local data.');
+   if(cloudPhotoIds.has(String(p.id)))continue;
    const path=userId+'/'+p.id;
-   jrvsCloudMessage('Uploading photo '+(i+1)+' of '+photos.length+'…');
-   const {error}=await jrvsSupabase.storage.from('jrvs-photos').upload(path,p.blob,{upsert:true,contentType:p.mime||p.blob.type||'application/octet-stream'});
-   if(error)throw error;
-   const meta={...p,storage_path:path};delete meta.blob;photoMeta.push(meta);
+   jrvsCloudMessage('Uploading new photo '+(i+1)+' of '+localPhotos.length+'…');
+   const {error}=await jrvsSupabase.storage.from('jrvs-photos').upload(path,p.blob,{upsert:false,contentType:p.mime||p.blob.type||'application/octet-stream'});
+   if(error && !String(error.message||'').toLowerCase().includes('already exists'))throw error;
+   const meta={...p,storage_path:path};delete meta.blob;mergedPhotoMeta.push(meta);cloudPhotoIds.add(String(p.id));
   }
-  const payload={business:JSON.parse(localStorage.getItem('jrvs-data')||'{}'),calendar:JSON.parse(localStorage.getItem('jrvs-calendar')||'[]'),photos:photoMeta,schema_version:1};
-  jrvsCloudMessage('Creating your first cloud backup…');
-  const {error:writeError}=await jrvsSupabase.from('jrvs_user_state').insert({user_id:userId,payload,updated_at:new Date().toISOString()});
-  if(writeError)throw writeError;
-  jrvsCloudMessage('First cloud backup complete · '+photos.length+' photos backed up.');
-  showToast('JRVS first cloud backup completed.');
- }catch(e){console.error('JRVS cloud sync failed',e);jrvsCloudMessage('Sync stopped: '+(e.message||'Unknown error')+'. Your local records have not been cleared.',true)}
+  // Download cloud-only photos and add them without clearing or overwriting local photos.
+  for(let i=0;i<cloudPhotoMeta.length;i++){
+   const meta=cloudPhotoMeta[i];if(!meta?.id||!meta.storage_path)throw new Error('A cloud photo is missing required metadata. No local data was changed.');
+   if(localPhotoIds.has(String(meta.id)))continue;
+   jrvsCloudMessage('Downloading new cloud photo '+(i+1)+' of '+cloudPhotoMeta.length+'…');
+   const {data:blob,error}=await jrvsSupabase.storage.from('jrvs-photos').download(meta.storage_path);
+   if(error)throw error;if(!(blob instanceof Blob)||blob.size===0)throw new Error('A cloud photo could not be verified.');
+   const rec={...meta,blob};delete rec.storage_path;await photoRequest('readwrite','put',rec);localPhotoIds.add(String(meta.id));
+  }
+  // Preserve same-ID edits that cannot be safely auto-resolved for later review.
+  if(conflicts.length)localStorage.setItem('jrvs-sync-conflicts-'+Date.now(),JSON.stringify({createdAt:new Date().toISOString(),conflicts}));
+  const payload={business:mergedBusiness,calendar:mergedCalendar,photos:mergedPhotoMeta,schema_version:1};
+  jrvsCloudMessage('Saving merged records to cloud…');
+  let write;
+  if(remote){
+   write=await jrvsSupabase.from('jrvs_user_state').update({payload,updated_at:new Date().toISOString()}).eq('user_id',userId).eq('updated_at',remote.updated_at).select('user_id').maybeSingle();
+   if(write.error)throw write.error;
+   if(!write.data)throw new Error('Cloud data changed during this sync. Nothing was overwritten; press Sync now again to merge the latest copy.');
+  }else{
+   write=await jrvsSupabase.from('jrvs_user_state').insert({user_id:userId,payload,updated_at:new Date().toISOString()}).select('user_id').maybeSingle();
+   if(write.error)throw write.error;
+  }
+  localStorage.setItem('jrvs-data',JSON.stringify(mergedBusiness));
+  localStorage.setItem('jrvs-calendar',JSON.stringify(mergedCalendar));
+  jrvsCloudMessage('Two-way sync complete · '+mergedBusiness.jobs?.length+' jobs · '+mergedBusiness.clients?.length+' clients · '+(await photoRequest('readonly','all')).length+' photos'+(conflicts.length?' · '+conflicts.length+' item(s) need conflict review':''));
+  showToast('JRVS two-way sync completed.');
+  await loadPhotos();renderQuotes();renderFinances();render();
+ }catch(e){console.error('JRVS cloud sync failed',e);jrvsCloudMessage('Sync stopped: '+(e.message||'Unknown error')+'. Local records were not intentionally cleared.',true)}
  finally{jrvsCloudBusy=false;jrvsCloudUi()}
-}
-</script>
+}</script>
 <script>
 // Consistent in-app feedback. Avoid native browser alert/confirm dialogs.
 function showToast(message, type='success', duration=3600){
@@ -1014,7 +1024,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.2.1.1';
+const APP_VERSION='0.2.2';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}

@@ -1,24 +1,21 @@
-# JRVS Property Co. V0.2.1.1 – Safer Cloud Sync Foundation
+# JRVS Property Co. V0.2.2 – Two-way Additive Cloud Sync
 
-## Deploy
-Extract this ZIP and upload its contents into the root of the existing GitHub repository, replacing matching files. Do not upload the ZIP itself or create a nested folder. Keep the existing GitHub Pages URL and browser profile. Do not clear browser/site data or uninstall the Home Screen app.
+## Install
+Upload the contents of this ZIP into the root of the existing GitHub Pages repository and commit. Keep the same repository URL and browser profiles. Do not clear browser/site data or uninstall the iPhone PWA.
+
+## What changed
+- Sync now merges new records from both devices instead of restoring the cloud snapshot over the device.
+- Business record collections (jobs, clients, quotes, income, expenses, packages and attention-cleared entries) merge by record ID.
+- Calendar events merge by ID.
+- New local photos upload to the private Supabase bucket; cloud-only photos download and are added without clearing local photos.
+- Same-ID records with no reliable newer timestamp are treated as conflicts. The cloud version is retained in the merged dataset and the local conflicting copy is preserved in a localStorage conflict archive named `jrvs-sync-conflicts-*`.
+- The cloud row is updated using its previous `updated_at` value as a concurrency guard. If another device changes it during sync, the update is rejected rather than silently overwriting it.
+
+## Important limitations
+- This is an additive merge release. Deletions are not synchronised yet; deleting a record on one device does not delete it from the other device/cloud.
+- Simultaneous edits to the same record may be saved as a local conflict archive for manual review. They are not automatically reconciled.
+- Test with dummy records first. Do not rely on this release as the only copy of important client or business records.
+- Photo files are never deleted by sync. Existing local photos are not cleared.
 
 ## Supabase
-The SQL setup was already run for the previous V0.2.1 foundation. This release uses the same table and private storage bucket, so you do not need to run the SQL again. In Supabase Authentication > URL Configuration, the Site URL should be `https://jacksonnorris-wqcko.github.io/JRVS-Property-Co-/` and Email sign-in should be enabled.
-
-## First use
-1. Open JRVS Settings > JRVS Cloud Sync on your desktop.
-2. Create your account, confirm the email if requested, then sign in.
-3. Select Sync now. If the cloud is empty, this creates the first cloud backup from this device.
-4. Sign in on your iPhone and select Sync now. If a cloud backup exists, press OK to restore it or Cancel to make no changes.
-
-## Safety behaviour in this release
-- Existing cloud snapshots are never overwritten by this release.
-- Restore downloads and verifies all cloud photos before changing local business records.
-- Restore saves the current business data and calendar in a local pre-restore backup key before applying cloud data.
-- Existing local photos are never cleared or overwritten; missing cloud photos are added.
-- If a photo download fails, the business data and calendar are not changed.
-- Sync is manual. This is a first-backup/restore foundation, not continuous two-way sync. Do not use simultaneous editing as a substitute for a proper conflict-resolution system.
-
-## Notes
-Local business data keys and the `jrvs-photo-library` IndexedDB database are retained. The Supabase publishable key is intended for browser use; never place a service-role or secret key in this app.
+No new SQL is required. V0.2.2 uses the existing `jrvs_user_state` table and private `jrvs-photos` bucket created by the V0.2.1 setup script.
