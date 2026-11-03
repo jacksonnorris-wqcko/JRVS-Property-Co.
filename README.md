@@ -1,4 +1,4 @@
-JRVS Property Co. — V0.1.9.4 Page Layout & Header Polish
+JRVS Property Co. — V0.1.9.5 Page Layout & Header Polish
 
 Changes:
 - Fixed the main content area being vertically centred differently on pages of different heights. All pages now start at the same top position.
