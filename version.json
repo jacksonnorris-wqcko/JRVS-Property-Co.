@@ -1,6 +1,6 @@
 {
-  "version": "0.1.2",
+  "version": "0.1.3",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "Dashboard Needs attention quote actions now open the selected quotation directly in the existing edit modal without navigating away. Attention list refreshes after quote status changes."
+  "notes": "Dashboard visual polish, clickable recent project cards with cover photos and status/financial summaries, and project photos displayed in Job Overview with preview and gallery shortcut."
 }
