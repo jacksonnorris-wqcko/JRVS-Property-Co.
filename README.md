@@ -1,17 +1,16 @@
-# JRVS Property Co. — V0.0.9 Beta
+# JRVS Property Co. — V0.0.9.1 Beta
 
-## Pricing & Quotes redesign
-- Rebuilt the Pricing & Quotes page layout with a consistent hierarchy and spacing.
-- Replaced the cramped Packages1-style summary row with four labelled summary cards.
-- Redesigned package cards with clear service/optional-extra labels, descriptions and pricing.
-- Redesigned quotation cards with quote reference, client, property, date, validity, total and status.
-- Added quote search and status filtering.
-- Added direct View client and View job actions where records are linked.
-- Improved responsive layout for smaller screens.
-- Existing quote/package forms, GST calculations, status actions and storage schema are retained.
+## Client profile fix
+- Replaced the browser alert client profile with a proper in-app modal matching the Job Overview design.
+- Shows client and agency details, email, phone and notes.
+- Lists linked jobs with View job actions.
+- Lists linked quotations.
+- Summarises income received, outstanding income and expenses associated with the client's jobs.
+- Edit client action opens the existing client editor.
+- Responsive layout for desktop and mobile.
 
 ## Install
-Upload all files in this ZIP to the root of the existing GitHub Pages repository, replacing the previous files. Keep using the same browser profile/device to retain local records and photos.
+Upload all files in this ZIP to the root of the existing GitHub Pages repository, replacing previous files. Keep using the same browser profile/device.
 
 ## Storage
-No changes to the app's localStorage key or photo IndexedDB database.
+No changes to the existing localStorage key or photo IndexedDB database.
