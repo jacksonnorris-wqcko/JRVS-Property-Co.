@@ -1,6 +1,6 @@
 {
-  "version": "0.1.9.3",
+  "version": "0.1.9.4",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-04",
-  "notes": "Separated Pricing & Quotes sales workflow from the dedicated Finance dashboard. Removed duplicate business activity summary from Finance; invoice integration and all existing storage preserved."
+  "notes": "Unified page positioning and consolidated duplicate page headings into one consistent global header. Preserved all app data and workflows."
 }
