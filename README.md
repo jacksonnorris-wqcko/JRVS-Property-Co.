@@ -21,3 +21,15 @@ Important:
 - Installing creates an app-like window; it does not move the app data to cloud storage.
 - Existing jobs, clients, quotes, invoices and photos remain in the same browser profile/site storage. Do not clear browser site data or switch browser profiles during installation.
 - Desktop installability depends on the browser and its PWA criteria. No live browser install test was performed.
+
+
+## V0.1.7 – Professional Photo Editor Controls
+- Expanded light controls: exposure, whites and blacks.
+- Expanded colour controls: temperature, tint and vibrance.
+- Detail and finishing controls: clarity, sharpening and vignette.
+- Live luminance histogram.
+- Undo/redo editing history and before/after comparison.
+- Original photographs remain unchanged; edited copies are saved separately.
+- Existing localStorage and IndexedDB names are unchanged.
+
+Deploy all ZIP contents into the repository root, replacing existing files. Do not upload the ZIP itself or place the files in a nested folder.

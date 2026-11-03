@@ -1,6 +1,6 @@
 {
-  "version": "0.1.6.1",
+  "version": "0.1.7",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "Desktop PWA install update: standalone app manifest, correctly sized branded icons, install prompt in Settings, desktop launch support and refreshed service worker."
+  "notes": "Professional photo editor control upgrade: expanded tonal and colour controls, detail and finishing adjustments, live histogram, undo/redo history and before/after comparison. Existing local business and photo storage preserved."
 }
