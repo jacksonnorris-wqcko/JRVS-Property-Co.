@@ -1,6 +1,6 @@
 {
-  "version": "0.1.5.7",
+  "version": "0.1.5.8",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "Pricing workspace redesigned with separate Packages, Quotations and Invoices sub-sections."
+  "notes": "Pricing workspace refined: quote creation moved into quotes, cleaner tabs, four most recent records per section with full search."
 }

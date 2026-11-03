@@ -381,6 +381,18 @@ input,select,textarea,.field input,.field select,.field textarea{font-size:13px;
 @media(max-width:1100px){.pricing-panel .quote-list,#pricing-panel-invoices .quote-list{grid-template-columns:1fr}#pricing-panel-packages .package-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.pricing-tabs{gap:4px;padding:5px}.pricing-tab{flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;padding:9px 8px;min-height:58px;font-size:12px}.pricing-tab small{font-size:10px}#pricing-panel-packages .package-grid{grid-template-columns:1fr}.pricing-panel .quote-panel-head{align-items:flex-start}.pricing-panel .quote-list-tools{width:100%}.pricing-panel .quote-list-tools input{min-width:0;flex:1}}
 
+
+/* V0.1.5.8 pricing workspace refinements */
+.pricing-tabs{display:flex;align-items:center;gap:6px;padding:6px;background:#f0f1e9;border:1px solid #e2e4d9;border-radius:13px;width:max-content;max-width:100%;margin:2px 0 16px}
+.pricing-tab{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:42px;padding:9px 14px;border:1px solid transparent;border-radius:9px;background:transparent;color:#59634d;text-align:center;cursor:pointer;font-size:13px;font-weight:700;white-space:nowrap}
+.pricing-tab small{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:20px;background:#e4e8db;color:#65734f;font-size:10px;font-weight:750}
+.pricing-tab:hover{background:#f8f9f4}
+.pricing-tab.active{background:#fffefa;border-color:#dce1d2;box-shadow:0 1px 4px #303b2010;color:#35412c}
+.pricing-tab.active small{background:#899b68;color:white}
+.list-limit-note{margin-top:12px;color:var(--muted);font-size:11px;line-height:1.45}
+.pricing-panel .quote-list-tools input{min-width:190px}
+@media(max-width:600px){.pricing-tabs{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}.pricing-tab{padding:8px 5px;font-size:11px;gap:5px}.pricing-tab small{min-width:19px;height:19px}.pricing-panel .quote-list-tools input{min-width:0}}
+
 </style>
 </head>
 <body>
@@ -418,29 +430,29 @@ input,select,textarea,.field input,.field select,.field textarea{font-size:13px;
     <section class="page" id="page-clients"><div class="toolbar"><div><h2 style="margin:0">Clients</h2><div class="muted">Keep client contact details together.</div></div><button class="primary" onclick="openModal('client')">＋ Add client</button></div><div id="clientsList" class="list"></div></section>
     <section class="page" id="page-photos"><div class="panel"><div class="panel-head"><div><h3>Photo library</h3><div class="muted">Browse projects, choose a cover image and manage each project’s full photo gallery.</div></div><span class="pill" id="photoCount">0 photos</span></div><div class="photo-toolbar"><select id="photoJobFilter" aria-label="Filter photos by job"><option value="all">All projects</option></select><select id="photoKind" aria-label="Photo type"><option value="Original">Original photos</option><option value="Edited">Edited photos</option></select><button class="primary" onclick="document.getElementById('photoFiles').click()">＋ Import photos</button><input id="photoFiles" type="file" accept="image/*" multiple hidden></div><div class="muted" style="margin-bottom:13px">In All jobs, each project appears once with its cover photo. Select a project to view its full gallery. Photos stay stored in this browser on this device.</div><div id="photoGrid" class="project-grid"><div class="empty" style="grid-column:1/-1"><b>No photos imported yet</b>Select a job and import your first property photos.</div></div></div></section>
     <section class="page" id="page-quotes">
-      <div class="quote-welcome"><div><div class="eyebrow">PRICING WORKSPACE</div><h2>Pricing overview</h2><p>Manage your photography services, build client quotations and keep track of accepted work.</p></div><button class="primary quote-create-main" onclick="openQuoteForm()">＋ Create a quote</button></div>
+      <div class="quote-welcome"><div><div class="eyebrow">PRICING WORKSPACE</div><h2>Pricing overview</h2><p>Manage your photography services, build client quotations and keep track of accepted work.</p></div></div>
       <div id="quoteStats" class="quote-stats"></div>
       <div class="pricing-tabs" role="tablist" aria-label="Pricing workspace sections">
-        <button class="pricing-tab active" type="button" role="tab" aria-selected="true" aria-controls="pricing-panel-packages" id="pricing-tab-packages" onclick="switchPricingTab('packages')"><span>Packages & extras</span><small id="pricingPackageCount">0 services</small></button>
-        <button class="pricing-tab" type="button" role="tab" aria-selected="false" aria-controls="pricing-panel-quotes" id="pricing-tab-quotes" onclick="switchPricingTab('quotes')"><span>Quotations</span><small id="pricingQuoteCount">0 quotes</small></button>
-        <button class="pricing-tab" type="button" role="tab" aria-selected="false" aria-controls="pricing-panel-invoices" id="pricing-tab-invoices" onclick="switchPricingTab('invoices')"><span>Invoices</span><small id="pricingInvoiceCount">0 invoices</small></button>
+        <button class="pricing-tab active" type="button" role="tab" aria-selected="true" aria-controls="pricing-panel-packages" id="pricing-tab-packages" onclick="switchPricingTab('packages')"><span>Packages & extras</span><small id="pricingPackageCount">0</small></button>
+        <button class="pricing-tab" type="button" role="tab" aria-selected="false" aria-controls="pricing-panel-quotes" id="pricing-tab-quotes" onclick="switchPricingTab('quotes')"><span>Quotations</span><small id="pricingQuoteCount">0</small></button>
+        <button class="pricing-tab" type="button" role="tab" aria-selected="false" aria-controls="pricing-panel-invoices" id="pricing-tab-invoices" onclick="switchPricingTab('invoices')"><span>Invoices</span><small id="pricingInvoiceCount">0</small></button>
       </div>
       <div class="pricing-panel active" id="pricing-panel-packages" role="tabpanel" aria-labelledby="pricing-tab-packages">
         <div class="panel quote-panel">
-        <div class="quote-panel-head"><div><div class="quote-section-kicker">YOUR SERVICES</div><h3>Packages & extras</h3><p class="muted">Reusable services and add-ons for faster, consistent quoting.</p></div><button class="secondary" onclick="openPackageForm()">＋ Add package</button></div>
-        <div id="packageList" class="package-grid"></div>
+        <div class="quote-panel-head"><div><div class="quote-section-kicker">YOUR SERVICES</div><h3>Packages & extras</h3><p class="muted">Reusable services and add-ons for faster, consistent quoting.</p></div><div class="quote-list-tools"><input id="packageSearch" type="search" placeholder="Search packages…" oninput="renderQuotes()"><button class="secondary" onclick="openPackageForm()">＋ Add package</button></div></div>
+        <div id="packageList" class="package-grid"></div><div class="list-limit-note" id="packageLimitNote"></div>
       </div>
       </div>
       <div class="pricing-panel" id="pricing-panel-quotes" role="tabpanel" aria-labelledby="pricing-tab-quotes" hidden>
         <div class="panel quote-panel quote-list-panel">
-        <div class="quote-panel-head"><div><div class="quote-section-kicker">CLIENT ESTIMATES</div><h3>Quotations</h3><p class="muted">Every quote can be connected to a client and a property job.</p></div><div class="quote-list-tools"><input id="quoteSearch" type="search" placeholder="Search quotes…" oninput="renderQuotes()"><select id="quoteStatusFilter" onchange="renderQuotes()"><option value="all">All statuses</option><option>Draft</option><option>Sent</option><option>Accepted</option><option>Declined</option></select></div></div>
-        <div id="quoteList" class="quote-list"></div>
+        <div class="quote-panel-head"><div><div class="quote-section-kicker">CLIENT ESTIMATES</div><h3>Quotations</h3><p class="muted">Every quote can be connected to a client and a property job.</p></div><div class="quote-list-tools"><button class="primary" onclick="openQuoteForm()">＋ Create a quote</button><input id="quoteSearch" type="search" placeholder="Search quotes…" oninput="renderQuotes()"><select id="quoteStatusFilter" onchange="renderQuotes()"><option value="all">All statuses</option><option>Draft</option><option>Sent</option><option>Accepted</option><option>Declined</option></select></div></div>
+        <div id="quoteList" class="quote-list"></div><div class="list-limit-note" id="quoteLimitNote"></div>
       </div>
       </div>
       <div class="pricing-panel" id="pricing-panel-invoices" role="tabpanel" aria-labelledby="pricing-tab-invoices" hidden>
         <div class="panel quote-panel quote-list-panel" style="margin-top:17px">
         <div class="quote-panel-head"><div><div class="quote-section-kicker">ACCOUNTS RECEIVABLE</div><h3>Invoices</h3><p class="muted">Create invoices from accepted quotations and track payment status.</p></div><div class="quote-list-tools"><button class="primary" type="button" onclick="openInvoiceCreator()">＋ Create invoice</button><input id="invoiceSearch" type="search" placeholder="Search invoices…" oninput="renderInvoices()"><select id="invoiceStatusFilter" onchange="renderInvoices()"><option value="all">All invoice statuses</option><option>Unpaid</option><option>Paid</option><option>Overdue</option></select></div></div>
-        <div id="invoiceList" class="quote-list"></div>
+        <div id="invoiceList" class="quote-list"></div><div class="list-limit-note" id="invoiceLimitNote"></div>
       </div>
       </div>
     </section>
@@ -543,7 +555,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.1.5.7';
+const APP_VERSION='0.1.5.8';
 const pageInfo={dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -826,17 +838,25 @@ function renderQuotes(){
  const stats=[['Service packages',active.length,'Reusable packages & extras','▦'],['Quotes created',quotes.length,'All quotations','▤'],['Accepted quotes',accepted,'Approved by clients','✓'],['Total quoted',money(total),'Combined quote value','$']];
  document.getElementById('quoteStats').innerHTML=stats.map(x=>`<div class="quote-stat"><div class="quote-stat-top"><span class="quote-stat-label">${x[0]}:</span><span class="quote-stat-icon">${x[3]}</span></div><div class="quote-stat-value">${x[1]}</div><div class="quote-stat-note">${x[2]}</div></div>`).join('');
  const pc=document.getElementById('pricingPackageCount'),qc=document.getElementById('pricingQuoteCount'),ic=document.getElementById('pricingInvoiceCount');
- if(pc)pc.textContent=active.length+' services';if(qc)qc.textContent=quotes.length+' quotes';if(ic)ic.textContent=(data.invoices||[]).length+' invoices';
+ if(pc)pc.textContent=String(active.length);if(qc)qc.textContent=String(quotes.length);if(ic)ic.textContent=String((data.invoices||[]).length);
  const pl=document.getElementById('packageList');
- pl.innerHTML=active.length?active.map(p=>`<div class="package-card"><div class="package-card-main"><div><div class="package-name">${esc(p.name)}</div><div class="package-description">${esc(p.description||'No description added yet.')}</div><span class="package-tag">${p.isExtra?'OPTIONAL EXTRA':'SERVICE PACKAGE'}</span></div><div class="package-price">${money(p.price)}</div></div><div class="package-actions"><button class="tiny-btn" onclick="editPackage('${p.id}')">Edit package</button><button class="tiny-btn danger" onclick="deletePackage('${p.id}')">Delete</button></div></div>`).join(''):`<div class="quote-empty"><strong>No service packages yet</strong><span>Add your first package to make creating quotes quicker.</span></div>`;
+ const packageTerm=(document.getElementById('packageSearch')?.value||'').trim().toLowerCase();
+ const matchingPackages=active.filter(p=>[p.name,p.description,p.isExtra?'Optional extra':'Service package',p.price].join(' ').toLowerCase().includes(packageTerm)).sort((a,b)=>(b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||''));
+ const visiblePackages=matchingPackages.slice(0,4);
+ const packageNote=document.getElementById('packageLimitNote');
+ if(packageNote)packageNote.textContent=matchingPackages.length>4?`Showing 4 of ${matchingPackages.length} matching packages. Search to find older packages.`:'';
+ pl.innerHTML=visiblePackages.length?visiblePackages.map(p=>`<div class="package-card"><div class="package-card-main"><div><div class="package-name">${esc(p.name)}</div><div class="package-description">${esc(p.description||'No description added yet.')}</div><span class="package-tag">${p.isExtra?'OPTIONAL EXTRA':'SERVICE PACKAGE'}</span></div><div class="package-price">${money(p.price)}</div></div><div class="package-actions"><button class="tiny-btn" onclick="editPackage('${p.id}')">Edit package</button><button class="tiny-btn danger" onclick="deletePackage('${p.id}')">Delete</button></div></div>`).join(''):`<div class="quote-empty"><strong>${active.length?'No matching packages':'No service packages yet'}</strong><span>${active.length?'Try another package name or description.':'Add your first package to make creating quotes quicker.'}</span></div>`;
  const ql=document.getElementById('quoteList');
  const search=(document.getElementById('quoteSearch')?.value||'').toLowerCase().trim();
  const filter=document.getElementById('quoteStatusFilter')?.value||'all';
- const shown=quotes.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).filter(q=>{
+ const matchingQuotes=quotes.slice().sort((a,b)=>(b.createdAt||b.date||'').localeCompare(a.createdAt||a.date||'')).filter(q=>{
   const client=data.clients.find(c=>c.id===q.clientId),job=data.jobs.find(j=>j.id===q.jobId);
-  const hay=[q.number,q.clientName,client?.name,q.jobName,job?.name,q.status].join(' ').toLowerCase();
+  const hay=[q.number,q.clientName,client?.name,client?.company,client?.email,q.jobName,job?.name,job?.address,job?.client,job?.status,q.status,q.date].join(' ').toLowerCase();
   return (!search||hay.includes(search))&&(filter==='all'||q.status===filter);
  });
+ const shown=matchingQuotes.slice(0,4);
+ const quoteNote=document.getElementById('quoteLimitNote');
+ if(quoteNote)quoteNote.textContent=matchingQuotes.length>4?`Showing the 4 most recent of ${matchingQuotes.length} matching quotations. Search by client or property to find older quotes.`:'';
  ql.innerHTML=shown.length?shown.map(q=>{
   const client=data.clients.find(c=>c.id===q.clientId),job=data.jobs.find(j=>j.id===q.jobId);
   const clientName=client?.name||q.clientName||'Client not linked',jobName=job?.name||q.jobName||'No job linked';
@@ -921,14 +941,18 @@ function renderInvoices(){
  const host=document.getElementById('invoiceList');if(!host)return;
  const filter=document.getElementById('invoiceStatusFilter')?.value||'all';
  const term=(document.getElementById('invoiceSearch')?.value||'').trim().toLowerCase();
- const rows=data.invoices.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).filter(inv=>{
+ const matchingRows=data.invoices.slice().sort((a,b)=>(b.createdAt||b.date||'').localeCompare(a.createdAt||a.date||'')).filter(inv=>{
   const overdue=invoiceIsOverdue(inv)&&inv.status!=='Paid';
   const status=inv.status==='Paid'?'Paid':overdue?'Overdue':'Unpaid';
   const matchesStatus=filter==='all'||status===filter;
-  const haystack=[inv.number,inv.clientName,inv.jobName,inv.status,status,inv.date,inv.dueDate,inv.notes].join(' ').toLowerCase();
+  const client=data.clients.find(c=>c.id===inv.clientId),job=data.jobs.find(j=>j.id===inv.jobId);
+  const haystack=[inv.number,inv.clientName,client?.name,client?.company,client?.email,inv.jobName,job?.name,job?.address,job?.client,inv.status,status,inv.date,inv.dueDate,inv.notes].join(' ').toLowerCase();
   return matchesStatus&&(!term||haystack.includes(term));
  });
- host.innerHTML=rows.length?rows.map(inv=>{const overdue=invoiceIsOverdue(inv)&&inv.status!=='Paid';const st=inv.status==='Paid'?'Paid':overdue?'Overdue':'Unpaid';return `<div class="quote-card"><div class="quote-card-top"><div><div class="quote-card-ref">${esc(inv.number||'Invoice')}</div><div class="quote-card-client">${esc(inv.clientName||'Client')}</div><div class="quote-card-meta"><span class="quote-meta-chip">${esc(inv.jobName||'No property linked')}</span><span class="quote-meta-chip">Issued: ${esc(inv.date||'—')}</span><span class="quote-meta-chip">Due: ${esc(inv.dueDate||'—')}</span></div></div><div class="quote-card-total">${money(inv.total)}<br><span class="invoice-status-pill ${st.toLowerCase()}">${st}</span></div></div><div class="quote-card-actions"><button class="tiny-btn" onclick="printBusinessDocument('invoice','${inv.id}')">Download / print PDF</button>${inv.status!=='Paid'?`<button class="tiny-btn" onclick="markInvoicePaid('${inv.id}')">Mark paid</button>`:''}<button class="tiny-btn danger" onclick="deleteInvoice('${inv.id}')">Delete</button></div></div>`}).join(''):'<div class="quote-empty"><strong>No invoices yet</strong><span>Accept a quotation, then create an invoice from it.</span></div>';
+ const rows=matchingRows.slice(0,4);
+ const invoiceNote=document.getElementById('invoiceLimitNote');
+ if(invoiceNote)invoiceNote.textContent=matchingRows.length>4?`Showing the 4 most recent of ${matchingRows.length} matching invoices. Search by client or property to find older invoices.`:'';
+ host.innerHTML=rows.length?rows.map(inv=>{const overdue=invoiceIsOverdue(inv)&&inv.status!=='Paid';const st=inv.status==='Paid'?'Paid':overdue?'Overdue':'Unpaid';return `<div class="quote-card"><div class="quote-card-top"><div><div class="quote-card-ref">${esc(inv.number||'Invoice')}</div><div class="quote-card-client">${esc(inv.clientName||'Client')}</div><div class="quote-card-meta"><span class="quote-meta-chip">${esc(inv.jobName||'No property linked')}</span><span class="quote-meta-chip">Issued: ${esc(inv.date||'—')}</span><span class="quote-meta-chip">Due: ${esc(inv.dueDate||'—')}</span></div></div><div class="quote-card-total">${money(inv.total)}<br><span class="invoice-status-pill ${st.toLowerCase()}">${st}</span></div></div><div class="quote-card-actions"><button class="tiny-btn" onclick="printBusinessDocument('invoice','${inv.id}')">Download / print PDF</button>${inv.status!=='Paid'?`<button class="tiny-btn" onclick="markInvoicePaid('${inv.id}')">Mark paid</button>`:''}<button class="tiny-btn danger" onclick="deleteInvoice('${inv.id}')">Delete</button></div></div>`}).join(''):`<div class="quote-empty"><strong>${data.invoices.length?'No matching invoices':'No invoices yet'}</strong><span>${data.invoices.length?'Try another client, property or invoice number.':'Accept a quotation, then create an invoice from it.'}</span></div>`;
 }
 function invoiceIsOverdue(inv){return !!(inv.dueDate&&inv.status!=='Paid'&&inv.dueDate<new Date().toISOString().slice(0,10))}
 function openInvoiceCreator(){
