@@ -1,5 +1,5 @@
 {
-  "version": "0.1.8.1",
+  "version": "0.1.8.2",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-04",
   "notes": "Calendar refinement: calendar links are jobs only; quotes and invoices removed from calendar event sources; event selection opens an in-calendar details panel and never navigates to another app section."
