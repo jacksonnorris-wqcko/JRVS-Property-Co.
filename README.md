@@ -1,20 +1,18 @@
-# JRVS Property Co. — V0.1.4 Beta
+# JRVS Property Co. — V0.1.4.2 Stability Hotfix
 
-## Global search
-- Added a global search field in the top bar.
-- Searches jobs by property name, client, address, status, date and notes.
-- Searches clients by name, company, email, phone and notes.
-- Searches quotations by reference, client, property, status and notes.
-- Searches income and expenses by description, category, date and amount.
-- Results open the relevant in-app detail or editing view.
-- Ctrl+K (or Cmd+K) focuses the search field; Escape closes the results.
-- Displays up to 12 matches.
+## Stability changes
+- Rebuilt from the last known working V0.1.3.1 baseline.
+- Original Jobs, Clients, Photos, Pricing & Quotes, Finance and Settings page/navigation code retained.
+- Global search functions are placed outside the `showPage` navigation function.
+- Removed Ctrl+K/Cmd+K shortcut; browser shortcuts are not intercepted.
+- Corrected finance search actions to call `editFinance(recordId, type)` in the correct order.
+- Search does not write, migrate, clear or reset app data.
 
-## Existing data
-No changes to localStorage record keys or IndexedDB photo storage.
+## Data preservation
+- Existing `jrvs-data` localStorage key retained.
+- Existing IndexedDB photo database retained.
+- No `localStorage.clear()`, database deletion or schema migration is included.
+- Use the same GitHub Pages URL and browser profile/device to access browser-local records.
 
 ## Install
-Upload all files in this ZIP to the root of the existing GitHub Pages repository, replacing previous files. Continue using the same browser/device to retain local records and photos.
-
-## Baseline
-Builds on JRVS V0.1.3.1.
+Replace the repository files with the contents of this ZIP.

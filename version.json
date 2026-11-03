@@ -1,6 +1,6 @@
 {
-  "version": "0.1.4",
+  "version": "0.1.4.2",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "Introduces global search across jobs, clients, quotations, income and expenses. Search results open the relevant job/client profile, quote editor or finance record. Ctrl+K focuses search."
+  "notes": "Stability hotfix rebuilt from the last working 0.1.3.1 baseline. Restores original page navigation and pricing/finance code, adds global search outside navigation function scope, removes Ctrl+K, and keeps existing browser storage keys untouched."
 }
