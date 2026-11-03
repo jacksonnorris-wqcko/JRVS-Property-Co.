@@ -1,22 +1,15 @@
-JRVS Property Co. — V0.1.9.2
+JRVS Property Co. — V0.1.9.3 Finance page visibility hotfix
 
-Release: Pricing & Quotes / Finance separation
+Fix:
+- Finance was appearing underneath Pricing & Quoting because the #page-finances CSS rule set display:flex with higher specificity than the shared hidden-page rule.
+- Finance now defaults to display:none and only displays as a flex column when it has the active class.
+- Pricing & Quoting contains only its sales workspace; Finance remains a separate navigation page.
 
-What changed
-- Pricing & Quotes is now explicitly the sales workspace: packages, quotations and invoices.
-- Its summary cards remain focused on service packages, quotes created, accepted quotes and total quoted value. These are sales metrics, not accounting figures.
-- Finance is the single home for payments received, outstanding invoice balances, expenses, net cash position and transaction management.
-- Removed the duplicated business-activity summary from Finance so the dashboard is cleaner and avoids repeating the same received/outstanding figures.
-- Invoices continue to feed Finance automatically.
+No business data, localStorage keys, calendar storage, photo IndexedDB, or invoice/payment logic changed.
 
-Data safety
-- Existing localStorage key jrvs-data is unchanged.
-- Existing calendar key jrvs-calendar is unchanged.
-- Existing photo database jrvs-photo-library and photos object store are unchanged.
-- No data reset or destructive migration is performed.
+Install:
+1. Extract the ZIP.
+2. Upload all files and folders into the root of the existing GitHub repository, replacing the previous release files.
+3. Keep using the same browser profile and existing app URL. Do not clear site data or uninstall the app.
 
-Deployment
-Extract the ZIP and upload all files/folders into the root of the existing GitHub Pages repository, replacing matching files. Do not upload the ZIP itself or place its contents inside a nested folder. Keep using the same browser/profile and do not clear site data.
-
-Testing note
-Static release checks only; live browser testing against the hosted site has not been performed.
+This is a CSS visibility fix; it has not been live-tested in the user's browser.
