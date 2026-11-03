@@ -1,0 +1,16 @@
+{
+  "name": "JRVS Property Co. Business Hub",
+  "short_name": "JRVS",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#F7F1DF",
+  "theme_color": "#899B68",
+  "icons": [
+    {
+      "src": "assets/jrvs-logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

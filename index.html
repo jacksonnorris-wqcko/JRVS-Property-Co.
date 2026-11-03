@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#899B68">
+  <meta name="description" content="JRVS Property Co. business management">
+  <title>JRVS Property Co. — Business Hub</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/jrvs-logo.png">
+  <style>
+    :root{--sage:#899B68;--sage-dark:#66794d;--cream:#F7F1DF;--paper:#fffdf7;--ink:#283025;--muted:#77806f;--line:#e7e7dc;--shadow:0 12px 32px #35422a12}
+    *{box-sizing:border-box}body{margin:0;background:#f4f3eb;color:var(--ink);font:15px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+    button,input,select,textarea{font:inherit}button{cursor:pointer}
+    .shell{min-height:100vh;display:grid;grid-template-columns:250px 1fr}
+    aside{background:var(--cream);border-right:1px solid #e9e3d2;padding:24px 16px;display:flex;flex-direction:column;gap:28px}
+    .brand{display:flex;align-items:center;gap:11px;padding:0 8px}.brand img{width:48px;height:48px;object-fit:contain;border-radius:12px}.brand-mark{font-weight:850;letter-spacing:1px;font-size:22px}.brand small{display:block;color:#737b67;letter-spacing:2px;font-size:9px}
+    .nav-label{font-size:10px;letter-spacing:1.6px;color:#8b907f;font-weight:800;padding:0 12px;margin-bottom:8px}
+    nav{display:grid;gap:5px}.nav-btn{border:0;background:transparent;color:#58614e;text-align:left;padding:11px 13px;border-radius:11px;display:flex;align-items:center;gap:12px;font-weight:600}.nav-btn.active,.nav-btn:hover{background:#e5e9d9;color:#34412c}.nav-btn span:first-child{width:20px;text-align:center;font-size:17px}
+    .side-bottom{margin-top:auto;padding:14px;border:1px solid #e5e1d3;border-radius:14px;color:#6c7562;font-size:12px}
+    main{padding:30px clamp(18px,4vw,54px);max-width:1500px;width:100%;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:30px}.eyebrow{color:var(--sage-dark);font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase}.top h1{font-size:30px;letter-spacing:-.8px;margin:4px 0}.sub{color:var(--muted);margin:0}.version{border:1px solid var(--line);background:var(--paper);padding:9px 12px;border-radius:30px;font-size:12px;color:#65705a;white-space:nowrap}
+    .welcome{background:var(--sage);color:white;padding:25px 28px;border-radius:20px;display:flex;justify-content:space-between;align-items:center;gap:18px;box-shadow:var(--shadow);margin-bottom:22px}.welcome h2{margin:0 0 5px;font-size:22px}.welcome p{margin:0;color:#f1f3e9cc}.welcome .date{font-size:12px;color:#f1f3e9}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}.stat,.panel{background:var(--paper);border:1px solid var(--line);border-radius:17px;padding:19px;box-shadow:var(--shadow)}.stat-label{color:var(--muted);font-size:12px;font-weight:650}.stat-value{font-size:29px;font-weight:800;margin-top:8px;letter-spacing:-1px}.stat-note{font-size:11px;color:#89917e;margin-top:3px}
+    .content-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:16px}.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.panel h3{margin:0;font-size:16px}.muted{color:var(--muted);font-size:12px}.primary{background:var(--sage);color:white;border:0;padding:10px 15px;border-radius:10px;font-weight:700}.primary:hover{background:var(--sage-dark)}.secondary{background:#edf0e5;color:#526143;border:0;padding:9px 12px;border-radius:9px;font-weight:650}
+    .empty{padding:28px 12px;text-align:center;color:#8a9180;border:1px dashed #d9ddcf;border-radius:13px}.empty b{display:block;color:#59634f;margin-bottom:4px}
+    .job{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-top:1px solid var(--line);gap:10px}.job strong{display:block;font-size:13px}.job small{color:var(--muted)}.pill{font-size:10px;padding:5px 8px;border-radius:20px;background:#edf0e5;color:#586747;font-weight:700}
+    .page{display:none}.page.active{display:block}.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.list{display:grid;gap:10px}.row-card{padding:15px 17px;border:1px solid var(--line);background:var(--paper);border-radius:13px;display:flex;justify-content:space-between;gap:12px;align-items:center}.row-card strong{display:block}.row-card small{color:var(--muted)}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.field{display:grid;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:700;color:#65705a}.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid #dfe2d6;border-radius:10px;background:#fffefa;color:var(--ink);outline-color:var(--sage)}.modal-backdrop{position:fixed;inset:0;background:#20271d77;display:none;align-items:center;justify-content:center;padding:18px;z-index:5}.modal-backdrop.show{display:flex}.modal{width:min(520px,100%);background:var(--paper);border-radius:18px;padding:23px;box-shadow:0 25px 80px #0003}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.modal-head h2{margin:0;font-size:19px}.close{border:0;background:#eff0e9;border-radius:8px;width:32px;height:32px}
+    .settings-note{background:#f0f2e9;padding:14px;border-radius:12px;color:#626d56;font-size:13px;margin-top:15px}.footer{margin-top:25px;color:#929887;font-size:11px;text-align:center}
+    @media(max-width:900px){.shell{grid-template-columns:1fr}aside{position:sticky;top:0;z-index:3;padding:10px 12px;border-right:0;border-bottom:1px solid #e9e3d2}.brand{padding:0 5px}.brand img{width:36px;height:36px}.brand-mark{font-size:18px}aside .nav-label,aside .side-bottom{display:none}nav{display:flex;overflow-x:auto;gap:4px}.nav-btn{white-space:nowrap;padding:8px 10px;font-size:12px}.nav-btn span:first-child{font-size:14px;width:auto}main{padding:22px 16px}.stats{grid-template-columns:repeat(2,1fr)}.content-grid{grid-template-columns:1fr}}
+    @media(max-width:480px){.top h1{font-size:25px}.welcome{padding:20px;align-items:flex-start;flex-direction:column}.stats{gap:9px}.stat{padding:14px}.stat-value{font-size:24px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.version{font-size:10px;padding:7px 9px}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="brand"><img src="assets/jrvs-logo.png" alt="JRVS logo" onerror="this.style.display='none'"><div><div class="brand-mark">JRVS</div><small>PROPERTY CO.</small></div></div>
+    <div><div class="nav-label">WORKSPACE</div><nav>
+      <button class="nav-btn active" data-page="dashboard"><span>⌂</span>Dashboard</button>
+      <button class="nav-btn" data-page="jobs"><span>▣</span>Jobs</button>
+      <button class="nav-btn" data-page="clients"><span>♙</span>Clients</button>
+      <button class="nav-btn" data-page="photos"><span>▧</span>Photo library</button>
+      <button class="nav-btn" data-page="quotes"><span>＄</span>Pricing & quotes</button>
+      <button class="nav-btn" data-page="finances"><span>◫</span>Finances</button>
+      <button class="nav-btn" data-page="settings"><span>⚙</span>Settings</button>
+    </nav></div>
+    <div class="side-bottom"><b>JRVS PROPERTY CO.</b><br>Simple tools for better property photography.<br><br><span id="sideVersion">Version 0.0.1</span></div>
+  </aside>
+  <main>
+    <header class="top"><div><div class="eyebrow">Business workspace</div><h1 id="pageTitle">Dashboard</h1><p class="sub" id="pageSub">A clear view of what's happening in your business.</p></div><div class="version" id="versionBadge">● Version 0.0.1</div></header>
+    <section class="page active" id="page-dashboard">
+      <div class="welcome"><div><h2>Good to see you.</h2><p>Your business, organised in one place.</p></div><div class="date" id="today"></div></div>
+      <div class="stats">
+        <div class="stat"><div class="stat-label">Active jobs</div><div class="stat-value" id="activeJobs">0</div><div class="stat-note">Jobs currently underway</div></div>
+        <div class="stat"><div class="stat-label">Clients</div><div class="stat-value" id="clientCount">0</div><div class="stat-note">Saved client records</div></div>
+        <div class="stat"><div class="stat-label">Quotes issued</div><div class="stat-value" id="quoteCount">0</div><div class="stat-note">Quotes created</div></div>
+        <div class="stat"><div class="stat-label">Income recorded</div><div class="stat-value" id="incomeTotal">$0</div><div class="stat-note">Payments entered</div></div>
+      </div>
+      <div class="content-grid">
+        <div class="panel"><div class="panel-head"><h3>Recent jobs</h3><button class="secondary" onclick="showPage('jobs')">View all</button></div><div id="recentJobs" class="empty"><b>No jobs yet</b>Add your first job to get started.</div></div>
+        <div class="panel"><div class="panel-head"><h3>Quick actions</h3><span class="muted">Get things moving</span></div><div style="display:grid;gap:9px"><button class="primary" onclick="openModal('job')">＋ Create a job</button><button class="secondary" onclick="openModal('client')">＋ Add a client</button><button class="secondary" onclick="showPage('photos')">▧ Open photo library</button></div><div class="settings-note">This is your first working foundation. We'll connect the sections as the app grows.</div></div>
+      </div>
+    </section>
+    <section class="page" id="page-jobs"><div class="toolbar"><div><h2 style="margin:0">Jobs</h2><div class="muted">Manage property photography work.</div></div><button class="primary" onclick="openModal('job')">＋ New job</button></div><div id="jobsList" class="list"></div></section>
+    <section class="page" id="page-clients"><div class="toolbar"><div><h2 style="margin:0">Clients</h2><div class="muted">Keep client contact details together.</div></div><button class="primary" onclick="openModal('client')">＋ Add client</button></div><div id="clientsList" class="list"></div></section>
+    <section class="page" id="page-photos"><div class="panel"><div class="panel-head"><div><h3>Photo library</h3><div class="muted">A starting point for your job-linked photo workflow.</div></div></div><div class="empty"><b>Photo management is coming next</b>V0.0.1 establishes the workspace. Local photo importing, previews, folders and editing tools will be added in a later release.</div></div></section>
+    <section class="page" id="page-quotes"><div class="panel"><h3>Pricing & quotations</h3><p class="muted">Your service list and quote builder will live here.</p><div class="empty"><b>Quote builder coming next</b>We'll add editable packages, add-ons and branded PDF quotations in a future release.</div></div></section>
+    <section class="page" id="page-finances"><div class="panel"><h3>Finances</h3><p class="muted">A simple place to understand money coming in and going out.</p><div class="empty"><b>Finance tracking coming next</b>Income, expenses, payment status and reporting will be developed in a later release.</div></div></section>
+    <section class="page" id="page-settings"><div class="panel"><h3>Application settings</h3><div class="row-card" style="margin-top:14px"><div><strong>Application version</strong><small>Use this to confirm updates are being received.</small></div><span class="pill" id="settingsVersion">V0.0.1</span></div><div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div><div class="row-card"><div><strong>Data storage</strong><small>V0.0.1 saves demo records in this browser on this device.</small></div><span class="pill">Local</span></div><div class="settings-note">Important: browser data is not yet cloud-synchronised. Keep backups of anything important. Automatic app updates do not replace or delete your saved records.</div></div></section>
+    <div class="footer">JRVS Property Co. · <span id="footerVersion">V0.0.1</span> · Built for better business days.</div>
+  </main>
+</div>
+<div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h2 id="modalTitle">New record</h2><button class="close" onclick="closeModal()">×</button></div><form id="recordForm"><div id="formFields" class="form-grid"></div><div style="display:flex;justify-content:flex-end;gap:9px;margin-top:18px"><button type="button" class="secondary" onclick="closeModal()">Cancel</button><button class="primary" type="submit">Save</button></div></form></div></div>
+<script>
+const APP_VERSION='0.0.1';
+const pageInfo={dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
+let data={jobs:[],clients:[],quotes:[],income:[]};
+try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
+const save=()=>localStorage.setItem('jrvs-data',JSON.stringify(data));
+function showPage(name){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.page===name));document.getElementById('pageTitle').textContent=pageInfo[name][0];document.getElementById('pageSub').textContent=pageInfo[name][1];}
+document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
+function openModal(type){const fields=document.getElementById('formFields');document.getElementById('modalTitle').textContent=type==='job'?'Create a job':'Add a client';fields.innerHTML=type==='job'?`
+<div class="field"><label>Job / property name</label><input name="name" required placeholder="e.g. 12 Ocean Street"></div>
+<div class="field"><label>Client</label><input name="client" placeholder="Client or agency"></div>
+<div class="field"><label>Scheduled date</label><input name="date" type="date"></div>
+<div class="field"><label>Status</label><select name="status"><option>Enquiry</option><option>Booked</option><option>In progress</option><option>Editing</option><option>Delivered</option></select></div>
+<div class="field full"><label>Notes</label><textarea name="notes" rows="2" placeholder="Access details, requested services..."></textarea></div>`:`
+<div class="field full"><label>Client / agency name</label><input name="name" required placeholder="Client name"></div>
+<div class="field"><label>Email</label><input name="email" type="email" placeholder="name@example.com"></div>
+<div class="field"><label>Phone</label><input name="phone" type="tel" placeholder="04xx xxx xxx"></div>
+<div class="field full"><label>Notes</label><textarea name="notes" rows="2"></textarea></div>`;
+document.getElementById('recordForm').dataset.type=type;document.getElementById('modalBackdrop').classList.add('show')}
+function closeModal(){document.getElementById('modalBackdrop').classList.remove('show')}
+document.getElementById('recordForm').addEventListener('submit',e=>{e.preventDefault();const type=e.target.dataset.type;const item=Object.fromEntries(new FormData(e.target));item.id=Date.now().toString();if(type==='job')data.jobs.unshift(item);else data.clients.unshift(item);save();closeModal();e.target.reset();render()});
+function render(){document.getElementById('activeJobs').textContent=data.jobs.filter(j=>!['Delivered'].includes(j.status)).length;document.getElementById('clientCount').textContent=data.clients.length;document.getElementById('quoteCount').textContent=data.quotes.length;document.getElementById('incomeTotal').textContent='$'+data.income.reduce((s,x)=>s+(Number(x.amount)||0),0).toLocaleString('en-AU');const jobHtml=data.jobs.map(j=>`<div class="row-card"><div><strong>${esc(j.name)}</strong><small>${esc(j.client||'No client')} · ${esc(j.date||'No date')}</small></div><span class="pill">${esc(j.status)}</span></div>`).join('');document.getElementById('jobsList').innerHTML=jobHtml||'<div class="empty"><b>No jobs added yet</b>Create your first job to see it here.</div>';document.getElementById('recentJobs').className=data.jobs.length?'':'empty';document.getElementById('recentJobs').innerHTML=data.jobs.slice(0,5).map(j=>`<div class="job"><div><strong>${esc(j.name)}</strong><small>${esc(j.client||'No client')} · ${esc(j.date||'No date')}</small></div><span class="pill">${esc(j.status)}</span></div>`).join('')||'<b>No jobs yet</b>Add your first job to get started.';document.getElementById('clientsList').innerHTML=data.clients.map(c=>`<div class="row-card"><div><strong>${esc(c.name)}</strong><small>${esc(c.email||'No email')} · ${esc(c.phone||'No phone')}</small></div><span class="pill">Client</span></div>`).join('')||'<div class="empty"><b>No clients yet</b>Add a client to get started.</div>'}
+function esc(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+document.getElementById('today').textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+['versionBadge','sideVersion','settingsVersion','footerVersion'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=(id==='versionBadge'?'● Version ':'V')+APP_VERSION});
+render();
+async function checkForUpdates(manual=false){const status=document.getElementById('updateStatus');if(status)status.textContent='Checking GitHub for a newer version…';try{const r=await fetch('./version.json?check='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('Version file unavailable');const remote=await r.json();if(remote.version&&remote.version!==APP_VERSION){if(status)status.textContent='A newer version ('+remote.version+') is available. Refreshing…';if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.getRegistration();if(reg)await reg.update()}setTimeout(()=>location.reload(),700)}else if(status)status.textContent='You are up to date · Version '+APP_VERSION;if(manual&&!remote.version)status.textContent='Could not read the version file.'}catch(e){if(status)status.textContent='Update check unavailable right now. Your current version is still usable.'}}
+if('serviceWorker'in navigator&&location.protocol!=='file:'){window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('./sw.js');reg.update();reg.addEventListener('updatefound',()=>{const w=reg.installing;if(w)w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)location.reload()})})}catch(e){}checkForUpdates()})}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUpdates()});
+</script>
+</body></html>
