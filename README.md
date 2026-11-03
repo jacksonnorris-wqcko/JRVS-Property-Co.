@@ -1,10 +1,6 @@
-# JRVS Property Co. V0.1.8.2 – Needs Attention Dashboard Hotfix
+JRVS Property Co. V0.1.9 – Finance integration foundation
 
-## Changes
-- Needs Attention items open an in-dashboard detail modal; no navigation to other app sections.
-- Added Mark as handled to clear a reminder after addressing it.
-- Cleared reminder IDs persist in the existing `jrvs-data` localStorage record.
-- Existing business and photo storage keys remain unchanged.
+Deploy all ZIP contents into the existing GitHub Pages repository root.
+Finance now derives invoice income, paid amounts and outstanding balances directly from existing invoices, and displays accepted quote totals separately. Existing manual income and expense records remain available. No invoice data is copied into the income store, preventing duplicate transaction entries.
 
-## Deploy
-Extract the ZIP and upload all files into the existing GitHub Pages repository root, replacing matching files. Keep the same URL and browser profile. Do not clear site data.
+This is the first finance integration release. Partial payment capture, recurring expense automation, bank imports/reconciliation and full GST/BAS reporting are not included yet. Existing local storage keys and photo library remain unchanged. Back up browser data before deployment; do not clear site data.
