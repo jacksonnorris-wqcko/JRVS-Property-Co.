@@ -918,10 +918,11 @@ async function jrvsCloudSignOut(){
  jrvsCloudSession=null;jrvsCloudUi();jrvsCloudMessage('Signed out. Local data remains on this device.');
 }
 function jrvsMergeRecords(localRows, cloudRows, label, conflicts){
- const out=new Map();
- (Array.isArray(cloudRows)?cloudRows:[]).forEach(x=>{if(x&&x.id!=null)out.set(String(x.id),x)});
- (Array.isArray(localRows)?localRows:[]).forEach(x=>{
-  if(!x||x.id==null)return;
+ const out=new Map(), unkeyed=[];
+ (Array.isArray(cloudRows)?cloudRows:[]).forEach((x,i)=>{if(!x||typeof x!=='object')return;if(x.id==null){unkeyed.push(x);return;}out.set(String(x.id),x)});
+ (Array.isArray(localRows)?localRows:[]).forEach((x,i)=>{
+  if(!x||typeof x!=='object')return;
+  if(x.id==null){unkeyed.push(x);return;}
   const id=String(x.id),old=out.get(id);
   if(!old){out.set(id,x);return;}
   if(JSON.stringify(old)===JSON.stringify(x))return;
@@ -930,7 +931,8 @@ function jrvsMergeRecords(localRows, cloudRows, label, conflicts){
   if(newTime>oldTime)out.set(id,x);
   else if(newTime===oldTime){conflicts.push({type:label,id,local:x,cloud:old});}
  });
- return [...out.values()];
+ // Legacy records without IDs are retained rather than silently discarded. They cannot be deduplicated safely.
+ return [...out.values(),...unkeyed];
 }
 function jrvsMergeBusiness(local,cloud,conflicts){
  const result={...(cloud||{}),...(local||{})};
@@ -981,6 +983,8 @@ async function jrvsCloudSync(){
   // Preserve same-ID edits that cannot be safely auto-resolved for later review.
   if(conflicts.length)localStorage.setItem('jrvs-sync-conflicts-'+Date.now(),JSON.stringify({createdAt:new Date().toISOString(),conflicts}));
   const payload={business:mergedBusiness,calendar:mergedCalendar,photos:mergedPhotoMeta,schema_version:1};
+  const payloadCheck=JSON.stringify(payload);
+  if(!payloadCheck||payloadCheck==='{}')throw new Error('The merged data snapshot is empty. No cloud write was attempted.');
   jrvsCloudMessage('Saving merged records to cloud…');
   let write;
   if(remote){
@@ -996,7 +1000,16 @@ async function jrvsCloudSync(){
   jrvsCloudMessage('Two-way sync complete · '+mergedBusiness.jobs?.length+' jobs · '+mergedBusiness.clients?.length+' clients · '+(await photoRequest('readonly','all')).length+' photos'+(conflicts.length?' · '+conflicts.length+' item(s) need conflict review':''));
   showToast('JRVS two-way sync completed.');
   await loadPhotos();renderQuotes();renderFinances();render();
- }catch(e){console.error('JRVS cloud sync failed',e);jrvsCloudMessage('Sync stopped: '+(e.message||'Unknown error')+'. Local records were not intentionally cleared.',true)}
+ }catch(e){
+  console.error('JRVS cloud sync failed',e);
+  const parts=[e?.message||'Unknown error'];
+  if(e?.code)parts.push('code '+e.code);
+  if(e?.status)parts.push('HTTP '+e.status);
+  if(e?.details)parts.push(String(e.details));
+  if(e?.hint)parts.push('Hint: '+String(e.hint));
+  const diagnostic=parts.join(' · ');
+  jrvsCloudMessage('Sync stopped: '+diagnostic+'. Local records were not intentionally cleared.',true);
+ }
  finally{jrvsCloudBusy=false;jrvsCloudUi()}
 }</script>
 <script>
@@ -1024,7 +1037,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.2.2';
+const APP_VERSION='0.2.3';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}

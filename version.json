@@ -1,6 +1,6 @@
 {
-  "version": "0.2.2",
+  "version": "0.2.3",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-04",
-  "notes": "Two-way additive cloud merge for new business records, calendar events and photos. Existing records are not blindly restored over local data; same-ID conflicts are preserved locally for review. Deletions are not yet synchronised."
+  "notes": "Sync reliability hotfix: preserve legacy records without IDs, validate snapshot before write, and display detailed Supabase error diagnostics. Additive merge remains experimental; no deletion sync."
 }
