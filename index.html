@@ -38,7 +38,18 @@
     .settings-note{background:#f0f2e9;padding:14px;border-radius:12px;color:#626d56;font-size:13px;margin-top:15px}.footer{margin-top:25px;color:#929887;font-size:11px;text-align:center}
     @media(max-width:900px){.shell{grid-template-columns:1fr}aside{position:sticky;top:0;z-index:3;padding:10px 12px;border-right:0;border-bottom:1px solid #e9e3d2}.brand{padding:0 5px}.brand img{width:36px;height:36px}.brand-mark{font-size:18px}aside .nav-label,aside .side-bottom{display:none}nav{display:flex;overflow-x:auto;gap:4px}.nav-btn{white-space:nowrap;padding:8px 10px;font-size:12px}.nav-btn span:first-child{font-size:14px;width:auto}main{padding:22px 16px}.stats{grid-template-columns:repeat(2,1fr)}.content-grid{grid-template-columns:1fr}}
     @media(max-width:480px){.top h1{font-size:25px}.welcome{padding:20px;align-items:flex-start;flex-direction:column}.stats{gap:9px}.stat{padding:14px}.stat-value{font-size:24px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.version{font-size:10px;padding:7px 9px}}
-  </style>
+  
+.editor-backdrop{position:fixed;inset:0;background:#f3f2e9;z-index:1200;display:none;overflow:auto}.editor-backdrop.show{display:block}
+.editor-shell{max-width:1400px;margin:0 auto;padding:22px}.editor-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.editor-top h2{margin:0;font-size:21px}.editor-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:18px;align-items:start}
+.editor-stage{background:#20231e;border-radius:16px;min-height:460px;display:flex;align-items:center;justify-content:center;padding:18px;overflow:hidden}
+#editorCanvas{max-width:100%;max-height:72vh;object-fit:contain;box-shadow:0 8px 30px #0005}
+.editor-panel{background:#fffdf7;border:1px solid var(--line);border-radius:15px;padding:17px;display:flex;flex-direction:column;gap:14px}
+.editor-control{display:flex;flex-direction:column;gap:6px}.editor-control label{font-size:12px;font-weight:650;display:flex;justify-content:space-between}
+.editor-control input[type=range]{width:100%;accent-color:#899b68}.editor-tools,.editor-actions{display:flex;gap:7px;flex-wrap:wrap}
+.editor-tools button,.editor-actions button{flex:1;min-width:76px}.editor-help{font-size:11px;color:var(--muted);line-height:1.5}
+.editor-status{font-size:12px;color:var(--muted);min-height:18px}@media(max-width:850px){.editor-layout{grid-template-columns:1fr}.editor-stage{min-height:260px}.editor-shell{padding:12px}.editor-top{align-items:flex-start}}
+</style>
 </head>
 <body>
 <div class="shell">
@@ -53,10 +64,10 @@
       <button class="nav-btn" data-page="finances"><span>◫</span>Finances</button>
       <button class="nav-btn" data-page="settings"><span>⚙</span>Settings</button>
     </nav></div>
-    <div class="side-bottom"><b>JRVS PROPERTY CO.</b><br>Simple tools for better property photography.<br><br><span id="sideVersion">Version 0.0.4</span></div>
+    <div class="side-bottom"><b>JRVS PROPERTY CO.</b><br>Simple tools for better property photography.<br><br><span id="sideVersion">Version 0.0.5</span></div>
   </aside>
   <main>
-    <header class="top"><div><div class="eyebrow">Business workspace</div><h1 id="pageTitle">Dashboard</h1><p class="sub" id="pageSub">A clear view of what's happening in your business.</p></div><div class="version" id="versionBadge">● Version 0.0.4</div></header>
+    <header class="top"><div><div class="eyebrow">Business workspace</div><h1 id="pageTitle">Dashboard</h1><p class="sub" id="pageSub">A clear view of what's happening in your business.</p></div><div class="version" id="versionBadge">● Version 0.0.5</div></header>
     <section class="page active" id="page-dashboard">
       <div class="welcome"><div><h2>Good to see you.</h2><p>Your business, organised in one place.</p></div><div class="date" id="today"></div></div>
       <div class="stats">
@@ -75,14 +86,29 @@
     <section class="page" id="page-photos"><div class="panel"><div class="panel-head"><div><h3>Photo library</h3><div class="muted">Browse projects, choose a cover image and manage each project’s full photo gallery.</div></div><span class="pill" id="photoCount">0 photos</span></div><div class="photo-toolbar"><select id="photoJobFilter" aria-label="Filter photos by job"><option value="all">All projects</option></select><select id="photoKind" aria-label="Photo type"><option value="Original">Original photos</option><option value="Edited">Edited photos</option></select><button class="primary" onclick="document.getElementById('photoFiles').click()">＋ Import photos</button><input id="photoFiles" type="file" accept="image/*" multiple hidden></div><div class="muted" style="margin-bottom:13px">In All jobs, each project appears once with its cover photo. Select a project to view its full gallery. Photos stay stored in this browser on this device.</div><div id="photoGrid" class="project-grid"><div class="empty" style="grid-column:1/-1"><b>No photos imported yet</b>Select a job and import your first property photos.</div></div></div></section>
     <section class="page" id="page-quotes"><div class="panel"><h3>Pricing & quotations</h3><p class="muted">Your service list and quote builder will live here.</p><div class="empty"><b>Quote builder coming next</b>We'll add editable packages, add-ons and branded PDF quotations in a future release.</div></div></section>
     <section class="page" id="page-finances"><div class="panel"><h3>Finances</h3><p class="muted">A simple place to understand money coming in and going out.</p><div class="empty"><b>Finance tracking coming next</b>Income, expenses, payment status and reporting will be developed in a later release.</div></div></section>
-    <section class="page" id="page-settings"><div class="panel"><h3>Application settings</h3><div class="row-card" style="margin-top:14px"><div><strong>Application version</strong><small>Use this to confirm updates are being received.</small></div><span class="pill" id="settingsVersion">V0.0.4</span></div><div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div><div class="row-card"><div><strong>Data storage</strong><small>V0.0.4 saves demo records in this browser on this device.</small></div><span class="pill">Local</span></div><div class="settings-note">Important: browser data is not yet cloud-synchronised. Keep backups of anything important. Automatic app updates do not replace or delete your saved records.</div></div></section>
-    <div class="footer">JRVS Property Co. · <span id="footerVersion">V0.0.4</span> · Built for better business days.</div>
+    <section class="page" id="page-settings"><div class="panel"><h3>Application settings</h3><div class="row-card" style="margin-top:14px"><div><strong>Application version</strong><small>Use this to confirm updates are being received.</small></div><span class="pill" id="settingsVersion">V0.0.5</span></div><div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div><div class="row-card"><div><strong>Data storage</strong><small>V0.0.5 saves demo records in this browser on this device.</small></div><span class="pill">Local</span></div><div class="settings-note">Important: browser data is not yet cloud-synchronised. Keep backups of anything important. Automatic app updates do not replace or delete your saved records.</div></div></section>
+    <div class="footer">JRVS Property Co. · <span id="footerVersion">V0.0.5</span> · Built for better business days.</div>
   </main>
 </div>
+
+<div class="editor-backdrop" id="editorBackdrop"><div class="editor-shell">
+<div class="editor-top"><div><div class="eyebrow">PHOTO WORKSPACE</div><h2 id="editorTitle">Edit photograph</h2><div class="muted" id="editorSubtitle">Original remains unchanged</div></div><button class="secondary" onclick="closeEditor()">← Back to gallery</button></div>
+<div class="editor-layout"><div class="editor-stage"><canvas id="editorCanvas"></canvas></div><aside class="editor-panel">
+<div><strong>Adjustments</strong><div class="editor-help">Changes are previewed here. Saving creates a separate edited copy; your original is never overwritten.</div></div>
+<div class="editor-control"><label>Brightness <span id="brightnessVal">0</span></label><input id="brightness" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
+<div class="editor-control"><label>Contrast <span id="contrastVal">0</span></label><input id="contrast" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
+<div class="editor-control"><label>Saturation <span id="saturationVal">0</span></label><input id="saturation" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
+<div class="editor-control"><label>Warmth <span id="warmthVal">0</span></label><input id="warmth" type="range" min="-50" max="50" value="0" oninput="editorChanged()"></div>
+<div class="editor-control"><label>Highlights <span id="highlightsVal">0</span></label><input id="highlights" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
+<div class="editor-control"><label>Shadows <span id="shadowsVal">0</span></label><input id="shadows" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
+<div><strong>Tools</strong><div class="editor-tools"><button class="secondary" onclick="rotateEditor(-90)">↶ Rotate</button><button class="secondary" onclick="rotateEditor(90)">↷ Rotate</button></div></div>
+<div class="editor-control"><label>Crop</label><select id="cropRatio" onchange="editorChanged()"><option value="original">Original ratio</option><option value="4:3">4:3</option><option value="3:2">3:2</option><option value="16:9">16:9</option><option value="1:1">Square</option></select><div class="editor-help">Crop is centred. Choose a ratio before saving.</div></div>
+<div class="editor-actions"><button class="secondary" onclick="resetEditor()">Reset</button><button class="primary" onclick="saveEditedPhoto()">Save edited copy</button></div><div class="editor-status" id="editorStatus"></div>
+</aside></div></div></div>
 <div class="modal-backdrop" id="photoPreviewBackdrop" onclick="if(event.target===this)closePhotoPreview()"><div class="modal preview-wrap"><div class="modal-head"><h2>Photo preview</h2><button class="close" onclick="closePhotoPreview()">×</button></div><img id="photoPreviewImage" class="photo-preview" alt="Selected property photograph"><div id="photoPreviewName" class="preview-name"></div></div></div>
 <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h2 id="modalTitle">New record</h2><button class="close" onclick="closeModal()">×</button></div><form id="recordForm"><div id="formFields" class="form-grid"></div><div style="display:flex;justify-content:flex-end;gap:9px;margin-top:18px"><button type="button" class="secondary" onclick="closeModal()">Cancel</button><button class="primary" type="submit">Save</button></div></form></div></div>
 <script>
-const APP_VERSION='0.0.4';
+const APP_VERSION='0.0.5';
 const pageInfo={dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -188,11 +214,57 @@ async function renderPhotos(){
  if(!rows.length){grid.innerHTML=back+'<div class="empty" style="grid-column:1/-1"><b>No photos in this project yet</b>Import photos using the button above.</div>';return}
  grid.innerHTML=back+rows.map(p=>{
    const u=URL.createObjectURL(p.blob);photoUrls.push(u);
-   return `<article class="photo-card"><img class="photo-thumb" src="${u}" alt="${esc(p.name)}" onclick="previewPhoto('${p.id}')"><div class="photo-info"><strong>${esc(p.name)} ${p.isCover?'<span class="cover-tag">Cover</span>':''}</strong><div class="photo-meta">${esc(p.type)} · ${bytes(p.size)}</div><div class="photo-controls"><select aria-label="Photo status" onchange="updatePhotoStatus('${p.id}',this.value)">${['Imported','Selected','Editing','Edited','Delivered'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}</select><button class="tiny-btn" onclick="setProjectCover('${p.id}')" ${p.isCover?'disabled':''}>${p.isCover?'Cover':'Set cover'}</button><button class="tiny-btn danger" onclick="deletePhoto('${p.id}')">Delete</button></div></div></article>`;
+   return `<article class="photo-card"><img class="photo-thumb" src="${u}" alt="${esc(p.name)}" onclick="previewPhoto('${p.id}')"><div class="photo-info"><strong>${esc(p.name)} ${p.isCover?'<span class="cover-tag">Cover</span>':''}</strong><div class="photo-meta">${esc(p.type)} · ${bytes(p.size)}</div><div class="photo-controls"><select aria-label="Photo status" onchange="updatePhotoStatus('${p.id}',this.value)">${['Imported','Selected','Editing','Edited','Delivered'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}</select><button class="tiny-btn" onclick="openEditor('${p.id}')">Edit</button><button class="tiny-btn" onclick="setProjectCover('${p.id}')" ${p.isCover?'disabled':''}>${p.isCover?'Cover':'Set cover'}</button><button class="tiny-btn danger" onclick="deletePhoto('${p.id}')">Delete</button></div></div></article>`;
  }).join('');
 }
 async function updatePhotoStatus(id,status){const p=photoRecords.find(x=>x.id===id);if(p){p.status=status;await photoRequest('readwrite','put',p);await loadPhotos()}}
 async function deletePhoto(id){const p=photoRecords.find(x=>x.id===id);if(p&&confirm('Delete '+p.name+' from the photo library?')){const wasCover=!!p.isCover;await photoRequest('readwrite','delete',id);if(wasCover){const next=photoRecords.filter(x=>x.jobId===p.jobId&&x.id!==id).sort((a,b)=>new Date(a.addedAt||0)-new Date(b.addedAt||0))[0];if(next){next.isCover=true;await photoRequest('readwrite','put',next)}}await loadPhotos()}}
+
+let editorPhoto=null,editorImage=null,editorRotation=0,editorBusy=false;
+function openEditor(id){
+ const p=photoRecords.find(x=>x.id===id);if(!p)return;editorPhoto=p;editorRotation=0;
+ ['brightness','contrast','saturation','warmth','highlights','shadows'].forEach(k=>document.getElementById(k).value=0);
+ document.getElementById('cropRatio').value='original';document.getElementById('editorTitle').textContent=p.name;
+ document.getElementById('editorSubtitle').textContent=p.jobName+' · Original remains unchanged';document.getElementById('editorStatus').textContent='';
+ const img=new Image(),url=URL.createObjectURL(p.blob);
+ img.onload=()=>{if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=img;editorImage._url=url;document.getElementById('editorBackdrop').classList.add('show');drawEditor()};
+ img.onerror=()=>{URL.revokeObjectURL(url);alert('This image could not be opened in the editor.')};img.src=url;
+}
+function closeEditor(){document.getElementById('editorBackdrop').classList.remove('show');if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=null;editorPhoto=null}
+function rotateEditor(deg){editorRotation=(editorRotation+deg+360)%360;drawEditor()}
+function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';editorRotation=0;drawEditor()}
+function editorChanged(){drawEditor()}
+function drawEditor(){
+ if(!editorImage||!editorPhoto)return;const canvas=document.getElementById('editorCanvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
+ const sw=editorImage.naturalWidth,sh=editorImage.naturalHeight,rot=editorRotation*Math.PI/180,swapped=editorRotation%180!==0;
+ let rw=swapped?sh:sw,rh=swapped?sw:sh,ratio=document.getElementById('cropRatio').value;
+ if(ratio!=='original'){const a=ratio.split(':').map(Number),target=a[0]/a[1],current=rw/rh;if(current>target)rw=rh*target;else rh=rw/target}
+ canvas.width=Math.max(1,Math.round(rw));canvas.height=Math.max(1,Math.round(rh));
+ const temp=document.createElement('canvas');temp.width=swapped?sh:sw;temp.height=swapped?sw:sh;
+ const t=temp.getContext('2d');t.translate(temp.width/2,temp.height/2);t.rotate(rot);t.drawImage(editorImage,-sw/2,-sh/2);
+ ctx.drawImage(temp,(temp.width-rw)/2,(temp.height-rh)/2,rw,rh,0,0,canvas.width,canvas.height);
+ const image=ctx.getImageData(0,0,canvas.width,canvas.height),d=image.data;
+ const v={brightness:+brightness.value,contrast:+contrast.value,saturation:+saturation.value,warmth:+warmth.value,highlights:+highlights.value,shadows:+shadows.value};
+ Object.keys(v).forEach(k=>document.getElementById(k+'Val').textContent=v[k]>0?'+'+v[k]:v[k]);
+ const c=(259*(v.contrast+255))/(255*(259-v.contrast));
+ for(let i=0;i<d.length;i+=4){let r=d[i],g=d[i+1],b=d[i+2],lum=.2126*r+.7152*g+.0722*b,shadow=1-lum/255,high=lum/255,tone=v.brightness+v.shadows*shadow*.75+v.highlights*high*.75;
+ r=(r-128)*c+128+tone+v.warmth*.65;g=(g-128)*c+128+tone;b=(b-128)*c+128+tone-v.warmth*.65;
+ const grey=.2126*r+.7152*g+.0722*b,sat=1+v.saturation/100;
+ d[i]=Math.max(0,Math.min(255,grey+(r-grey)*sat));d[i+1]=Math.max(0,Math.min(255,grey+(g-grey)*sat));d[i+2]=Math.max(0,Math.min(255,grey+(b-grey)*sat))}
+ ctx.putImageData(image,0,0);
+}
+async function saveEditedPhoto(){
+ if(!editorPhoto||!editorImage||editorBusy)return;editorBusy=true;const btn=document.querySelector('#editorBackdrop .editor-actions .primary');btn.disabled=true;
+ document.getElementById('editorStatus').textContent='Preparing edited copy…';
+ try{const canvas=document.getElementById('editorCanvas'),mime=/image\/(jpeg|png|webp)/.test(editorPhoto.mime)?editorPhoto.mime:'image/jpeg';
+ const blob=await new Promise(resolve=>canvas.toBlob(resolve,mime,mime==='image/jpeg'?.94:undefined));if(!blob)throw Error('No output');
+ const rec={id:Date.now().toString()+Math.random().toString(16).slice(2),jobId:editorPhoto.jobId,jobName:editorPhoto.jobName,name:editorPhoto.name.replace(/\.[^.]+$/,'')+'_edited.'+(mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg'),type:'Edited',size:blob.size,mime:blob.type,addedAt:new Date().toISOString(),status:'Edited',isCover:false,sourcePhotoId:editorPhoto.id,blob};
+ await photoRequest('readwrite','put',rec);document.getElementById('editorStatus').textContent='Edited copy saved to this project gallery.';
+ const jobId=editorPhoto.jobId;setTimeout(async()=>{closeEditor();document.getElementById('photoJobFilter').value=jobId;await loadPhotos()},500)
+ }catch(e){document.getElementById('editorStatus').textContent='Could not save the edited copy. Check available browser storage.'}
+ finally{editorBusy=false;btn.disabled=false}
+}
+
 let previewUrl=null;
 function previewPhoto(id){const p=photoRecords.find(x=>x.id===id);if(!p)return;if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=URL.createObjectURL(p.blob);document.getElementById('photoPreviewImage').src=previewUrl;document.getElementById('photoPreviewName').textContent=p.name+' · '+p.jobName;document.getElementById('photoPreviewBackdrop').classList.add('show')}
 function closePhotoPreview(){document.getElementById('photoPreviewBackdrop').classList.remove('show');document.getElementById('photoPreviewImage').src='';if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null}}
