@@ -24,7 +24,7 @@
     .content-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:16px}.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.panel h3{margin:0;font-size:16px}.muted{color:var(--muted);font-size:12px}.primary{background:var(--sage);color:white;border:0;padding:10px 15px;border-radius:10px;font-weight:700}.primary:hover{background:var(--sage-dark)}.secondary{background:#edf0e5;color:#526143;border:0;padding:9px 12px;border-radius:9px;font-weight:650}
     .empty{padding:28px 12px;text-align:center;color:#8a9180;border:1px dashed #d9ddcf;border-radius:13px}.empty b{display:block;color:#59634f;margin-bottom:4px}
     .job{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-top:1px solid var(--line);gap:10px}.job strong{display:block;font-size:13px}.job small{color:var(--muted)}.pill{font-size:10px;padding:5px 8px;border-radius:20px;background:#edf0e5;color:#586747;font-weight:700}
-    .page{display:none}.page.active{display:block}.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.list{display:grid;gap:10px}.row-card{padding:15px 17px;border:1px solid var(--line);background:var(--paper);border-radius:13px;display:flex;justify-content:space-between;gap:12px;align-items:center}.row-card strong{display:block}.row-card small{color:var(--muted)}
+    .page{display:none}.page.active{display:block}.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.list{display:grid;gap:10px}.row-card{padding:15px 17px;border:1px solid var(--line);background:var(--paper);border-radius:13px;display:flex;justify-content:space-between;gap:12px;align-items:center}.row-card strong{display:block}.row-card small{color:var(--muted)}.row-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.tiny-btn{border:1px solid var(--line);background:#fffefa;color:#59634f;padding:6px 9px;border-radius:8px;font-size:11px;font-weight:700}.tiny-btn.danger{color:#a14f43}
     .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.field{display:grid;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:700;color:#65705a}.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid #dfe2d6;border-radius:10px;background:#fffefa;color:var(--ink);outline-color:var(--sage)}.modal-backdrop{position:fixed;inset:0;background:#20271d77;display:none;align-items:center;justify-content:center;padding:18px;z-index:5}.modal-backdrop.show{display:flex}.modal{width:min(520px,100%);background:var(--paper);border-radius:18px;padding:23px;box-shadow:0 25px 80px #0003}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.modal-head h2{margin:0;font-size:19px}.close{border:0;background:#eff0e9;border-radius:8px;width:32px;height:32px}
     .settings-note{background:#f0f2e9;padding:14px;border-radius:12px;color:#626d56;font-size:13px;margin-top:15px}.footer{margin-top:25px;color:#929887;font-size:11px;text-align:center}
     @media(max-width:900px){.shell{grid-template-columns:1fr}aside{position:sticky;top:0;z-index:3;padding:10px 12px;border-right:0;border-bottom:1px solid #e9e3d2}.brand{padding:0 5px}.brand img{width:36px;height:36px}.brand-mark{font-size:18px}aside .nav-label,aside .side-bottom{display:none}nav{display:flex;overflow-x:auto;gap:4px}.nav-btn{white-space:nowrap;padding:8px 10px;font-size:12px}.nav-btn span:first-child{font-size:14px;width:auto}main{padding:22px 16px}.stats{grid-template-columns:repeat(2,1fr)}.content-grid{grid-template-columns:1fr}}
@@ -44,10 +44,10 @@
       <button class="nav-btn" data-page="finances"><span>◫</span>Finances</button>
       <button class="nav-btn" data-page="settings"><span>⚙</span>Settings</button>
     </nav></div>
-    <div class="side-bottom"><b>JRVS PROPERTY CO.</b><br>Simple tools for better property photography.<br><br><span id="sideVersion">Version 0.0.1</span></div>
+    <div class="side-bottom"><b>JRVS PROPERTY CO.</b><br>Simple tools for better property photography.<br><br><span id="sideVersion">Version 0.0.2</span></div>
   </aside>
   <main>
-    <header class="top"><div><div class="eyebrow">Business workspace</div><h1 id="pageTitle">Dashboard</h1><p class="sub" id="pageSub">A clear view of what's happening in your business.</p></div><div class="version" id="versionBadge">● Version 0.0.1</div></header>
+    <header class="top"><div><div class="eyebrow">Business workspace</div><h1 id="pageTitle">Dashboard</h1><p class="sub" id="pageSub">A clear view of what's happening in your business.</p></div><div class="version" id="versionBadge">● Version 0.0.2</div></header>
     <section class="page active" id="page-dashboard">
       <div class="welcome"><div><h2>Good to see you.</h2><p>Your business, organised in one place.</p></div><div class="date" id="today"></div></div>
       <div class="stats">
@@ -63,36 +63,68 @@
     </section>
     <section class="page" id="page-jobs"><div class="toolbar"><div><h2 style="margin:0">Jobs</h2><div class="muted">Manage property photography work.</div></div><button class="primary" onclick="openModal('job')">＋ New job</button></div><div id="jobsList" class="list"></div></section>
     <section class="page" id="page-clients"><div class="toolbar"><div><h2 style="margin:0">Clients</h2><div class="muted">Keep client contact details together.</div></div><button class="primary" onclick="openModal('client')">＋ Add client</button></div><div id="clientsList" class="list"></div></section>
-    <section class="page" id="page-photos"><div class="panel"><div class="panel-head"><div><h3>Photo library</h3><div class="muted">A starting point for your job-linked photo workflow.</div></div></div><div class="empty"><b>Photo management is coming next</b>V0.0.1 establishes the workspace. Local photo importing, previews, folders and editing tools will be added in a later release.</div></div></section>
+    <section class="page" id="page-photos"><div class="panel"><div class="panel-head"><div><h3>Photo library</h3><div class="muted">A starting point for your job-linked photo workflow.</div></div></div><div class="empty"><b>Photo management is coming next</b>V0.0.2 establishes the workspace. Local photo importing, previews, folders and editing tools will be added in a later release.</div></div></section>
     <section class="page" id="page-quotes"><div class="panel"><h3>Pricing & quotations</h3><p class="muted">Your service list and quote builder will live here.</p><div class="empty"><b>Quote builder coming next</b>We'll add editable packages, add-ons and branded PDF quotations in a future release.</div></div></section>
     <section class="page" id="page-finances"><div class="panel"><h3>Finances</h3><p class="muted">A simple place to understand money coming in and going out.</p><div class="empty"><b>Finance tracking coming next</b>Income, expenses, payment status and reporting will be developed in a later release.</div></div></section>
-    <section class="page" id="page-settings"><div class="panel"><h3>Application settings</h3><div class="row-card" style="margin-top:14px"><div><strong>Application version</strong><small>Use this to confirm updates are being received.</small></div><span class="pill" id="settingsVersion">V0.0.1</span></div><div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div><div class="row-card"><div><strong>Data storage</strong><small>V0.0.1 saves demo records in this browser on this device.</small></div><span class="pill">Local</span></div><div class="settings-note">Important: browser data is not yet cloud-synchronised. Keep backups of anything important. Automatic app updates do not replace or delete your saved records.</div></div></section>
-    <div class="footer">JRVS Property Co. · <span id="footerVersion">V0.0.1</span> · Built for better business days.</div>
+    <section class="page" id="page-settings"><div class="panel"><h3>Application settings</h3><div class="row-card" style="margin-top:14px"><div><strong>Application version</strong><small>Use this to confirm updates are being received.</small></div><span class="pill" id="settingsVersion">V0.0.2</span></div><div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div><div class="row-card"><div><strong>Data storage</strong><small>V0.0.2 saves demo records in this browser on this device.</small></div><span class="pill">Local</span></div><div class="settings-note">Important: browser data is not yet cloud-synchronised. Keep backups of anything important. Automatic app updates do not replace or delete your saved records.</div></div></section>
+    <div class="footer">JRVS Property Co. · <span id="footerVersion">V0.0.2</span> · Built for better business days.</div>
   </main>
 </div>
 <div class="modal-backdrop" id="modalBackdrop"><div class="modal"><div class="modal-head"><h2 id="modalTitle">New record</h2><button class="close" onclick="closeModal()">×</button></div><form id="recordForm"><div id="formFields" class="form-grid"></div><div style="display:flex;justify-content:flex-end;gap:9px;margin-top:18px"><button type="button" class="secondary" onclick="closeModal()">Cancel</button><button class="primary" type="submit">Save</button></div></form></div></div>
 <script>
-const APP_VERSION='0.0.1';
+const APP_VERSION='0.0.2';
 const pageInfo={dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
 const save=()=>localStorage.setItem('jrvs-data',JSON.stringify(data));
 function showPage(name){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.page===name));document.getElementById('pageTitle').textContent=pageInfo[name][0];document.getElementById('pageSub').textContent=pageInfo[name][1];}
 document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
-function openModal(type){const fields=document.getElementById('formFields');document.getElementById('modalTitle').textContent=type==='job'?'Create a job':'Add a client';fields.innerHTML=type==='job'?`
-<div class="field"><label>Job / property name</label><input name="name" required placeholder="e.g. 12 Ocean Street"></div>
-<div class="field"><label>Client</label><input name="client" placeholder="Client or agency"></div>
-<div class="field"><label>Scheduled date</label><input name="date" type="date"></div>
-<div class="field"><label>Status</label><select name="status"><option>Enquiry</option><option>Booked</option><option>In progress</option><option>Editing</option><option>Delivered</option></select></div>
-<div class="field full"><label>Notes</label><textarea name="notes" rows="2" placeholder="Access details, requested services..."></textarea></div>`:`
-<div class="field full"><label>Client / agency name</label><input name="name" required placeholder="Client name"></div>
-<div class="field"><label>Email</label><input name="email" type="email" placeholder="name@example.com"></div>
-<div class="field"><label>Phone</label><input name="phone" type="tel" placeholder="04xx xxx xxx"></div>
-<div class="field full"><label>Notes</label><textarea name="notes" rows="2"></textarea></div>`;
-document.getElementById('recordForm').dataset.type=type;document.getElementById('modalBackdrop').classList.add('show')}
+function openModal(type,id=null){
+ const fields=document.getElementById('formFields'),existing=id?(type==='job'?data.jobs:data.clients).find(x=>x.id===id):null;
+ document.getElementById('modalTitle').textContent=(existing?'Edit ':'Create a ')+(type==='job'?'job':'client');
+ fields.innerHTML=type==='job'?`
+ <div class="field"><label>Job / property name</label><input name="name" required placeholder="e.g. 12 Ocean Street"></div>
+ <div class="field"><label>Client</label><input name="client" list="clientOptions" placeholder="Client or agency"><datalist id="clientOptions">${data.clients.map(c=>`<option value="${esc(c.name)}">`).join('')}</datalist></div>
+ <div class="field"><label>Scheduled date</label><input name="date" type="date"></div>
+ <div class="field"><label>Status</label><select name="status"><option>Enquiry</option><option>Booked</option><option>In Progress</option><option>Editing</option><option>Delivered</option></select></div>
+ <div class="field full"><label>Property address</label><input name="address" placeholder="Street, suburb"></div>
+ <div class="field full"><label>Notes</label><textarea name="notes" rows="3" placeholder="Access details, requested services..."></textarea></div>`:`
+ <div class="field full"><label>Client / agency name</label><input name="name" required placeholder="Client name"></div>
+ <div class="field"><label>Email</label><input name="email" type="email" placeholder="name@example.com"></div>
+ <div class="field"><label>Phone</label><input name="phone" type="tel" placeholder="04xx xxx xxx"></div>
+ <div class="field full"><label>Company / agency</label><input name="company" placeholder="Optional"></div>
+ <div class="field full"><label>Notes</label><textarea name="notes" rows="3"></textarea></div>`;
+ const form=document.getElementById('recordForm');form.dataset.type=type;form.dataset.editId=id||'';
+ if(existing)Object.entries(existing).forEach(([k,v])=>{const el=form.elements.namedItem(k);if(el)el.value=v});
+ document.getElementById('modalBackdrop').classList.add('show');
+}
 function closeModal(){document.getElementById('modalBackdrop').classList.remove('show')}
-document.getElementById('recordForm').addEventListener('submit',e=>{e.preventDefault();const type=e.target.dataset.type;const item=Object.fromEntries(new FormData(e.target));item.id=Date.now().toString();if(type==='job')data.jobs.unshift(item);else data.clients.unshift(item);save();closeModal();e.target.reset();render()});
-function render(){document.getElementById('activeJobs').textContent=data.jobs.filter(j=>!['Delivered'].includes(j.status)).length;document.getElementById('clientCount').textContent=data.clients.length;document.getElementById('quoteCount').textContent=data.quotes.length;document.getElementById('incomeTotal').textContent='$'+data.income.reduce((s,x)=>s+(Number(x.amount)||0),0).toLocaleString('en-AU');const jobHtml=data.jobs.map(j=>`<div class="row-card"><div><strong>${esc(j.name)}</strong><small>${esc(j.client||'No client')} · ${esc(j.date||'No date')}</small></div><span class="pill">${esc(j.status)}</span></div>`).join('');document.getElementById('jobsList').innerHTML=jobHtml||'<div class="empty"><b>No jobs added yet</b>Create your first job to see it here.</div>';document.getElementById('recentJobs').className=data.jobs.length?'':'empty';document.getElementById('recentJobs').innerHTML=data.jobs.slice(0,5).map(j=>`<div class="job"><div><strong>${esc(j.name)}</strong><small>${esc(j.client||'No client')} · ${esc(j.date||'No date')}</small></div><span class="pill">${esc(j.status)}</span></div>`).join('')||'<b>No jobs yet</b>Add your first job to get started.';document.getElementById('clientsList').innerHTML=data.clients.map(c=>`<div class="row-card"><div><strong>${esc(c.name)}</strong><small>${esc(c.email||'No email')} · ${esc(c.phone||'No phone')}</small></div><span class="pill">Client</span></div>`).join('')||'<div class="empty"><b>No clients yet</b>Add a client to get started.</div>'}
+function deleteRecord(type,id){
+ const list=type==='job'?data.jobs:data.clients,item=list.find(x=>x.id===id);if(!item)return;
+ if(type==='client'&&data.jobs.some(j=>(j.client||'').toLowerCase()===item.name.toLowerCase())&&!confirm('This client is linked to jobs. Delete the client record? Job details will remain.'))return;
+ if(!confirm(`Delete "${item.name}"? This cannot be undone.`))return;
+ if(type==='job')data.jobs=data.jobs.filter(x=>x.id!==id);else data.clients=data.clients.filter(x=>x.id!==id);
+ save();render();
+}
+function viewJob(id){const j=data.jobs.find(x=>x.id===id);if(!j)return;alert(`JOB DETAILS\n\n${j.name}\nStatus: ${j.status||'Enquiry'}\nClient: ${j.client||'Not assigned'}\nDate: ${j.date||'Not scheduled'}\nAddress: ${j.address||'Not entered'}\n\nNotes:\n${j.notes||'None'}`)}
+function viewClient(id){const c=data.clients.find(x=>x.id===id);if(!c)return;const jobs=data.jobs.filter(j=>(j.client||'').toLowerCase()===c.name.toLowerCase());alert(`CLIENT PROFILE\n\n${c.name}\nCompany: ${c.company||'—'}\nEmail: ${c.email||'—'}\nPhone: ${c.phone||'—'}\n\nLINKED JOBS (${jobs.length})\n${jobs.map(j=>'• '+j.name+' — '+(j.status||'Enquiry')).join('\n')||'No linked jobs yet.'}\n\nNotes:\n${c.notes||'None'}`)}
+document.getElementById('recordForm').addEventListener('submit',e=>{
+ e.preventDefault();const type=e.target.dataset.type,id=e.target.dataset.editId,item=Object.fromEntries(new FormData(e.target));
+ if(id){const list=type==='job'?data.jobs:data.clients,i=list.findIndex(x=>x.id===id);if(i>=0)list[i]={...list[i],...item};}
+ else{item.id=Date.now().toString();if(type==='job')data.jobs.unshift(item);else data.clients.unshift(item);}
+ save();closeModal();e.target.reset();render();
+});
+function render(){
+ document.getElementById('activeJobs').textContent=data.jobs.filter(j=>j.status!=='Delivered').length;
+ document.getElementById('clientCount').textContent=data.clients.length;
+ document.getElementById('quoteCount').textContent=data.quotes.length;
+ document.getElementById('incomeTotal').textContent='$'+data.income.reduce((s,x)=>s+(Number(x.amount)||0),0).toLocaleString('en-AU');
+ const jobCard=j=>`<div class="row-card"><div style="min-width:0"><strong>${esc(j.name)}</strong><small>${esc(j.client||'No client')} · ${esc(j.date||'No date')} · ${esc(j.address||'Address not entered')}</small></div><div class="row-actions"><span class="pill">${esc(j.status||'Enquiry')}</span><button class="tiny-btn" onclick="viewJob('${j.id}')">View</button><button class="tiny-btn" onclick="openModal('job','${j.id}')">Edit</button><button class="tiny-btn danger" onclick="deleteRecord('job','${j.id}')">Delete</button></div></div>`;
+ document.getElementById('jobsList').innerHTML=data.jobs.map(jobCard).join('')||'<div class="empty"><b>No jobs added yet</b>Create your first job to see it here.</div>';
+ document.getElementById('recentJobs').className=data.jobs.length?'':'empty';
+ document.getElementById('recentJobs').innerHTML=data.jobs.slice(0,5).map(j=>`<div class="job"><div><strong>${esc(j.name)}</strong><small>${esc(j.client||'No client')} · ${esc(j.date||'No date')}</small></div><span class="pill">${esc(j.status||'Enquiry')}</span></div>`).join('')||'<b>No jobs yet</b>Add your first job to get started.';
+ document.getElementById('clientsList').innerHTML=data.clients.map(c=>{const count=data.jobs.filter(j=>(j.client||'').toLowerCase()===c.name.toLowerCase()).length;return `<div class="row-card"><div style="min-width:0"><strong>${esc(c.name)}</strong><small>${esc(c.company||'')}${c.company?' · ':''}${esc(c.email||'No email')} · ${esc(c.phone||'No phone')} · ${count} linked job${count===1?'':'s'}</small></div><div class="row-actions"><button class="tiny-btn" onclick="viewClient('${c.id}')">Profile</button><button class="tiny-btn" onclick="openModal('client','${c.id}')">Edit</button><button class="tiny-btn danger" onclick="deleteRecord('client','${c.id}')">Delete</button></div></div>`}).join('')||'<div class="empty"><b>No clients yet</b>Add a client to get started.</div>';
+}
 function esc(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 document.getElementById('today').textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 ['versionBadge','sideVersion','settingsVersion','footerVersion'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=(id==='versionBadge'?'● Version ':'V')+APP_VERSION});
