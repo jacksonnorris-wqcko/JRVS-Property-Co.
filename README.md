@@ -1,12 +1,9 @@
-# JRVS Property Co. V0.1.5.1 Hotfix
+# JRVS Property Co. — V0.1.5.2 UI & notification hotfix
 
-This is a logo-rendering hotfix for V0.1.5 Document Generation. The approved JRVS logo is embedded directly in quotation and invoice print documents, avoiding broken relative image paths in the browser print window.
+Built on V0.1.5.1. This release reduces unnecessary vertical scrolling with a denser workspace layout, compact cards and controls, and a two-column Pricing & Quotes layout on desktop. On smaller screens the layout stacks responsively.
 
-## Install
-Upload and replace the files in the repository root with the contents of this ZIP. Keep using the same GitHub Pages URL and browser profile.
+Native browser alert pop-ups have been replaced with in-app toast notifications. Native confirmation prompts have been replaced with a branded in-app confirmation dialog. PDF generation still opens a separate print window because the browser print dialog is required for Save as PDF.
 
-## Data preservation
-This hotfix does not clear, migrate, or overwrite `jrvs-data` localStorage or the `jrvs-photo-library` IndexedDB database.
+Existing data keys are unchanged: `jrvs-data` in localStorage and `jrvs-photo-library` in IndexedDB. No data migration, clearing or photo deletion is performed.
 
-## Verification
-The logo is embedded as a compact JPEG data URI in the document template. Version metadata and service-worker cache are updated to 0.1.5.1.
+Upload all six files from this ZIP to the existing GitHub Pages repository root, replacing matching files. Continue using the same browser profile and GitHub Pages URL.
