@@ -1,6 +1,6 @@
 {
-  "version": "0.2.0",
+  "version": "0.2.1.1",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-04",
-  "notes": "Mobile compatibility release. Preserves desktop experience while adding an iPhone-optimised responsive layout, safe-area support, touch-friendly navigation and forms, mobile photo gallery and editor layouts, and Safari Add to Home Screen support. Existing local business, calendar and photo storage identifiers remain unchanged."
+  "notes": "Safer cloud backup foundation: verified photo downloads before restore, local pre-restore backup, additive photo restore, and no overwrite of an existing cloud snapshot."
 }
