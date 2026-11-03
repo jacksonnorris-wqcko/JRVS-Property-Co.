@@ -1,6 +1,6 @@
 {
-  "version": "0.1.0",
+  "version": "0.1.1",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-03",
-  "notes": "New baseline release. Adds quote-to-job conversion for accepted quotes, a job workflow status foundation, and dashboard attention list for sent quotes and outstanding income. Preserves existing data schema and photo library."
+  "notes": "Fixes dashboard Needs attention updates after quote creation/status changes. Draft quotes now appear as ready to send. Quote job selector filters to jobs belonging to the selected client and updates when client selection changes."
 }
