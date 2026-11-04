@@ -1,6 +1,6 @@
 {
-  "version": "0.4.1.1",
+  "version": "0.5.0",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-05",
-  "notes": "Dashboard welcome component refinement. Corrected stylesheet placement, rebuilt responsive welcome/time/weather layout, and removed dashboard styles accidentally embedded in the PDF template."
+  "notes": "Batch Studio foundation: multi-select project photos and apply consistent property presets to create separate edited copies while preserving originals."
 }
