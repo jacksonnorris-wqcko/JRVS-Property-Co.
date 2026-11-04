@@ -776,7 +776,7 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 @media(max-width:600px){#page-settings .cloud-control-card{padding:16px}#page-settings .cloud-sync-panel{align-items:stretch;flex-direction:column}#page-settings .cloud-sync-button{width:100%}#page-settings .cloud-account-caption{display:none}#page-settings .cloud-details-hint{display:none}}
 
 
-/* V0.5.0 Batch Studio */
+/* V0.5.1 Batch Studio */
 .batch-studio{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#f7f1df;border:1px solid #d9dfca;border-radius:14px;padding:12px 14px;margin:12px 0 16px;color:#34402d}
 .batch-studio .batch-count{font-weight:800;margin-right:auto}.batch-studio select{min-width:190px}.photo-select-wrap{position:absolute;top:10px;left:10px;z-index:3;background:#fffdf0;border:1px solid #899b68;border-radius:9px;padding:6px 9px;box-shadow:0 2px 8px #0002;font-size:12px;font-weight:750;color:#34402d}.photo-select-wrap input{accent-color:#66794d;width:17px;height:17px;vertical-align:middle;margin:0 5px 0 0}.photo-card.is-batch-selected{outline:3px solid #899b68;outline-offset:2px}.batch-progress{font-size:12px;color:#566047;min-width:100%}
 @media(max-width:700px){.batch-studio{align-items:stretch}.batch-studio select,.batch-studio button{width:100%}.batch-studio .batch-count{width:100%}}
@@ -1303,7 +1303,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.5.0';
+const APP_VERSION='0.5.1';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -1679,14 +1679,43 @@ function updateBatchSelectionCount(){const el=document.getElementById('batchSele
 function selectAllVisiblePhotos(){document.querySelectorAll('#photoGrid .photo-select-wrap input').forEach(input=>{input.checked=true;const m=input.getAttribute('onchange')?.match(/togglePhotoSelection\('([^']+)'/);if(m)selectedPhotoIds.add(m[1]);input.closest('.photo-card')?.classList.add('is-batch-selected')});updateBatchSelectionCount()}
 function clearPhotoSelection(){selectedPhotoIds.clear();document.querySelectorAll('#photoGrid .photo-select-wrap input').forEach(input=>{input.checked=false;input.closest('.photo-card')?.classList.remove('is-batch-selected')});updateBatchSelectionCount()}
 async function applyBatchPresetToSelection(){
- const ids=[...selectedPhotoIds],targets=ids.map(id=>photoRecords.find(p=>p.id===id)).filter(p=>p&&p.type==='Original'&&!p.isRaw);
- const progress=document.getElementById('batchProgress');if(!targets.length){showToast('Select at least one editable original photo.');return}
+ const ids=[...selectedPhotoIds],targets=ids.map(id=>photoRecords.find(p=>String(p.id)===String(id))).filter(p=>p&&p.type==='Original'&&!p.isRaw);
+ const progress=document.getElementById('batchProgress');
+ if(!targets.length){showToast('Select at least one editable original photo.');if(progress)progress.textContent='No editable original photos selected.';return}
  const preset=document.getElementById('batchPreset')?.value||'natural';
- if(!await showConfirm(`Apply ${document.querySelector('#batchPreset option:checked')?.textContent||preset} to ${targets.length} selected original photos? New edited copies will be created; originals stay untouched.`))return;
- const settings=editorSettingsFromPreset(preset),button=document.querySelector('.batch-studio .primary');if(button)button.disabled=true;let done=0,failed=0;
- try{for(const target of targets){if(progress)progress.textContent=`Applying preset · ${done+failed+1} of ${targets.length}: ${target.name}`;let url;try{url=URL.createObjectURL(target.blob);const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=url});editorPhoto=target;editorImage=img;editorRotation=0;settingsApplyToEditor(settings);const blob=await createFullQualityEditorBlob('image/jpeg',.94);if(!blob)throw Error('render failed');const rec={id:Date.now().toString()+Math.random().toString(16).slice(2),jobId:target.jobId,jobName:target.jobName,name:target.name.replace(/\.[^.]+$/,'')+'_edited.jpg',type:'Edited',size:blob.size,mime:'image/jpeg',addedAt:new Date().toISOString(),status:'Edited',isCover:false,sourcePhotoId:target.id,blob};await photoRequest('readwrite','put',rec);done++;}catch(e){failed++;}finally{if(url)URL.revokeObjectURL(url)}}
- if(progress)progress.textContent=`Finished: ${done} edited copies created${failed?` · ${failed} failed`:''}. Originals were preserved.`;showToast(`${done} edited copies created${failed?`; ${failed} failed`:''}.`);
- }finally{editorImage=null;editorPhoto=null;if(button)button.disabled=false;await loadPhotos();}
+ const presetLabel=document.querySelector('#batchPreset option:checked')?.textContent||preset;
+ const accepted=await showConfirm(`Apply ${presetLabel} to ${targets.length} selected original photos? New edited copies will be created; originals stay untouched.`,{title:'Apply batch edit',confirmText:'Apply to photos',danger:false});
+ if(!accepted)return;
+ const settings=editorSettingsFromPreset(preset),button=document.querySelector('.batch-studio .primary');
+ if(button)button.disabled=true;
+ let done=0,failed=0;const errors=[];
+ try{
+  for(const target of targets){
+   if(progress)progress.textContent=`Applying ${presetLabel} · ${done+failed+1} of ${targets.length}: ${target.name}`;
+   let url=null;
+   try{
+    if(!(target.blob instanceof Blob))throw new Error('Original photo data is unavailable');
+    url=URL.createObjectURL(target.blob);
+    const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('Photo could not be decoded'));im.src=url});
+    editorPhoto=target;editorImage=img;editorRotation=0;
+    // The editor controls remain mounted in the hidden editor dialog. Set every control
+    // explicitly before rendering so batch processing does not depend on opening the editor.
+    settingsApplyToEditor(settings);
+    const rendered=createEditorRenderCanvas(0);
+    if(!rendered?.canvas)throw new Error('Could not render edited image');
+    const blob=await new Promise((resolve,reject)=>rendered.canvas.toBlob(b=>b?resolve(b):reject(new Error('JPEG export failed')),'image/jpeg',.94));
+    if(!blob||!blob.size)throw new Error('Edited image was empty');
+    const rec={id:Date.now().toString()+Math.random().toString(16).slice(2),jobId:target.jobId,jobName:target.jobName,name:target.name.replace(/\.[^.]+$/,'')+'_edited.jpg',type:'Edited',size:blob.size,mime:'image/jpeg',addedAt:new Date().toISOString(),status:'Edited',isCover:false,sourcePhotoId:target.id,blob};
+    await photoRequest('readwrite','put',rec);done++;
+   }catch(e){failed++;errors.push(`${target.name}: ${e?.message||'Unknown error'}`);}
+   finally{if(url)URL.revokeObjectURL(url)}
+  }
+  const summary=`Batch complete: ${done} edited ${done===1?'copy':'copies'} created${failed?` · ${failed} failed`:''}. Originals were preserved.`;
+  if(progress)progress.textContent=summary+(errors.length?` First issue: ${errors[0]}`:'');
+  if(done)showToast(`${done} edited ${done===1?'copy':'copies'} created${failed?`; ${failed} failed`:''}.`);
+  else showToast(`Batch edit couldn't create any copies. ${errors[0]||'Please try again.'}`);
+ }catch(e){if(progress)progress.textContent=`Batch edit failed: ${e?.message||'Unknown error'}`;showToast(`Batch edit failed: ${e?.message||'Unknown error'}`)}
+ finally{editorImage=null;editorPhoto=null;if(button)button.disabled=false;await loadPhotos();}
 }
 function editorSettingsFromPreset(name){const presets={natural:{brightness:5,contrast:7,saturation:1,warmth:0,highlights:-18,shadows:18,exposure:.10,whites:7,blacks:-5,temperature:-2,tint:0,vibrance:3,clarity:5,sharpening:12,vignette:0},bright:{brightness:10,contrast:3,saturation:0,warmth:-1,highlights:-24,shadows:28,exposure:.22,whites:12,blacks:-4,temperature:-3,tint:0,vibrance:2,clarity:3,sharpening:10,vignette:0},window:{brightness:5,contrast:5,saturation:0,warmth:0,highlights:-42,shadows:32,exposure:.08,whites:5,blacks:-7,temperature:-2,tint:0,vibrance:2,clarity:5,sharpening:10,vignette:0},warm:{brightness:5,contrast:6,saturation:3,warmth:5,highlights:-20,shadows:16,exposure:.08,whites:6,blacks:-7,temperature:5,tint:1,vibrance:5,clarity:4,sharpening:10,vignette:0},modern:{brightness:3,contrast:12,saturation:-2,warmth:-2,highlights:-22,shadows:14,exposure:.04,whites:8,blacks:-12,temperature:-5,tint:0,vibrance:1,clarity:10,sharpening:18,vignette:0},soft:{brightness:8,contrast:-3,saturation:-4,warmth:2,highlights:-26,shadows:24,exposure:.12,whites:5,blacks:4,temperature:1,tint:1,vibrance:-1,clarity:-3,sharpening:7,vignette:0},luxury:{brightness:1,contrast:17,saturation:-3,warmth:1,highlights:-30,shadows:12,exposure:0,whites:8,blacks:-18,temperature:-1,tint:0,vibrance:0,clarity:12,sharpening:20,vignette:4},wood:{brightness:4,contrast:8,saturation:2,warmth:4,highlights:-22,shadows:18,exposure:.06,whites:6,blacks:-8,temperature:3,tint:0,vibrance:3,clarity:8,sharpening:14,vignette:0},bathroom:{brightness:9,contrast:4,saturation:-5,warmth:-4,highlights:-32,shadows:24,exposure:.16,whites:14,blacks:-5,temperature:-7,tint:1,vibrance:-1,clarity:6,sharpening:14,vignette:0},exterior:{brightness:4,contrast:11,saturation:4,warmth:-2,highlights:-24,shadows:18,exposure:.04,whites:8,blacks:-10,temperature:-3,tint:0,vibrance:8,clarity:9,sharpening:18,vignette:0},sunny:{brightness:5,contrast:8,saturation:5,warmth:2,highlights:-34,shadows:16,exposure:.04,whites:10,blacks:-8,temperature:1,tint:0,vibrance:9,clarity:8,sharpening:16,vignette:0}};return presets[name]||presets.natural}
 function settingsApplyToEditor(settings){const defaults={...settings,perspectiveV:0,perspectiveH:0,blacks:settings.blacks??0};EDITOR_KEYS.forEach(k=>{const el=document.getElementById(k);if(el)el.value=defaults[k]??0});document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';drawEditor()}

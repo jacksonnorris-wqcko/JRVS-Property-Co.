@@ -1,6 +1,6 @@
 {
-  "version": "0.5.0",
+  "version": "0.5.1",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-05",
-  "notes": "Batch Studio foundation: multi-select project photos and apply consistent property presets to create separate edited copies while preserving originals."
+  "notes": "Batch Studio reliability fix: confirmed batch action, explicit full-quality render/export, visible per-photo errors, and preserved originals."
 }
