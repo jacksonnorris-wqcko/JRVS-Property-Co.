@@ -17,3 +17,11 @@ Static checks only; live browser and Supabase workflows have not been exercised 
 - Invoices include payment instructions, invoice-number payment reference, due-date guidance and clearly marked placeholders for bank account details.
 - No existing customer, job, quote, invoice, photo, calendar or cloud data is reset or migrated.
 - Existing five-item default list limits and seven-day upcoming-events window are retained.
+
+
+## V0.3.3 – Desktop Workflow Refinement
+- Added quick workflow-stage changes from the job detail view.
+- Added direct job-detail shortcuts to edit job details, create a linked quote, and open the job photo gallery.
+- Added linked invoice visibility, PDF access and mark-as-paid action from the job detail view.
+- Preserves existing localStorage keys, IndexedDB photo library, Supabase configuration, cloud sync, brand palette, list caps and seven-day upcoming-events window.
+- No SQL changes or data reset required.

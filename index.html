@@ -704,7 +704,14 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 @media(min-width:681px) and (max-width:1050px){.shell{grid-template-columns:218px minmax(0,1fr)}main{padding:25px 23px 40px}.header-actions .header-action{padding:0 10px}.global-search{width:210px}}
 @media(max-width:680px){.header-actions{display:none}}
 
-  </style>
+  
+/* V0.3.3 desktop job workflow */
+.job-workflow-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 16px;padding:12px;background:#f5f6ef;border:1px solid #e4e8da;border-radius:11px;align-items:center}
+.job-workflow-actions select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fffefa;color:var(--ink);min-width:155px}
+.job-detail-row .tiny-btn{margin-top:4px}
+.job-invoice-status{font-size:11px;color:var(--muted);margin-top:3px}
+@media(min-width:1051px){#jobDetailContent{max-width:100%}.job-detail-info{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
 </head>
 <body>
 <div class="shell">
@@ -1121,7 +1128,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.3.1.1';
+const APP_VERSION='0.3.3';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -1331,17 +1338,25 @@ function viewJob(id){
  const info=[['Client',j.client||'Not assigned'],['Status',j.status||'Enquiry'],['Scheduled date',j.date||'Not scheduled'],['Property address',j.address||'Not entered'],['Client email',client?.email||'—'],['Client phone',client?.phone||'—']];
  const incomeHtml=inc.length?inc.map(x=>`<div class="job-detail-row"><div><strong>${esc(x.description)}</strong><small>${esc(x.date||'No date')} · ${esc(x.category||'Income')} · ${esc(x.status||'Paid')}</small></div><div style="text-align:right"><strong>${money(x.amount)}</strong><div><button class="tiny-btn" onclick="closeJobDetail();editFinance('${x.id}','income')">Edit</button></div></div></div>`).join(''):'<div class="job-detail-empty">No income has been recorded against this job.</div>';
  const expenseHtml=exp.length?exp.map(x=>`<div class="job-detail-row"><div><strong>${esc(x.description)}</strong><small>${esc(x.date||'No date')} · ${esc(x.category||'Expense')}</small></div><div style="text-align:right"><strong>${money(x.amount)}</strong><div><button class="tiny-btn" onclick="closeJobDetail();editFinance('${x.id}','expense')">Edit</button></div></div></div>`).join(''):'<div class="job-detail-empty">No expenses have been recorded against this job.</div>';
- const quoteHtml=qs.length?qs.map(q=>`<div class="job-detail-row"><div><strong>${esc(q.number)}</strong><small>${esc(q.date||'No date')} · ${esc(q.status||'Draft')}</small></div><div style="text-align:right"><strong>${money(q.total)}</strong><div><button class="tiny-btn" onclick="closeJobDetail();editQuote('${q.id}')">Edit quote</button></div></div></div>`).join(''):'<div class="job-detail-empty">No quotations are linked to this job.</div>';
+ const quoteHtml=qs.length?qs.map(q=>`<div class="job-detail-row"><div><strong>${esc(q.number)}</strong><small>${esc(q.date||'No date')} · ${esc(q.status||'Draft')}</small></div><div style="text-align:right"><strong>${money(q.total)}</strong><div><button class="tiny-btn" onclick="closeJobDetail();editQuote('${q.id}')">Edit quote</button><button class="tiny-btn" onclick="printBusinessDocument('quote','${q.id}')">PDF</button></div></div></div>`).join(''):'<div class="job-detail-empty">No quotations are linked to this job.</div>';
+ const invoices=(data.invoices||[]).filter(x=>x.jobId===id);
+ const invoiceHtml=invoices.length?invoices.map(x=>`<div class="job-detail-row"><div><strong>${esc(x.number||'Invoice')}</strong><small>${esc(x.date||'No date')} · Due ${esc(x.dueDate||'not set')}</small><div class="job-invoice-status">${esc(x.status||'Unpaid')}</div></div><div style="text-align:right"><strong>${money(x.total)}</strong><div><button class="tiny-btn" onclick="printBusinessDocument('invoice','${x.id}')">PDF</button>${x.status!=='Paid'?`<button class="tiny-btn" onclick="markInvoicePaid('${x.id}')">Mark paid</button>`:''}</div></div></div>`).join(''):'<div class="job-detail-empty">No invoices are linked to this job.</div>';
+ const stages=['Enquiry','Quoted','Booked','Photography','Editing','Delivered'];
+ const stageOptions=stages.map(v=>`<option ${((j.status||'Enquiry')===v)?'selected':''}>${v}</option>`).join('');
  document.getElementById('jobDetailContent').innerHTML=`
  <div class="job-detail-header"><div><div class="job-detail-title">${esc(j.name)}</div><div class="job-detail-sub">Job record · ${esc(j.id)}</div></div><span class="pill">${esc(j.status||'Enquiry')}</span></div>
+ <div class="job-workflow-actions"><strong>Workflow stage</strong><select id="jobStageQuick" aria-label="Job workflow stage">${stageOptions}</select><button class="tiny-btn" onclick="updateJobStage('${j.id}',document.getElementById('jobStageQuick').value)">Update stage</button><button class="tiny-btn" onclick="closeJobDetail();openModal('job','${j.id}')">Edit job details</button><button class="tiny-btn" onclick="startQuoteForJob('${j.id}')">＋ Create quote</button><button class="tiny-btn" onclick="openProjectGallery('${j.id}');closeJobDetail();showPage('photos')">Open photos</button></div>
  <div class="job-detail-grid"><div class="job-detail-stat"><span>Income received</span><strong>${money(received)}</strong></div><div class="job-detail-stat"><span>Outstanding</span><strong>${money(due)}</strong></div><div class="job-detail-stat"><span>Expenses</span><strong>${money(costs)}</strong></div></div>
  <div class="job-detail-section"><h3>Property & client</h3><div class="job-detail-info">${info.map(x=>`<div><small>${x[0]}</small><strong>${esc(x[1])}</strong></div>`).join('')}</div></div>
  <div class="job-detail-section"><h3>Income · ${inc.length}</h3>${incomeHtml}</div>
  <div class="job-detail-section"><h3>Expenses · ${exp.length}</h3>${expenseHtml}</div>
  <div class="job-detail-section"><h3>Quotations · ${qs.length}</h3>${quoteHtml}</div>
+ <div class="job-detail-section"><h3>Invoices · ${invoices.length}</h3>${invoiceHtml}</div>
  <div class="job-detail-section"><h3>Job notes</h3><div class="job-detail-notes">${esc(j.notes||'No notes have been added.')}</div></div>`;
  document.getElementById('jobDetailBackdrop').classList.add('show');
 }
+function updateJobStage(id,status){const j=data.jobs.find(x=>x.id===id);if(!j)return;const allowed=['Enquiry','Quoted','Booked','Photography','Editing','Delivered'];if(!allowed.includes(status))return;j.status=status;j.statusUpdatedAt=new Date().toISOString();save();render();viewJob(id);showToast('Job stage updated to '+status+'.')}
+function startQuoteForJob(id){const j=data.jobs.find(x=>x.id===id);if(!j)return;const c=data.clients.find(x=>(x.name||'').trim().toLowerCase()===(j.client||'').trim().toLowerCase());if(!c){showToast('Add or link a client to this job before creating a quote.');closeJobDetail();openModal('job',id);return}closeJobDetail();openQuoteForm();document.getElementById('qClient').value=c.id;updateQuoteJobOptions(c.id,id);showPage('quotes')}
 function closeJobDetail(){document.getElementById('jobDetailBackdrop').classList.remove('show')}
 function viewClient(id){
  const c=data.clients.find(x=>x.id===id);if(!c)return;
