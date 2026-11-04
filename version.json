@@ -1,6 +1,6 @@
 {
-  "version": "0.5.3",
+  "version": "0.5.4",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-05",
-  "notes": "Batch output visibility fix and atomic project cover selection; originals preserved."
+  "notes": "Verified batch persistence, edited gallery auto-switch, duplicate-click guard, atomic cover selection."
 }
