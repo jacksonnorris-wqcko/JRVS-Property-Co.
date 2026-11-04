@@ -1,23 +1,25 @@
-# JRVS Property Co. — V0.5.9
+# JRVS Property Co. — V0.6.0
 
-## Photo workspace grid correction
+## Photo gallery structural redesign
 
-- Fixed the project gallery layout so the gallery heading, photo selection/export bar, and collapsible batch-editing panel span the full gallery width.
-- Photo cards now flow beneath the full-width controls instead of sharing the same grid row as narrow side panels.
-- Kept the responsive stacked selection bar on smaller screens.
-- Preserved V0.5.8 photo cards, ZIP export, individual full-resolution downloads, editing and existing photo storage.
+- Separated the project gallery controls from the photo-card grid in the rendered HTML structure.
+- The gallery heading, selection/export bar and batch editing panel now occupy their own full-width rows.
+- Only photo cards are rendered inside the dedicated responsive photo-card grid.
+- This removes the previous grid auto-placement conflict that caused the selection and batch panels to appear as narrow empty cards beside photos.
+- Kept multi-select ZIP export, batch presets, individual full-size downloads, editing, cover selection and workflow status controls.
+- Preserved existing IndexedDB photo storage and application data.
 
 ## Deploying
 
 1. Extract this ZIP.
 2. Upload all files and folders inside it to the root of the existing GitHub repository.
 3. Replace matching files when prompted.
-4. Do not clear browser/site data or reset IndexedDB. Existing business records and photo-library data should be preserved.
+4. Do not clear browser/site data or reset IndexedDB.
 
 ## Release version
 
-- App version: `0.5.9`
-- `version.json`: `0.5.9`
-- Service-worker cache: `jrvs-property-co-v0.5.9`
+- App version: `0.6.0`
+- `version.json`: `0.6.0`
+- Service-worker cache: `jrvs-property-co-v0.6.0`
 
-This release is a presentation/layout correction. It does not intentionally migrate, clear, or reset local business records, photo records, or Supabase data.
+This release changes the gallery DOM structure and presentation only. It does not intentionally migrate, clear, or reset business data, photo records, or Supabase data.

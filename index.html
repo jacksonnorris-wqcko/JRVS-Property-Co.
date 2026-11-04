@@ -1367,7 +1367,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.5.9';
+const APP_VERSION='0.6.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -1763,11 +1763,11 @@ async function renderPhotos(){
  const job=data.jobs.find(j=>j.id===f);
  const rows=getProjectPhotos(f).filter(p=>(kind==='all'||p.type===kind)&&(!search||p.name.toLowerCase().includes(search)||String(p.status||'').toLowerCase().includes(search)));
  const back=`<div class="gallery-heading"><div><div class="gallery-kicker">PROJECT GALLERY</div><strong>${esc(job?.name||'Project gallery')}</strong><div class="muted">${rows.length} ${rows.length===1?'photo':'photos'} shown · Original files are kept safe</div></div><button class="secondary gallery-back" onclick="showAllProjects()">← All projects</button></div><section class="photo-selection-bar" aria-label="Photo selection actions"><div class="selection-summary"><strong id="batchSelectionCount">0 photos selected</strong><span>Select photos to prepare a delivery ZIP</span></div><div class="selection-actions"><button class="secondary" type="button" onclick="selectAllVisiblePhotos()">Select all</button><button class="secondary" type="button" onclick="clearPhotoSelection()">Clear</button><button class="primary photo-zip-btn" type="button" onclick="downloadSelectedPhotosZip()">↓ Download selected (.zip)</button></div></section><details class="batch-tools"><summary>Batch editing <span>Apply one preset to selected photos</span></summary><div class="batch-tools-content"><select id="batchPreset"><option value="natural">Natural Listing</option><option value="bright">Bright &amp; Airy</option><option value="window">Window Balanced</option><option value="warm">Warm Lifestyle</option><option value="modern">Crisp Modern</option><option value="soft">Soft Neutral</option><option value="luxury">Luxury Contrast</option><option value="wood">Wood &amp; Stone</option><option value="bathroom">Bathroom Clean</option><option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option></select><button class="primary" type="button" onclick="applyBatchPresetToSelection()">Apply preset to selected</button><div class="batch-progress" id="batchProgress">Original photos are never changed.</div></div></details>`;
- if(!rows.length){grid.innerHTML=back+'<div class="empty" style="grid-column:1/-1"><b>No matching photos</b>Try a different filename or status.</div>';return}
- grid.innerHTML=back+rows.map(p=>{
+ if(!rows.length){grid.innerHTML=back+'<div class="empty photo-empty"><b>No matching photos</b>Try a different filename or status.</div>';return}
+ grid.innerHTML=back+'<div class="photo-cards-grid">'+rows.map(p=>{
    const u=URL.createObjectURL(p.blob);photoUrls.push(u);
    return `<article class="photo-card ${selectedPhotoIds.has(p.id)?'is-batch-selected':''}"><div class="photo-image-wrap"><label class="photo-select-wrap"><input type="checkbox" ${selectedPhotoIds.has(p.id)?'checked':''} onchange="togglePhotoSelection('${p.id}',this.checked)">Select</label><img class="photo-thumb" src="${u}" alt="${esc(p.name)}" onclick="previewPhoto('${p.id}')"><button class="photo-preview-action" onclick="previewPhoto('${p.id}')" aria-label="Preview photo">↗</button>${p.isCover?'<span class="photo-cover-badge">★ Cover image</span>':''}</div><div class="photo-info"><div class="photo-title-row"><strong title="${esc(p.name)}">${esc(p.name)}</strong><span class="photo-file-type">${esc(p.type)}</span></div><div class="photo-meta">${bytes(p.size)} <span>·</span> ${new Date(p.addedAt||Date.now()).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div><label class="photo-status-field"><span>WORKFLOW STATUS</span><select aria-label="Photo status" onchange="updatePhotoStatus('${p.id}',this.value)">${['Imported','Selected','Editing','Edited','Delivered'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}</select></label><div class="photo-actions"><button class="primary photo-edit-btn" onclick="openEditor('${p.id}')">✎ Edit photo</button><button class="tiny-btn photo-cover-btn" onclick="setProjectCover('${p.id}')" ${p.isCover?'disabled':''}>${p.isCover?'✓ Cover':'Set cover'}</button><button class="tiny-btn" onclick="downloadPhoto('${p.id}')" title="Download original file">↓ Download</button><button class="tiny-btn danger photo-delete-btn" onclick="deletePhoto('${p.id}')" aria-label="Delete photo" title="Delete photo">⌫</button></div></div></article>`;
- }).join('');
+ }).join('')+'</div>';
 }
 const selectedPhotoIds=new Set();
 
@@ -2138,6 +2138,60 @@ function printBusinessDocument(type,id){
     grid-template-columns: 1fr 1fr;
   }
   #page-photos .selection-actions .photo-zip-btn { grid-column: 1 / -1; }
+}
+
+
+/* V0.6.0 — structural photo gallery layout */
+#page-photos #photoGrid.photo-grid{
+  display:flex !important;
+  flex-direction:column;
+  align-items:stretch;
+  gap:0;
+  width:100%;
+  min-width:0;
+}
+#page-photos #photoGrid.photo-grid > .gallery-heading,
+#page-photos #photoGrid.photo-grid > .photo-selection-bar,
+#page-photos #photoGrid.photo-grid > .batch-tools,
+#page-photos #photoGrid.photo-grid > .photo-empty{
+  display:flex;
+  width:100%;
+  max-width:none;
+  box-sizing:border-box;
+  flex:0 0 auto;
+}
+#page-photos #photoGrid.photo-grid > .gallery-heading{
+  justify-content:space-between;
+  align-items:center;
+  margin:22px 0 14px;
+}
+#page-photos #photoGrid.photo-grid > .photo-selection-bar{
+  justify-content:space-between;
+  align-items:center;
+  margin:0 0 14px;
+}
+#page-photos #photoGrid.photo-grid > .batch-tools{
+  display:block;
+  margin:0 0 18px;
+}
+#page-photos .photo-cards-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:18px;
+  width:100%;
+  min-width:0;
+  align-items:stretch;
+}
+#page-photos .photo-cards-grid .photo-card{min-width:0;width:100%}
+#page-photos .photo-empty{min-height:130px;align-items:center;justify-content:center;text-align:center}
+@media(max-width:680px){
+  #page-photos #photoGrid.photo-grid > .photo-selection-bar{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  #page-photos .selection-actions{display:grid;grid-template-columns:1fr 1fr}
+  #page-photos .selection-actions .photo-zip-btn{grid-column:1/-1}
+  #page-photos .photo-cards-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:13px}
 }
 
 </style></head><body><main class="sheet"><header class="head"><div class="brand"><img src="${logoUrl}" alt="JRVS Property Co"><small>PROPERTY PHOTOGRAPHY</small></div><div class="doc"><h1>${title}</h1><strong>${esc(record.number||'')}</strong><p class="muted">${type==='quote'?'Date':'Issue date'}: ${esc(record.date||'—')}</p>${type==='quote'?`<p class="muted">Valid until: ${esc(record.validUntil||(()=>{const d=new Date((record.date||new Date().toISOString().slice(0,10))+'T00:00:00');d.setDate(d.getDate()+30);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})())}</p>`:''}${type==='invoice'?`<p class="muted">Due date: ${esc(record.dueDate||'—')}</p>`:''}</div></header><section class="meta"><div><h3>BILL TO</h3><p><strong>${esc(record.clientName||client.name||'Client')}</strong><br>${esc(client.company||'')}<br>${esc(client.email||'')}<br>${esc(client.phone||'')}</p></div><div class="right"><h3>PROPERTY / JOB</h3><p><strong>${esc(record.jobName||job.name||'')}</strong><br>${esc(job.address||'')}<br><span class="muted">${type==='invoice'?'Payment status: '+esc(record.status||'Unpaid'): 'Quotation prepared by JRVS Property Co.'}</span></p></div></section>${type==='quote'?`<section class="intro-note"><strong>Thank you for the opportunity.</strong><br>Thank you for considering JRVS Property Co. and giving us the opportunity to provide a quote for your property. We appreciate your consideration and would be pleased to answer any questions about the services outlined below.</section>`:''}<table><thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Amount</th></tr></thead><tbody>${rows}</tbody></table><section class="totals"><div><span>Subtotal</span><strong>${money(record.subtotal)}</strong></div><div><span>${gstLabel}</span><strong>${money(record.gst)}</strong></div><div class="grand"><span>Total AUD</span><span>${money(record.total)}</span></div></section>${type==='invoice'?`<section class="payment-panel"><h3>PAYMENT DETAILS</h3><p style="margin:0 0 10px">Please make payment by the due date shown above. Use <strong>${esc(record.number||'Invoice number')}</strong> as your payment reference.</p><div class="payment-grid"><p><strong>Account name:</strong> To be provided</p><p><strong>BSB:</strong> To be provided</p><p><strong>Account number:</strong> To be provided</p><p><strong>Payment reference:</strong> ${esc(record.number||'Invoice number')}</p></div><p style="margin:10px 0 0;color:#72786c;font-size:10px">Bank details will be updated when JRVS Property Co. payment details are finalised.</p></section>`:''}${record.notes?`<section class="notes"><strong>Notes & terms</strong><br>${esc(record.notes)}</section>`:''}<footer class="foot"><span>JRVS Property Co.</span><span>${type==='invoice'?'Thank you for choosing JRVS Property Co. We appreciate your business.':'JRVS Property Co. · Property Photography'}</span></footer></main><script>window.addEventListener('load',()=>{setTimeout(()=>window.print(),350)});<\/script></body></html>`;
