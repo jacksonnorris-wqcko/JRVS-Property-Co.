@@ -48,3 +48,11 @@ Static checks only; live browser and Supabase workflows have not been exercised 
 - Kept existing Supabase authentication and sync implementation unchanged.
 - No database migration, SQL changes, or data reset required.
 - Device indicator identifies only the current device; it does not claim live remote-device presence.
+
+
+## V0.3.5.1 – Install prompt improvement
+- The Install JRVS button is always visible.
+- Uses the native browser PWA install prompt when available.
+- Provides tailored instructions for iPhone Safari, Android, and desktop Chrome/Edge when a native prompt is unavailable.
+- Detects an already-installed standalone app and updates the button state.
+- No changes to authentication, cloud sync, local records, or photo storage.

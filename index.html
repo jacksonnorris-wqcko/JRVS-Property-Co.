@@ -868,7 +868,7 @@ main{margin:0 auto;align-self:start;min-height:100vh}
       <div class="finance-transactions-panel"><div class="finance-panel-head"><div><h3>Transactions</h3><p>Invoice income is linked automatically. Add expenses and other income as they occur.</p></div></div><div class="finance-toolbar"><div class="finance-filters"><select id="financeTypeFilter" onchange="renderFinances()"><option value="all">All transactions</option><option value="income">Income</option><option value="expense">Expenses</option></select><select id="financeStatusFilter" onchange="renderFinances()"><option value="all">All statuses</option><option value="Paid">Paid / received</option><option value="Unpaid">Unpaid / outstanding</option></select></div></div><div class="finance-list-head"><span>Transaction</span><span style="text-align:right">Amount</span><span style="text-align:right">Actions</span></div><div id="financeList"></div></div>
     </section>
     <section class="page" id="page-settings"><div class="panel">
-      <div class="settings-header"><div><div class="eyebrow">WORKSPACE PREFERENCES</div><h2>Settings</h2><p>Manage your JRVS account, device setup and app updates.</p></div><span class="settings-version" id="settingsVersion">V0.3.5</span></div>
+      <div class="settings-header"><div><div class="eyebrow">WORKSPACE PREFERENCES</div><h2>Settings</h2><p>Manage your JRVS account, device setup and app updates.</p></div><span class="settings-version" id="settingsVersion">V0.3.5.1</span></div>
       <div class="settings-layout"><div class="settings-main">
         <section class="settings-card cloud-control-card"><div class="settings-card-head"><span class="settings-icon cloud-large-icon">☁</span><div class="cloud-heading-copy"><h3>JRVS Cloud</h3><p>Your private workspace across your devices.</p></div><span class="pill cloud-state-pill" id="cloudConnectionBadge">Local only</span></div>
           <div class="cloud-account-hero"><div class="cloud-account-mark">✉</div><div class="cloud-account-copy"><strong id="cloudAccountStatus">Not connected</strong><small>JRVS business account</small></div><span class="cloud-account-caption" id="cloudAccountHint">Sign in to sync devices</span></div>
@@ -882,7 +882,7 @@ main{margin:0 auto;align-self:start;min-height:100vh}
         </section>
       </div><div class="settings-side">
         <section class="settings-card"><div class="settings-card-head"><span class="settings-icon">▣</span><div><h3>Install JRVS</h3><p>Use JRVS as a standalone app on your devices.</p></div></div>
-          <div class="row-card"><div><strong>Desktop app</strong><small>Launch from your Windows Start menu or desktop.</small></div><button class="primary" id="installAppButton" type="button" onclick="installJRVSApp()" hidden>Install app</button><span class="pill" id="installAppStatus">Add to Home Screen on iPhone</span></div>
+          <div class="row-card"><div><strong>Desktop app</strong><small>Launch from your Windows Start menu or desktop.</small></div><button class="primary" id="installAppButton" type="button" onclick="installJRVSApp()">Install JRVS</button><span class="pill" id="installAppStatus">Check install options</span></div>
           <div class="settings-note">Windows: use the Chrome or Edge install option. iPhone: open this site in Safari, tap Share, then Add to Home Screen.</div>
         </section>
         <section class="settings-card"><div class="settings-card-head"><span class="settings-icon">◈</span><div><h3>Data & privacy</h3><p>Understand where your business information is stored.</p></div></div>
@@ -2010,24 +2010,54 @@ async function checkForUpdates(manual=false){
 }
 
 let deferredInstallPrompt=null;
-window.addEventListener('beforeinstallprompt',e=>{
- e.preventDefault();deferredInstallPrompt=e;
+function jrvsIsStandalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
+function jrvsInstallEnvironment(){
+ const ua=navigator.userAgent||'';
+ const ios=/iphone|ipad|ipod/i.test(ua);
+ const safari=ios&&/safari/i.test(ua)&&!/crios|fxios|edgios|opios/i.test(ua);
+ const android=/android/i.test(ua);
+ const desktop=/windows|macintosh|linux/i.test(ua)&&!android;
+ return {ios,safari,android,desktop};
+}
+function jrvsSetInstallState(){
  const b=document.getElementById('installAppButton'),s=document.getElementById('installAppStatus');
- if(b)b.hidden=false;if(s)s.textContent='Ready to install';
+ if(!b||!s)return;
+ if(jrvsIsStandalone()){b.textContent='Already installed';b.disabled=true;s.textContent='Installed on this device';return;}
+ b.disabled=false;b.textContent='Install JRVS';
+ if(deferredInstallPrompt){s.textContent='Ready to install';return;}
+ const env=jrvsInstallEnvironment();
+ if(env.ios&&env.safari)s.textContent='Available via Safari Share menu';
+ else if(env.ios)s.textContent='Open in Safari to install';
+ else if(env.android)s.textContent='Use browser menu if no prompt appears';
+ else s.textContent='Install using Chrome or Edge';
+}
+window.addEventListener('beforeinstallprompt',e=>{
+ e.preventDefault();deferredInstallPrompt=e;jrvsSetInstallState();
 });
 window.addEventListener('appinstalled',()=>{
- deferredInstallPrompt=null;
- const b=document.getElementById('installAppButton'),s=document.getElementById('installAppStatus');
- if(b)b.hidden=true;if(s)s.textContent='Installed — launch JRVS from your desktop';
+ deferredInstallPrompt=null;jrvsSetInstallState();showToast('JRVS has been installed on this device.');
 });
 async function installJRVSApp(){
- if(!deferredInstallPrompt){showToast('Use Chrome or Edge menu → Install JRVS Property Co.');return}
- deferredInstallPrompt.prompt();
- const choice=await deferredInstallPrompt.userChoice;
- if(choice?.outcome==='accepted'){const s=document.getElementById('installAppStatus');if(s)s.textContent='Installation accepted';}
- deferredInstallPrompt=null;
- const b=document.getElementById('installAppButton');if(b)b.hidden=true;
+ if(jrvsIsStandalone()){jrvsSetInstallState();showToast('JRVS is already installed on this device.');return;}
+ if(deferredInstallPrompt){
+  const promptEvent=deferredInstallPrompt;deferredInstallPrompt=null;
+  try{
+   await promptEvent.prompt();
+   const choice=await promptEvent.userChoice;
+   if(choice&&choice.outcome==='accepted'){showToast('JRVS installation accepted.');}
+   else{showToast('Installation was cancelled. You can try again anytime.');}
+  }catch(err){showToast('The install prompt was unavailable. Try your browser menu → Install JRVS.');}
+  jrvsSetInstallState();return;
+ }
+ const env=jrvsInstallEnvironment();
+ if(env.ios&&env.safari){showToast('To install: tap Share in Safari, choose Add to Home Screen, then tap Add.');return;}
+ if(env.ios){showToast('Open JRVS in Safari, tap Share, then choose Add to Home Screen.');return;}
+ if(env.android){showToast('Open your browser menu (⋮) and choose Install app or Add to Home screen.');return;}
+ showToast('In Chrome or Edge, open the browser menu and choose Install JRVS Property Co. If it is not listed, check that the site has finished loading and try again.');
 }
+window.addEventListener('pageshow',jrvsSetInstallState);
+document.addEventListener('DOMContentLoaded',jrvsSetInstallState);
+setTimeout(jrvsSetInstallState,0);
 
 if('serviceWorker'in navigator&&location.protocol!=='file:'){window.addEventListener('load',async()=>{try{await navigator.serviceWorker.register('./sw.js');}catch(e){}checkForUpdates()})}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUpdates()});

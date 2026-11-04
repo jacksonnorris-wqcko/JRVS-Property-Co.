@@ -1,6 +1,6 @@
 {
-  "version": "0.3.5",
+  "version": "0.3.5.1",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-04",
-  "notes": "Cloud Sync control centre redesign with clearer account status, prominent sync action, device-local status and collapsible account/help controls. Existing authentication, sync logic, records and photo storage preserved."
+  "notes": "Install JRVS action now invokes the native PWA install prompt when supported and provides device-specific installation guidance otherwise. Existing cloud sync and data preserved."
 }
