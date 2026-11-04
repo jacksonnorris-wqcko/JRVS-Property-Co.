@@ -1,6 +1,6 @@
 {
-  "version": "0.3.1.1",
+  "version": "0.3.2",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-04",
-  "notes": "Corrected list workflow: show five recent items by default across jobs, clients, packages, quotes and invoices; searching reveals up to ten matching results with a clear count and guidance. Retains seven-day upcoming events."
+  "notes": "Quote and invoice document refinement: quote thank-you message and 30-day validity; invoice payment instructions with clearly marked bank-detail placeholders, invoice-number reference and due-date guidance. Existing list limits and seven-day upcoming events retained."
 }

@@ -1,0 +1,1008 @@
+
+// JRVS Cloud Sync foundation. Publishable keys are intended for browser use;
+// access is restricted by Supabase Auth + Row Level Security.
+const JRVS_SUPABASE_URL='https://pbwgwlhckmectbecooxl.supabase.co';
+const JRVS_SUPABASE_PUBLISHABLE_KEY='sb_publishable_qgw4CIrCvcMKYrSg53jNZw_ZOHHcArC';
+let jrvsSupabase=null, jrvsCloudSession=null, jrvsCloudBusy=false;
+try {
+ if(window.supabase?.createClient) jrvsSupabase=window.supabase.createClient(JRVS_SUPABASE_URL,JRVS_SUPABASE_PUBLISHABLE_KEY);
+} catch(e){console.error('JRVS cloud client unavailable',e)}
+function jrvsCloudUi(){
+ const email=document.getElementById('cloudAccountStatus'),badge=document.getElementById('cloudConnectionBadge'),btn=document.getElementById('cloudSyncButton'),status=document.getElementById('cloudSyncStatus');
+ if(email)email.textContent=jrvsCloudSession?.user?.email||'Not connected';
+ if(badge){badge.textContent=jrvsCloudSession?'Connected':'Local only';badge.classList.toggle('success',!!jrvsCloudSession)}
+ if(btn)btn.disabled=!jrvsCloudSession||jrvsCloudBusy;
+ if(status&&jrvsCloudSession&&status.textContent==='Not connected to cloud.')status.textContent='Signed in. Ready to synchronise.';
+}
+function jrvsCloudMessage(t,error=false){const el=document.getElementById('cloudSyncStatus');if(el)el.textContent=t;if(error)showToast(t,'error');}
+async function jrvsCloudInit(){
+ if(!jrvsSupabase){jrvsCloudMessage('Cloud library could not load. Check your internet connection.',true);return}
+ const {data:{session}}=await jrvsSupabase.auth.getSession();jrvsCloudSession=session;jrvsCloudUi();
+ jrvsSupabase.auth.onAuthStateChange((_event,session)=>{jrvsCloudSession=session;jrvsCloudUi()});
+}
+async function jrvsCloudSignUp(){
+ if(!jrvsSupabase)return jrvsCloudMessage('Cloud service is unavailable.',true);
+ const email=document.getElementById('cloudEmail').value.trim(),password=document.getElementById('cloudPassword').value;
+ if(!email||password.length<8)return jrvsCloudMessage('Enter an email and a password of at least 8 characters.',true);
+ const {data,error}=await jrvsSupabase.auth.signUp({email,password});
+ if(error)return jrvsCloudMessage(error.message,true);
+ jrvsCloudSession=data.session;jrvsCloudUi();
+ jrvsCloudMessage(data.session?'Account created. You can now sync.':'Account created. Check your email to confirm it, then sign in.');
+}
+async function jrvsCloudSignIn(){
+ if(!jrvsSupabase)return jrvsCloudMessage('Cloud service is unavailable.',true);
+ const email=document.getElementById('cloudEmail').value.trim(),password=document.getElementById('cloudPassword').value;
+ const {data,error}=await jrvsSupabase.auth.signInWithPassword({email,password});
+ if(error)return jrvsCloudMessage(error.message,true);
+ jrvsCloudSession=data.session;jrvsCloudUi();jrvsCloudMessage('Signed in. Choose Sync now to connect your records.');
+}
+async function jrvsCloudSignOut(){
+ if(!jrvsSupabase)return;
+ const {error}=await jrvsSupabase.auth.signOut();if(error)return jrvsCloudMessage(error.message,true);
+ jrvsCloudSession=null;jrvsCloudUi();jrvsCloudMessage('Signed out. Local data remains on this device.');
+}
+function jrvsMergeRecords(localRows, cloudRows, label, conflicts){
+ const out=new Map(), unkeyed=[];
+ (Array.isArray(cloudRows)?cloudRows:[]).forEach((x,i)=>{if(!x||typeof x!=='object')return;if(x.id==null){unkeyed.push(x);return;}out.set(String(x.id),x)});
+ (Array.isArray(localRows)?localRows:[]).forEach((x,i)=>{
+  if(!x||typeof x!=='object')return;
+  if(x.id==null){unkeyed.push(x);return;}
+  const id=String(x.id),old=out.get(id);
+  if(!old){out.set(id,x);return;}
+  if(JSON.stringify(old)===JSON.stringify(x))return;
+  const oldTime=Date.parse(old.updatedAt||old.modifiedAt||old.updated_at||old.modified_at||old.createdAt||old.addedAt||'')||0;
+  const newTime=Date.parse(x.updatedAt||x.modifiedAt||x.updated_at||x.modified_at||x.createdAt||x.addedAt||'')||0;
+  if(newTime>oldTime)out.set(id,x);
+  else if(newTime===oldTime){conflicts.push({type:label,id,local:x,cloud:old});}
+ });
+ // Legacy records without IDs are retained rather than silently discarded. They cannot be deduplicated safely.
+ return [...out.values(),...unkeyed];
+}
+function jrvsMergeBusiness(local,cloud,conflicts){
+ const result={...(cloud||{}),...(local||{})};
+ const arrayKeys=new Set(['jobs','clients','quotes','income','expenses','packages','attentionCleared']);
+ for(const key of arrayKeys){
+  if(Array.isArray(local?.[key])||Array.isArray(cloud?.[key]))result[key]=jrvsMergeRecords(local?.[key],cloud?.[key],key,conflicts);
+ }
+ return result;
+}
+async function jrvsCloudSync(){
+ if(!jrvsSupabase||!jrvsCloudSession||jrvsCloudBusy)return;
+ jrvsCloudBusy=true;jrvsCloudUi();
+ const userId=jrvsCloudSession.user.id;
+ let syncStage='initialising';
+ try{
+  syncStage='reading cloud snapshot';
+  jrvsCloudMessage('Reading cloud records…');
+  const {data:remote,error:readError}=await jrvsSupabase.from('jrvs_user_state').select('payload,updated_at').eq('user_id',userId).maybeSingle();
+  if(readError)throw readError;
+  const localBusiness=JSON.parse(localStorage.getItem('jrvs-data')||'{}');
+  const localCalendar=JSON.parse(localStorage.getItem('jrvs-calendar')||'[]');
+  const localPhotos=await photoRequest('readonly','all')||[];
+  const cloudPayload=remote?.payload||{};
+  const conflicts=[];
+  const mergedBusiness=jrvsMergeBusiness(localBusiness,cloudPayload.business||{},conflicts);
+  const mergedCalendar=jrvsMergeRecords(localCalendar,cloudPayload.calendar||[],'calendar',conflicts);
+  // Normalise legacy cloud photo metadata. Older releases could write a photo
+  // record without storage_path; the established object path is userId/photoId.
+  // Invalid metadata is quarantined for diagnostics and never blocks business sync.
+  const rawCloudPhotoMeta=Array.isArray(cloudPayload.photos)?cloudPayload.photos:[];
+  const cloudPhotoMeta=[]; const skippedCloudPhotos=[];
+  for(let i=0;i<rawCloudPhotoMeta.length;i++){
+   const raw=rawCloudPhotoMeta[i];
+   if(!raw||typeof raw!=='object'||!raw.id){skippedCloudPhotos.push({index:i,reason:'missing photo id'});continue;}
+   const id=String(raw.id);
+   const storagePath=(typeof raw.storage_path==='string'&&raw.storage_path.trim())?raw.storage_path.trim():(userId+'/'+id);
+   cloudPhotoMeta.push({...raw,id,storage_path:storagePath});
+  }
+  const mergedPhotoMeta=jrvsMergeRecords(localPhotos.filter(p=>p&&p.id).map(p=>{const m={...p};delete m.blob;return m}),cloudPhotoMeta,'photos',conflicts);
+  const localPhotoIds=new Set(localPhotos.filter(p=>p&&p.id).map(p=>String(p.id)));
+  const cloudPhotoIds=new Set(cloudPhotoMeta.map(p=>String(p.id)));
+  // Upload local-only photos first. Never delete local or cloud files during sync.
+  for(let i=0;i<localPhotos.length;i++){
+   const p=localPhotos[i];if(!p?.id||!(p.blob instanceof Blob))throw new Error('Photo '+(p?.name||i+1)+' is missing its image data. Sync stopped without deleting local data.');
+   if(cloudPhotoIds.has(String(p.id)))continue;
+   const path=userId+'/'+p.id;
+   jrvsCloudMessage('Preparing photo '+(i+1)+' of '+localPhotos.length+'…');
+   if(!Number.isFinite(p.blob.size)||p.blob.size<=0)throw new Error('Photo '+(p.name||i+1)+' has an empty image file.');
+   const photoBytes=await p.blob.arrayBuffer();
+   if(!photoBytes||photoBytes.byteLength!==p.blob.size)throw new Error('Photo '+(p.name||i+1)+' could not be read completely on this device.');
+   syncStage='uploading photo '+(p.name||i+1)+' ('+photoBytes.byteLength+' bytes)';
+   jrvsCloudMessage('Uploading new photo '+(i+1)+' of '+localPhotos.length+'…');
+   const {error}=await jrvsSupabase.storage.from('jrvs-photos').upload(path,photoBytes,{upsert:false,contentType:p.mime||p.blob.type||'application/octet-stream'});
+   if(error && !String(error.message||'').toLowerCase().includes('already exists'))throw error;
+   const meta={...p,id:String(p.id),storage_path:path};delete meta.blob;const existingIndex=mergedPhotoMeta.findIndex(x=>String(x?.id)===String(p.id));if(existingIndex>=0)mergedPhotoMeta[existingIndex]={...mergedPhotoMeta[existingIndex],...meta};else mergedPhotoMeta.push(meta);cloudPhotoIds.add(String(p.id));
+  }
+  // Download cloud-only photos and add them without clearing or overwriting local photos.
+  for(let i=0;i<cloudPhotoMeta.length;i++){
+   const meta=cloudPhotoMeta[i];
+   if(localPhotoIds.has(String(meta.id)))continue;
+   syncStage='downloading cloud photo '+(meta.name||i+1);
+   jrvsCloudMessage('Downloading cloud photo '+(i+1)+' of '+cloudPhotoMeta.length+'…');
+   const {data:blob,error}=await jrvsSupabase.storage.from('jrvs-photos').download(meta.storage_path);
+   if(error){skippedCloudPhotos.push({id:meta.id,name:meta.name||'',reason:error.message||'download failed'});continue;}
+   if(!(blob instanceof Blob)||blob.size===0){skippedCloudPhotos.push({id:meta.id,name:meta.name||'',reason:'empty or invalid downloaded file'});continue;}
+   const rec={...meta,blob};delete rec.storage_path;
+   try{await photoRequest('readwrite','put',rec);localPhotoIds.add(String(meta.id));}
+   catch(photoSaveError){skippedCloudPhotos.push({id:meta.id,name:meta.name||'',reason:'local photo library write failed: '+(photoSaveError.message||'unknown error')});}
+  }
+  // Preserve same-ID edits that cannot be safely auto-resolved for later review.
+  if(conflicts.length)localStorage.setItem('jrvs-sync-conflicts-'+Date.now(),JSON.stringify({createdAt:new Date().toISOString(),conflicts}));
+  if(skippedCloudPhotos.length)localStorage.setItem('jrvs-photo-sync-review-'+Date.now(),JSON.stringify({createdAt:new Date().toISOString(),items:skippedCloudPhotos}));
+  const payload={business:mergedBusiness,calendar:mergedCalendar,photos:mergedPhotoMeta,schema_version:1};
+  const payloadCheck=JSON.stringify(payload);
+  if(!payloadCheck||payloadCheck==='{}')throw new Error('The merged data snapshot is empty. No cloud write was attempted.');
+  syncStage='saving merged business snapshot';
+  jrvsCloudMessage('Saving merged records to cloud…');
+  let write;
+  if(remote){
+   write=await jrvsSupabase.from('jrvs_user_state').update({payload,updated_at:new Date().toISOString()}).eq('user_id',userId).eq('updated_at',remote.updated_at).select('user_id').maybeSingle();
+   if(write.error)throw write.error;
+   if(!write.data)throw new Error('Cloud data changed during this sync. Nothing was overwritten; press Sync now again to merge the latest copy.');
+  }else{
+   write=await jrvsSupabase.from('jrvs_user_state').insert({user_id:userId,payload,updated_at:new Date().toISOString()}).select('user_id').maybeSingle();
+   if(write.error)throw write.error;
+  }
+  syncStage='applying verified local business snapshot';
+  localStorage.setItem('jrvs-data',JSON.stringify(mergedBusiness));
+  localStorage.setItem('jrvs-calendar',JSON.stringify(mergedCalendar));
+  jrvsCloudMessage('Two-way sync complete · '+(mergedBusiness.jobs?.length||0)+' jobs · '+(mergedBusiness.clients?.length||0)+' clients · '+(await photoRequest('readonly','all')).length+' photos'+(conflicts.length?' · '+conflicts.length+' item(s) need conflict review':'')+(skippedCloudPhotos.length?' · '+skippedCloudPhotos.length+' photo(s) need review':''));
+  showToast('JRVS two-way sync completed.');
+  await loadPhotos();renderQuotes();renderFinances();render();
+ }catch(e){
+  console.error('JRVS cloud sync failed',e);
+  const parts=['Stage: '+syncStage,e?.message||'Unknown error'];
+  if(e?.code)parts.push('code '+e.code);
+  if(e?.status)parts.push('HTTP '+e.status);
+  if(e?.details)parts.push(String(e.details));
+  if(e?.hint)parts.push('Hint: '+String(e.hint));
+  const diagnostic=parts.join(' · ');
+  jrvsCloudMessage('Sync stopped: '+diagnostic+'. Local records were not intentionally cleared.',true);
+ }
+ finally{jrvsCloudBusy=false;jrvsCloudUi()}
+}
+
+// Consistent in-app feedback. Avoid native browser alert/confirm dialogs.
+function showToast(message, type='success', duration=3600){
+ const host=document.getElementById('toastStack');
+ if(!host){console.log(message);return}
+ const item=document.createElement('div');item.className='app-toast '+(type==='error'?'error':type==='info'?'info':'success');
+ const icon=document.createElement('span');icon.className='app-toast-icon';icon.textContent=type==='error'?'!':type==='info'?'i':'✓';
+ const copy=document.createElement('span');copy.className='app-toast-message';copy.textContent=String(message);
+ const close=document.createElement('button');close.className='app-toast-close';close.type='button';close.setAttribute('aria-label','Dismiss notification');close.textContent='×';close.onclick=()=>item.remove();
+ item.append(icon,copy,close);host.appendChild(item);
+ requestAnimationFrame(()=>item.classList.add('visible'));
+ const timer=setTimeout(()=>{item.classList.remove('visible');setTimeout(()=>item.remove(),220)},duration);
+ close.addEventListener('click',()=>clearTimeout(timer),{once:true});
+}
+let appConfirmResolver=null;
+function showConfirm(message, options={}){
+ const back=document.getElementById('appConfirmBackdrop');
+ if(!back)return Promise.resolve(false);
+ if(appConfirmResolver){appConfirmResolver(false);appConfirmResolver=null}
+ const title=document.getElementById('appConfirmTitle'),body=document.getElementById('appConfirmMessage'),accept=document.getElementById('appConfirmAccept'),cancel=document.getElementById('appConfirmCancel');
+ title.textContent=options.title||'Please confirm';body.textContent=String(message);accept.textContent=options.confirmText||'Confirm';
+ accept.classList.toggle('danger-action',options.danger!==false);back.classList.add('show');back.setAttribute('aria-hidden','false');
+ return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
+}
+
+const APP_VERSION='0.3.1.1';
+const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
+let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
+try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
+if(!Array.isArray(data.packages))data.packages=[];if(!Array.isArray(data.quotes))data.quotes=[];if(!Array.isArray(data.income))data.income=[];if(!Array.isArray(data.expenses))data.expenses=[];if(!Array.isArray(data.attentionCleared))data.attentionCleared=[];
+const save=()=>localStorage.setItem('jrvs-data',JSON.stringify(data));
+
+// V0.1.8 Business Calendar — separate event store; business records remain authoritative.
+const CALENDAR_KEY='jrvs-calendar';
+let calendarEvents=(()=>{try{return JSON.parse(localStorage.getItem(CALENDAR_KEY)||'[]')}catch(e){return []}})();
+let calendarCursor=new Date();calendarCursor.setHours(12,0,0,0);
+let calendarView='month';
+const calSave=()=>localStorage.setItem(CALENDAR_KEY,JSON.stringify(calendarEvents));
+const calDate=d=>{const x=new Date(d);return isNaN(x)?'':`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`};
+const calSafe=(v)=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function calendarSources(){
+ const out=[];
+ (data.jobs||[]).forEach(j=>{if(j.date)out.push({id:'job-'+j.id,sourceId:String(j.id),sourceType:'job',title:(j.name||'Property job')+' · Shoot',date:j.date,type:'shoot',location:j.address||'',subtitle:'Job booking',jobId:j.id,generated:true})});
+ return out;
+}
+function calendarAllEvents(){
+ const generated=calendarSources();
+ const manual=calendarEvents.filter(e=>!e.generated);
+ return [...generated,...manual].filter(e=>e.date).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.startTime||'').localeCompare(b.startTime||''));
+}
+function calendarLinkOptions(selected=''){
+ const options=(data.jobs||[]).map(x=>({v:'job:'+x.id,t:'Job · '+(x.name||'Untitled')}));
+ return '<option value="">No job linked</option>'+options.map(o=>`<option value="${calSafe(o.v)}" ${selected===o.v?'selected':''}>${calSafe(o.t)}</option>`).join('');
+}
+function calendarOpenLinked(link){
+ if(!link)return;
+ const [type,id]=link.split(':');
+ if(type!=='job')return;
+ // Job links are informational only; calendar interactions never navigate away.
+ showCalendarDetail(calendarAllEvents().find(e=>e.sourceType==='job'&&String(e.sourceId)===String(id))||null);
+}
+function renderCalendar(){
+ const grid=document.getElementById('calendarGrid');if(!grid)return;
+ const events=calendarAllEvents(),today=calDate(new Date());
+ document.querySelectorAll('[data-calview]').forEach(b=>b.classList.toggle('active',b.dataset.calview===calendarView));
+ const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+ let start,end,heading;
+ if(calendarView==='month'){
+  const first=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth(),1,12),last=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth()+1,0,12);
+  start=new Date(first);start.setDate(first.getDate()-first.getDay());end=new Date(last);end.setDate(last.getDate()+(6-last.getDay()));
+  heading=monthNames[calendarCursor.getMonth()]+' '+calendarCursor.getFullYear();
+ }else if(calendarView==='week'){
+  start=new Date(calendarCursor);start.setDate(start.getDate()-start.getDay());end=new Date(start);end.setDate(end.getDate()+6);
+  heading='Week of '+start.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+ }else{start=new Date(calendarCursor);end=new Date(calendarCursor);heading=calendarCursor.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+ document.getElementById('calendarHeading').textContent=heading;
+ const inRange=events.filter(e=>e.date>=calDate(start)&&e.date<=calDate(end));
+ const eventButton=e=>`<button class="cal-event ${calSafe(e.type||'task')}" title="${calSafe(e.title)}" onclick="openCalendarItem('${calSafe(e.id)}')">${e.startTime?calSafe(e.startTime)+' ':''}${calSafe(e.title)}</button>`;
+ if(calendarView==='month'){
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let out=days.map(d=>`<div class="cal-weekday">${d}</div>`).join('');
+  for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+   const ds=calDate(d),dayEvents=inRange.filter(e=>e.date===ds);
+   out+=`<div class="cal-cell ${d.getMonth()!==calendarCursor.getMonth()?'outside':''} ${ds===today?'today':''}"><div class="cal-day-num"><span>${d.getDate()}</span><button class="cal-add" onclick="openCalendarEvent('${ds}')" aria-label="Add event ${ds}">＋</button></div>${dayEvents.slice(0,3).map(eventButton).join('')}${dayEvents.length>3?`<small class="muted">+${dayEvents.length-3} more</small>`:''}</div>`;
+  }
+  grid.className='calendar-grid';grid.innerHTML=out;
+ }else if(calendarView==='week'){
+  let out='';for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){const ds=calDate(d),dayEvents=inRange.filter(e=>e.date===ds);out+=`<div class="cal-week-day ${ds===today?'today':''}"><h4>${d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})} <button class="cal-add" onclick="openCalendarEvent('${ds}')">＋</button></h4><div class="cal-day-list">${dayEvents.map(eventButton).join('')||'<small class="muted">No events</small>'}</div></div>`}
+  grid.className='cal-week-grid';grid.innerHTML=out;
+ }else{
+  const dayEvents=events.filter(e=>e.date===calDate(calendarCursor));
+  grid.className='';grid.innerHTML=`<div class="cal-day-list">${dayEvents.map(eventButton).join('')||'<div class="agenda-empty">Nothing scheduled. Add an event to plan your day.</div>'}</div><button class="secondary" style="margin-top:10px" onclick="openCalendarEvent('${calDate(calendarCursor)}')">＋ Add to this day</button>`;
+ }
+ const upcomingEnd=calDate(new Date(new Date(today+'T12:00:00').getTime()+7*86400000));
+ const upcoming=events.filter(e=>e.date>=today&&e.date<=upcomingEnd).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.startTime||'').localeCompare(b.startTime||''));
+ document.getElementById('agendaHeading').textContent='Upcoming events';
+ document.getElementById('calendarAgenda').innerHTML=upcoming.length?upcoming.map(e=>`<div class="agenda-item"><div><strong>${calSafe(e.title)}</strong><small>${new Date(e.date+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}${e.startTime?' · '+calSafe(e.startTime):''} · ${calSafe(e.subtitle||e.location||'JRVS event')}</small></div><button class="tiny-btn" onclick="openCalendarItem('${calSafe(e.id)}')">Open</button></div>`).join(''):'<div class="agenda-empty">No upcoming events. Add your first appointment or schedule a job.</div>';
+}
+function setCalendarView(v){calendarView=v;renderCalendar()}
+function calendarMove(n){if(calendarView==='month')calendarCursor.setMonth(calendarCursor.getMonth()+n);else if(calendarView==='week')calendarCursor.setDate(calendarCursor.getDate()+7*n);else calendarCursor.setDate(calendarCursor.getDate()+n);renderCalendar()}
+function calendarToday(){calendarCursor=new Date();calendarCursor.setHours(12,0,0,0);renderCalendar()}
+let calendarDetailEventId='';
+function openCalendarItem(id){
+ const e=calendarAllEvents().find(x=>String(x.id)===String(id));if(!e)return;
+ showCalendarDetail(e);
+}
+function showCalendarDetail(e){
+ if(!e)return;
+ calendarDetailEventId=e.id;
+ const dateLabel=new Date(e.date+'T12:00:00').toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+ document.getElementById('calendarDetailTitle').textContent=e.title||'Calendar event';
+ document.getElementById('calDetailWhen').textContent=dateLabel+(e.allDay?' · All day':(e.startTime?' · '+e.startTime+(e.endTime?'–'+e.endTime:''):''));
+ document.getElementById('calDetailType').textContent=e.generated?'Automatically linked from a job':'Calendar appointment';
+ document.getElementById('calDetailLocation').textContent=e.location||'No location added';
+ document.getElementById('calDetailLocationWrap').style.display=e.location?'':'none';
+ const linkedJob=e.jobId?(data.jobs||[]).find(j=>String(j.id)===String(e.jobId)):e.link?.startsWith('job:')?(data.jobs||[]).find(j=>String(j.id)===String(e.link.split(':')[1])):null;
+ document.getElementById('calDetailJob').textContent=linkedJob?(linkedJob.name||'Untitled job')+' · '+(linkedJob.address||'No address'):'No linked job';
+ document.getElementById('calDetailJobWrap').style.display=linkedJob?'':'none';
+ document.getElementById('calDetailNotes').textContent=e.notes||'No notes';
+ document.getElementById('calDetailEdit').style.display=e.generated?'none':'';
+ document.getElementById('calendarDetailBackdrop').classList.add('show');
+}
+function closeCalendarDetail(){document.getElementById('calendarDetailBackdrop').classList.remove('show');calendarDetailEventId=''}
+function editCalendarDetail(){const e=calendarEvents.find(x=>x.id===calendarDetailEventId);if(!e)return;closeCalendarDetail();openCalendarEvent(e.date,e)}
+function openCalendarEvent(date='',event=null){
+ const form=document.getElementById('calendarEventForm');form.reset();
+ document.getElementById('calEventId').value=event?.id||'';
+ document.getElementById('calendarEventTitle').textContent=event?'Edit calendar event':'Add calendar event';
+ document.getElementById('calTitle').value=event?.title||'';
+ document.getElementById('calType').value=event?.type||'task';
+ document.getElementById('calStart').value=event?.date||date||calDate(new Date());
+ document.getElementById('calEnd').value=event?.endDate||event?.date||date||calDate(new Date());
+ document.getElementById('calStartTime').value=event?.startTime||'09:00';
+ document.getElementById('calEndTime').value=event?.endTime||'10:00';
+ document.getElementById('calAllDay').value=event?.allDay?'all':'timed';
+ document.getElementById('calLocation').value=event?.location||'';
+ document.getElementById('calNotes').value=event?.notes||'';
+ document.getElementById('calLink').innerHTML=calendarLinkOptions(event?.link||'');
+ document.getElementById('calDeleteButton').style.display=event?'inline-flex':'none';
+ document.getElementById('calendarEventBackdrop').classList.add('show');
+}
+function closeCalendarEvent(){document.getElementById('calendarEventBackdrop').classList.remove('show')}
+function deleteCalendarEvent(){
+ const id=document.getElementById('calEventId').value;if(!id)return;
+ calendarEvents=calendarEvents.filter(x=>x.id!==id);calSave();closeCalendarEvent();renderCalendar();render();
+ showToast('Calendar event deleted. Linked business records were not changed.');
+}
+
+document.getElementById('calAllDay').addEventListener('change',e=>{const all=e.target.value==='all';document.getElementById('calStartTime').disabled=all;document.getElementById('calEndTime').disabled=all});
+document.getElementById('calendarEventForm').addEventListener('submit',e=>{
+ e.preventDefault();const id=document.getElementById('calEventId').value||'cal-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
+ const item={id,title:document.getElementById('calTitle').value.trim(),type:document.getElementById('calType').value,date:document.getElementById('calStart').value,endDate:document.getElementById('calEnd').value,startTime:document.getElementById('calStartTime').value,endTime:document.getElementById('calEndTime').value,allDay:document.getElementById('calAllDay').value==='all',location:document.getElementById('calLocation').value.trim(),link:document.getElementById('calLink').value,notes:document.getElementById('calNotes').value.trim(),updatedAt:new Date().toISOString()};
+ if(item.endDate<item.date){showToast('End date cannot be before start date.');return}
+ const i=calendarEvents.findIndex(x=>x.id===id);if(i>=0)calendarEvents[i]=item;else calendarEvents.push(item);
+ calSave();closeCalendarEvent();renderCalendar();showToast('Calendar event saved.');
+});
+function exportCalendarICS(){
+ const events=calendarAllEvents(),stamp=d=>d.replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+ const escI=s=>String(s||'').replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;');
+ const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//JRVS Property Co//Business Calendar//EN','CALSCALE:GREGORIAN'];
+ events.forEach(e=>{if(!e.date)return;const start=e.allDay?e.date.replace(/-/g,''):(e.date.replace(/-/g,'')+'T'+(e.startTime||'0900').replace(':','')+'00');const endDate=e.endDate||e.date;const end=e.allDay?new Date(endDate+'T12:00:00').toISOString().slice(0,10).replace(/-/g,''):(endDate.replace(/-/g,'')+'T'+(e.endTime||'1000').replace(':','')+'00');lines.push('BEGIN:VEVENT','UID:'+escI(e.id)+'@jrvs-property-co','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'').replace('Z','Z'),e.allDay?'DTSTART;VALUE=DATE:'+start:'DTSTART;TZID=Australia/Sydney:'+start,e.allDay?'DTEND;VALUE=DATE:'+new Date(new Date(endDate+'T12:00:00').getTime()+86400000).toISOString().slice(0,10).replace(/-/g,''):'DTEND;TZID=Australia/Sydney:'+end,'SUMMARY:'+escI(e.title),'DESCRIPTION:'+escI(e.notes||e.subtitle||''),e.location?'LOCATION:'+escI(e.location):'', 'END:VEVENT')});
+ lines.push('END:VCALENDAR');const blob=new Blob([lines.filter(Boolean).join('\r\n')],{type:'text/calendar;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='JRVS-Business-Calendar.ics';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('Calendar export created. Import the .ics file into your calendar app.');
+}
+
+function showPage(name){if(name==='calendar')renderCalendar();if(name==='quotes')renderQuotes();if(name==='finances')renderFinances();document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.page===name));document.getElementById('pageTitle').textContent=pageInfo[name][0];document.getElementById('pageSub').textContent=pageInfo[name][1];const eyebrow=document.getElementById('pageEyebrow');if(eyebrow)eyebrow.textContent=({dashboard:'Business workspace',calendar:'Schedule',jobs:'Business workspace',clients:'Business workspace',photos:'Media workspace',quotes:'Sales workspace',finances:'Business management',settings:'Preferences'})[name]||'Business workspace';window.scrollTo(0,0);}
+
+// Global search. No keyboard shortcut is registered, and search never writes to storage.
+function buildGlobalSearchResults(query){
+ const q=query.trim().toLowerCase();if(!q)return [];
+ const matches=[];
+ const add=(type,id,title,subtitle,icon,action,haystack)=>{if((haystack||'').toLowerCase().includes(q))matches.push({type,id,title,subtitle,icon,action})};
+ data.jobs.forEach(j=>add('Job',j.id,j.name,`${j.client||'No client'} · ${j.address||'Address not entered'} · ${j.status||'Enquiry'}`,'▣',()=>viewJob(j.id),[j.name,j.client,j.address,j.status,j.date,j.notes].join(' ')));
+ data.clients.forEach(c=>add('Client',c.id,c.name,`${c.company||'Private client'} · ${c.email||'No email'} · ${c.phone||'No phone'}`,'♙',()=>viewClient(c.id),[c.name,c.company,c.email,c.phone,c.notes].join(' ')));
+ data.quotes.forEach(q=>add('Quote',q.id,q.number||'Quotation',`${q.clientName||'Client'} · ${q.status||'Draft'} · ${money(q.total)}`,'＄',()=>editQuote(q.id),[q.number,q.clientName,q.jobName,q.status,q.notes].join(' ')));
+ (data.invoices||[]).forEach(inv=>add('Invoice',inv.id,inv.number||'Invoice',`${inv.clientName||'Client'} · ${inv.status||'Unpaid'} · ${money(inv.total)}`,'＄',()=>{showPage('quotes');document.getElementById('invoiceStatusFilter').value='all';renderInvoices()},[inv.number,inv.clientName,inv.jobName,inv.status].join(' ')));
+ (data.income||[]).forEach(r=>add('Income',r.id,r.description||'Income record',`${money(r.amount)} · ${r.date||'No date'} · ${r.status||'Paid'}`,'↗',()=>{showPage('finances');editFinance(r.id,'income')},[r.description,r.category,r.date,r.status,r.amount].join(' ')));
+ (data.expenses||[]).forEach(r=>add('Expense',r.id,r.description||'Expense record',`${money(r.amount)} · ${r.date||'No date'} · ${r.category||'Expense'}`,'↘',()=>{showPage('finances');editFinance(r.id,'expense')},[r.description,r.category,r.date,r.amount].join(' ')));
+ return matches.slice(0,12);
+}
+function runGlobalSearch(){
+ const input=document.getElementById('globalSearchInput'),panel=document.getElementById('globalSearchResults');if(!input||!panel)return;
+ const query=input.value.trim();if(!query){panel.hidden=true;panel.innerHTML='';return}
+ const results=buildGlobalSearchResults(query);
+ panel.innerHTML=results.length?results.map((r,i)=>`<button class="search-result" type="button" data-search-index="${i}"><span class="search-result-icon">${r.icon}</span><span class="search-result-copy"><strong>${esc(r.title)}</strong><small>${esc(r.subtitle)}</small></span><span class="search-result-type">${r.type}</span></button>`).join('')+`<div class="search-hint">Showing up to 12 matches · Select a result to open it</div>`:`<div class="search-empty">No matches found for “${esc(query)}”.</div>`;
+ panel.hidden=false;
+ panel.querySelectorAll('[data-search-index]').forEach((button,i)=>button.addEventListener('click',()=>{const chosen=results[i];panel.hidden=true;input.value='';input.blur();chosen.action()}));
+}
+function closeGlobalSearch(){const panel=document.getElementById('globalSearchResults');if(panel)panel.hidden=true}
+
+document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
+const globalSearchInput=document.getElementById('globalSearchInput');
+if(globalSearchInput){
+ globalSearchInput.addEventListener('input',runGlobalSearch);
+ globalSearchInput.addEventListener('keydown',e=>{if(e.key==='Escape'){closeGlobalSearch();globalSearchInput.blur()}if(e.key==='Enter'){const first=document.querySelector('#globalSearchResults [data-search-index="0"]');if(first)first.click()}});
+ document.addEventListener('click',e=>{if(!document.getElementById('globalSearchWrap')?.contains(e.target))closeGlobalSearch()});
+}
+
+function openModal(type,id=null){
+ const fields=document.getElementById('formFields'),existing=id?(type==='job'?data.jobs:data.clients).find(x=>x.id===id):null;
+ document.getElementById('modalTitle').textContent=(existing?'Edit ':'Create a ')+(type==='job'?'job':'client');
+ fields.innerHTML=type==='job'?`
+ <div class="field"><label>Job / property name</label><input name="name" required placeholder="e.g. 12 Ocean Street"></div>
+ <div class="field"><label>Client</label><input name="client" list="clientOptions" placeholder="Client or agency"><datalist id="clientOptions">${data.clients.map(c=>`<option value="${esc(c.name)}">`).join('')}</datalist></div>
+ <div class="field"><label>Scheduled date</label><input name="date" type="date"></div>
+ <div class="field"><label>Status</label><select name="status"><option>Enquiry</option><option>Quoted</option><option>Booked</option><option>Photography</option><option>Editing</option><option>Delivered</option></select></div>
+ <div class="field full"><label>Property address</label><input name="address" placeholder="Street, suburb"></div>
+ <div class="field full"><label>Notes</label><textarea name="notes" rows="3" placeholder="Access details, requested services..."></textarea></div>`:`
+ <div class="field full"><label>Client / agency name</label><input name="name" required placeholder="Client name"></div>
+ <div class="field"><label>Email</label><input name="email" type="email" placeholder="name@example.com"></div>
+ <div class="field"><label>Phone</label><input name="phone" type="tel" placeholder="04xx xxx xxx"></div>
+ <div class="field full"><label>Company / agency</label><input name="company" placeholder="Optional"></div>
+ <div class="field full"><label>Notes</label><textarea name="notes" rows="3"></textarea></div>`;
+ const form=document.getElementById('recordForm');form.dataset.type=type;form.dataset.editId=id||'';
+ if(existing)Object.entries(existing).forEach(([k,v])=>{const el=form.elements.namedItem(k);if(el)el.value=v});
+ document.getElementById('modalBackdrop').classList.add('show');
+}
+function closeModal(){document.getElementById('modalBackdrop').classList.remove('show')}
+async function deleteRecord(type,id){
+ const list=type==='job'?data.jobs:data.clients,item=list.find(x=>x.id===id);if(!item)return;
+ if(type==='client'&&data.jobs.some(j=>(j.client||'').toLowerCase()===item.name.toLowerCase())&&!await showConfirm('This client is linked to jobs. Delete the client record? Job details will remain.'))return;
+ if(!await showConfirm(`Delete "${item.name}"? This cannot be undone.`))return;
+ if(type==='job')data.jobs=data.jobs.filter(x=>x.id!==id);else data.clients=data.clients.filter(x=>x.id!==id);
+ save();render();
+}
+function viewJob(id){
+ const j=data.jobs.find(x=>x.id===id);if(!j)return;
+ const inc=(data.income||[]).filter(x=>x.jobId===id),exp=(data.expenses||[]).filter(x=>x.jobId===id),qs=(data.quotes||[]).filter(x=>x.jobId===id);
+ const received=inc.filter(x=>x.status==='Paid').reduce((s,x)=>s+(Number(x.amount)||0),0);
+ const due=inc.filter(x=>x.status!=='Paid').reduce((s,x)=>s+(Number(x.amount)||0),0);
+ const costs=exp.reduce((s,x)=>s+(Number(x.amount)||0),0);
+ const client=data.clients.find(c=>c.name.toLowerCase()===(j.client||'').toLowerCase());
+ document.getElementById('jobDetailHeading').textContent=j.name;
+ const info=[['Client',j.client||'Not assigned'],['Status',j.status||'Enquiry'],['Scheduled date',j.date||'Not scheduled'],['Property address',j.address||'Not entered'],['Client email',client?.email||'—'],['Client phone',client?.phone||'—']];
+ const incomeHtml=inc.length?inc.map(x=>`<div class="job-detail-row"><div><strong>${esc(x.description)}</strong><small>${esc(x.date||'No date')} · ${esc(x.category||'Income')} · ${esc(x.status||'Paid')}</small></div><div style="text-align:right"><strong>${money(x.amount)}</strong><div><button class="tiny-btn" onclick="closeJobDetail();editFinance('${x.id}','income')">Edit</button></div></div></div>`).join(''):'<div class="job-detail-empty">No income has been recorded against this job.</div>';
+ const expenseHtml=exp.length?exp.map(x=>`<div class="job-detail-row"><div><strong>${esc(x.description)}</strong><small>${esc(x.date||'No date')} · ${esc(x.category||'Expense')}</small></div><div style="text-align:right"><strong>${money(x.amount)}</strong><div><button class="tiny-btn" onclick="closeJobDetail();editFinance('${x.id}','expense')">Edit</button></div></div></div>`).join(''):'<div class="job-detail-empty">No expenses have been recorded against this job.</div>';
+ const quoteHtml=qs.length?qs.map(q=>`<div class="job-detail-row"><div><strong>${esc(q.number)}</strong><small>${esc(q.date||'No date')} · ${esc(q.status||'Draft')}</small></div><div style="text-align:right"><strong>${money(q.total)}</strong><div><button class="tiny-btn" onclick="closeJobDetail();editQuote('${q.id}')">Edit quote</button></div></div></div>`).join(''):'<div class="job-detail-empty">No quotations are linked to this job.</div>';
+ document.getElementById('jobDetailContent').innerHTML=`
+ <div class="job-detail-header"><div><div class="job-detail-title">${esc(j.name)}</div><div class="job-detail-sub">Job record · ${esc(j.id)}</div></div><span class="pill">${esc(j.status||'Enquiry')}</span></div>
+ <div class="job-detail-grid"><div class="job-detail-stat"><span>Income received</span><strong>${money(received)}</strong></div><div class="job-detail-stat"><span>Outstanding</span><strong>${money(due)}</strong></div><div class="job-detail-stat"><span>Expenses</span><strong>${money(costs)}</strong></div></div>
+ <div class="job-detail-section"><h3>Property & client</h3><div class="job-detail-info">${info.map(x=>`<div><small>${x[0]}</small><strong>${esc(x[1])}</strong></div>`).join('')}</div></div>
+ <div class="job-detail-section"><h3>Income · ${inc.length}</h3>${incomeHtml}</div>
+ <div class="job-detail-section"><h3>Expenses · ${exp.length}</h3>${expenseHtml}</div>
+ <div class="job-detail-section"><h3>Quotations · ${qs.length}</h3>${quoteHtml}</div>
+ <div class="job-detail-section"><h3>Job notes</h3><div class="job-detail-notes">${esc(j.notes||'No notes have been added.')}</div></div>`;
+ document.getElementById('jobDetailBackdrop').classList.add('show');
+}
+function closeJobDetail(){document.getElementById('jobDetailBackdrop').classList.remove('show')}
+function viewClient(id){
+ const c=data.clients.find(x=>x.id===id);if(!c)return;
+ const jobs=data.jobs.filter(j=>(j.client||'').trim().toLowerCase()===(c.name||'').trim().toLowerCase());
+ const jobIds=new Set(jobs.map(j=>j.id));
+ const qs=(data.quotes||[]).filter(q=>q.clientId===id||((q.clientName||'').trim().toLowerCase()===(c.name||'').trim().toLowerCase()));
+ const inc=(data.income||[]).filter(x=>jobIds.has(x.jobId)),exp=(data.expenses||[]).filter(x=>jobIds.has(x.jobId));
+ const received=inc.filter(x=>x.status==='Paid').reduce((s,x)=>s+(Number(x.amount)||0),0);
+ const outstanding=inc.filter(x=>x.status!=='Paid').reduce((s,x)=>s+(Number(x.amount)||0),0);
+ const costs=exp.reduce((s,x)=>s+(Number(x.amount)||0),0);
+ const initials=(c.name||'C').trim().split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
+ document.getElementById('clientDetailHeading').textContent='Client profile';
+ document.getElementById('clientEditButton').onclick=()=>{closeClientDetail();openModal('client',id)};
+ const jobHtml=jobs.length?jobs.map(j=>`<div class="client-profile-item"><div><strong>${esc(j.name)}</strong><small>${esc(j.address||'No address')} · ${esc(j.date||'No date')} · ${esc(j.status||'Enquiry')}</small></div><button class="tiny-btn" onclick="closeClientDetail();viewJob('${j.id}')">View job</button></div>`).join(''):'<div class="client-profile-empty">No jobs are linked to this client yet.</div>';
+ const quoteHtml=qs.length?qs.map(q=>`<div class="client-profile-item"><div><strong>${esc(q.number||'Quotation')}</strong><small>${esc(q.jobName||'No job specified')} · ${esc(q.date||'No date')} · ${esc(q.status||'Draft')}</small></div><div style="text-align:right"><strong>${money(q.total)}</strong></div></div>`).join(''):'<div class="client-profile-empty">No quotations have been created for this client.</div>';
+ const contact=[['Email',c.email||'Not provided'],['Phone',c.phone||'Not provided'],['Company / agency',c.company||'Not provided']];
+ document.getElementById('clientDetailContent').innerHTML=`
+ <div class="client-profile-hero"><div class="client-avatar">${esc(initials)}</div><div><div class="client-profile-name">${esc(c.name)}</div><div class="client-profile-company">${esc(c.company||'Private client')}</div></div></div>
+ <div class="client-contact-grid">${contact.map(x=>`<div class="client-contact-card"><small>${x[0]}</small><strong>${esc(x[1])}</strong></div>`).join('')}</div>
+ <div class="client-profile-stats"><div class="client-profile-stat"><span>Jobs linked</span><strong>${jobs.length}</strong></div><div class="client-profile-stat"><span>Income received</span><strong>${money(received)}</strong></div><div class="client-profile-stat"><span>Outstanding</span><strong>${money(outstanding)}</strong></div></div>
+ <div class="client-profile-section"><h3>Jobs · ${jobs.length}</h3>${jobHtml}</div>
+ <div class="client-profile-section"><h3>Quotations · ${qs.length}</h3>${quoteHtml}</div>
+ <div class="client-profile-section"><h3>Financial activity</h3><div class="client-contact-grid"><div class="client-contact-card"><small>Expenses recorded against jobs</small><strong>${money(costs)}</strong></div><div class="client-contact-card"><small>Income transactions</small><strong>${inc.length}</strong></div></div></div>
+ <div class="client-profile-section"><h3>Client notes</h3><div class="client-profile-notes">${esc(c.notes||'No notes have been added.')}</div></div>`;
+ document.getElementById('clientDetailBackdrop').classList.add('show');
+}
+function closeClientDetail(){document.getElementById('clientDetailBackdrop').classList.remove('show')}
+document.getElementById('recordForm').addEventListener('submit',e=>{
+ e.preventDefault();const type=e.target.dataset.type,id=e.target.dataset.editId,item=Object.fromEntries(new FormData(e.target));
+ if(id){const list=type==='job'?data.jobs:data.clients,i=list.findIndex(x=>x.id===id);if(i>=0)list[i]={...list[i],...item};}
+ else{item.id=Date.now().toString();if(type==='job')data.jobs.unshift(item);else data.clients.unshift(item);}
+ save();closeModal();e.target.reset();render();
+});
+
+let activeAttentionItem=null;
+function attentionItems(){
+ const awaiting=(data.quotes||[]).filter(q=>q.status==='Sent'||q.status==='Draft').map(q=>({key:'quote:'+q.id,kind:q.status==='Draft'?'Quote ready to send':'Quote awaiting client response',title:q.number||'Quotation',sub:q.clientName||'Client',detail:`Status: ${q.status||'Draft'}\nClient: ${q.clientName||'Not specified'}\nProperty: ${q.jobName||'Not linked'}\nTotal: ${money(q.total)}\nDate: ${q.date||'Not set'}\nValid until: ${q.validUntil||'Not set'}`,recordType:'Quotation'}));
+ const unpaid=(data.income||[]).filter(x=>x.status!=='Paid').map(x=>({key:'income:'+x.id,kind:'Payment outstanding',title:x.description||'Income',sub:`${money(x.amount)} · ${x.date||'No date'}`,detail:`Status: ${x.status||'Outstanding'}\nAmount: ${money(x.amount)}\nDate: ${x.date||'Not set'}\nCategory: ${x.category||'Not specified'}\n${x.jobId?'Linked job: '+(data.jobs.find(j=>String(j.id)===String(x.jobId))?.name||'Job'):''}`,recordType:'Payment'}));
+ return [...awaiting,...unpaid].filter(x=>!data.attentionCleared.includes(x.key));
+}
+function renderAttention(){
+ const list=document.getElementById('attentionList');if(!list)return;
+ const items=attentionItems();document.getElementById('attentionCount').textContent=items.length;
+ list.innerHTML=items.length?items.slice(0,6).map(x=>`<button type="button" class="attention-item" onclick="openAttentionDetail('${esc(x.key)}')"><span style="text-align:left;min-width:0"><strong>${esc(x.title)}</strong><small>${esc(x.kind)} · ${esc(x.sub)}</small></span><span class="tiny-btn">View details</span></button>`).join(''):'<div class="attention-empty">You are all caught up. No quotes or payments need attention.</div>';
+}
+function openAttentionDetail(key){
+ const item=attentionItems().find(x=>x.key===key);if(!item)return;activeAttentionItem=item;
+ document.getElementById('attentionDetailTitle').textContent=item.title;
+ document.getElementById('attentionDetailType').textContent=item.kind;
+ document.getElementById('attentionDetailBody').textContent=item.detail;
+ document.getElementById('attentionDetailBackdrop').classList.add('show');
+}
+function closeAttentionDetail(){document.getElementById('attentionDetailBackdrop').classList.remove('show');activeAttentionItem=null}
+function clearAttentionItem(){if(!activeAttentionItem)return;data.attentionCleared.push(activeAttentionItem.key);save();closeAttentionDetail();renderAttention();}
+
+function render(){
+ document.getElementById('activeJobs').textContent=data.jobs.filter(j=>j.status!=='Delivered').length;
+ document.getElementById('clientCount').textContent=data.clients.length;
+ document.getElementById('quoteCount').textContent=data.quotes.length;
+ document.getElementById('incomeTotal').textContent='$'+data.income.reduce((s,x)=>s+(Number(x.amount)||0),0).toLocaleString('en-AU');
+ const jobCard=j=>{
+ const inc=(data.income||[]).filter(x=>x.jobId===j.id),exp=(data.expenses||[]).filter(x=>x.jobId===j.id);
+ const paid=inc.filter(x=>x.status==='Paid').reduce((s,x)=>s+(Number(x.amount)||0),0);
+ const due=inc.filter(x=>x.status!=='Paid').reduce((s,x)=>s+(Number(x.amount)||0),0);
+ return `<div class="row-card"><div style="min-width:0"><strong>${esc(j.name)}</strong><small>${esc(j.client||'No client')} · ${esc(j.date||'No date')} · ${esc(j.address||'Address not entered')}</small><small class="job-finance-link">Finance: ${money(paid)} received · ${money(due)} outstanding · ${exp.length} expense${exp.length===1?'':'s'}</small></div><div class="row-actions"><span class="pill">${esc(j.status||'Enquiry')}</span><button class="tiny-btn" onclick="viewJob('${j.id}')">View</button><button class="tiny-btn" onclick="openModal('job','${j.id}')">Edit</button><button class="tiny-btn danger" onclick="deleteRecord('job','${j.id}')">Delete</button></div></div>`;
+ };
+ const jobTerm=(document.getElementById('jobSearch')?.value||'').trim().toLowerCase();const matchingJobs=data.jobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).filter(j=>!jobTerm||[j.name,j.client,j.address,j.status,j.date,j.notes].join(' ').toLowerCase().includes(jobTerm));const visibleJobs=listLimit(matchingJobs,jobTerm);document.getElementById('jobsList').innerHTML=visibleJobs.map(jobCard).join('')||'<div class="empty"><b>No matching jobs</b>Try another search or create a new job.</div>';const jobsNote=document.getElementById('jobsLimitNote');if(jobsNote)jobsNote.textContent=listLimitMessage(matchingJobs.length,visibleJobs.length,jobTerm,'jobs');
+ dashboardPhotoUrls.forEach(u=>URL.revokeObjectURL(u));dashboardPhotoUrls=[];
+ const recent=data.jobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,5);
+ document.getElementById('recentJobs').className=recent.length?'recent-job-list':'empty';
+ document.getElementById('recentJobs').innerHTML=recent.map(j=>{
+  const pics=photoRecords.filter(p=>p.jobId===j.id),cover=pics.find(p=>p.isCover)||pics[0];
+  const inc=(data.income||[]).filter(x=>x.jobId===j.id),exp=(data.expenses||[]).filter(x=>x.jobId===j.id);
+  const paid=inc.filter(x=>x.status==='Paid').reduce((s,x)=>s+(Number(x.amount)||0),0);
+  const due=inc.filter(x=>x.status!=='Paid').reduce((s,x)=>s+(Number(x.amount)||0),0);
+  let media='<span class="recent-job-placeholder">⌂</span>';
+  if(cover?.blob){const u=URL.createObjectURL(cover.blob);dashboardPhotoUrls.push(u);media=`<span class="recent-job-cover" style="background-image:url('${u}')"></span>`}
+  return `<button type="button" class="recent-job-card" onclick="viewJob('${j.id}')" aria-label="Open project ${esc(j.name)}">${media}<span class="recent-job-main"><strong>${esc(j.name)}</strong><small>${esc(j.client||'No client')} · ${esc(j.date||'No date')}</small><span class="recent-job-meta"><span class="pill">${esc(j.status||'Enquiry')}</span><span>${pics.length} photo${pics.length===1?'':'s'}</span><span>${money(paid)} received</span>${due>0?`<span class="recent-job-due">${money(due)} due</span>`:''}</span></span><span class="recent-job-arrow">›</span></button>`;
+ }).join('')||'<div class="empty"><b>No jobs yet</b>Add your first job to get started.</div>';
+ const clientTerm=(document.getElementById('clientSearch')?.value||'').trim().toLowerCase();const matchingClients=data.clients.filter(c=>!clientTerm||[c.name,c.company,c.email,c.phone,c.address].join(' ').toLowerCase().includes(clientTerm));const visibleClients=listLimit(matchingClients,clientTerm);document.getElementById('clientsList').innerHTML=visibleClients.map(c=>{const count=data.jobs.filter(j=>(j.client||'').toLowerCase()===c.name.toLowerCase()).length;return `<div class="row-card"><div style="min-width:0"><strong>${esc(c.name)}</strong><small>${esc(c.company||'')}${c.company?' · ':''}${esc(c.email||'No email')} · ${esc(c.phone||'No phone')} · ${count} linked job${count===1?'':'s'}</small></div><div class="row-actions"><button class="tiny-btn" onclick="viewClient('${c.id}')">Profile</button><button class="tiny-btn" onclick="openModal('client','${c.id}')">Edit</button><button class="tiny-btn danger" onclick="deleteRecord('client','${c.id}')">Delete</button></div></div>`}).join('')||'<div class="empty"><b>No matching clients</b>Try another search or add a client.</div>';const clientsNote=document.getElementById('clientsLimitNote');if(clientsNote)clientsNote.textContent=listLimitMessage(matchingClients.length,visibleClients.length,clientTerm,'clients');
+ renderAttention();
+ const schedule=document.getElementById('dashboardSchedule');
+ if(schedule){const today=calDate(new Date());const upcomingEnd=calDate(new Date(new Date(today+'T12:00:00').getTime()+7*86400000));const upcoming=calendarAllEvents().filter(e=>e.date>=today&&e.date<=upcomingEnd).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.startTime||'').localeCompare(b.startTime||''));schedule.innerHTML=upcoming.length?upcoming.map(e=>`<div class="row-card"><div><strong>${calSafe(e.title)}</strong><small>${new Date(e.date+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}${e.startTime?' · '+calSafe(e.startTime):''} · ${calSafe(e.subtitle||e.location||'JRVS event')}</small></div><button class="tiny-btn" onclick="showPage('calendar');openCalendarItem('${calSafe(e.id)}')">Open</button></div>`).join(''):'<div class="empty">Nothing scheduled yet. Add an event in your calendar.</div>'}
+}
+function esc(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+// Photos are stored separately from job/client records in IndexedDB.
+const PHOTO_DB='jrvs-photo-library',PHOTO_STORE='photos';
+function openPhotoDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(PHOTO_DB,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(PHOTO_STORE))req.result.createObjectStore(PHOTO_STORE,{keyPath:'id'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+async function photoRequest(mode,action,value){const db=await openPhotoDB();return new Promise((resolve,reject)=>{const tx=db.transaction(PHOTO_STORE,mode),s=tx.objectStore(PHOTO_STORE);let r=action==='all'?s.getAll():action==='put'?s.put(value):s.delete(value);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);tx.oncomplete=()=>db.close();tx.onerror=()=>reject(tx.error)})}
+let photoRecords=[],photoUrls=[],dashboardPhotoUrls=[];
+async function loadPhotos(){try{photoRecords=await photoRequest('readonly','all')||[]}catch(e){photoRecords=[]}populatePhotoJobFilter();renderPhotos();render()}
+function populatePhotoJobFilter(){const el=document.getElementById('photoJobFilter');if(!el)return;const old=el.value;el.innerHTML='<option value="all">All projects</option>'+data.jobs.map(j=>`<option value="${esc(j.id)}">${esc(j.name)}</option>`).join('');if([...el.options].some(o=>o.value===old))el.value=old}
+async function importPhotos(files){const jobId=document.getElementById('photoJobFilter').value;if(jobId==='all'){showToast('Please choose a specific job before importing photos.');return}const job=data.jobs.find(j=>j.id===jobId);if(!job)return;const kind=document.getElementById('photoKind').value;let added=0;for(const file of files){const ext=(file.name.split('.').pop()||'').toLowerCase(),isRaw=['cr2','cr3','nef','arw','dng','raf','orf','rw2','pef','srw'].includes(ext);if(!file.type.startsWith('image/')&&!isRaw)continue;const rec={id:Date.now().toString()+Math.random().toString(16).slice(2),jobId,jobName:job.name,name:file.name,type:kind,size:file.size,mime:file.type||(isRaw?'application/octet-stream':'image/jpeg'),isRaw,addedAt:new Date().toISOString(),status:kind==='Original'?'Imported':'Edited',isCover:!photoRecords.some(p=>p.jobId===jobId),blob:file};try{await photoRequest('readwrite','put',rec);added++}catch(e){showToast('Storage could not save '+file.name+'. Your browser may be low on available storage.');break}}await loadPhotos();showToast(added+' photo(s) imported to '+job.name+'.')}
+function bytes(n){return n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB'}
+
+function getProjectPhotos(jobId){return photoRecords.filter(p=>p.jobId===jobId).sort((a,b)=>new Date(a.addedAt||0)-new Date(b.addedAt||0))}
+function getProjectCover(jobId){
+ const items=getProjectPhotos(jobId);
+ return items.find(p=>p.isCover)||items[0]||null;
+}
+async function setProjectCover(id){
+ const chosen=photoRecords.find(p=>p.id===id);if(!chosen)return;
+ for(const p of photoRecords.filter(x=>x.jobId===chosen.jobId)){p.isCover=p.id===id;await photoRequest('readwrite','put',p)}
+ await loadPhotos();
+}
+function openProjectGallery(jobId){
+ const filter=document.getElementById('photoJobFilter');filter.value=jobId;renderPhotos();
+}
+function showAllProjects(){
+ const filter=document.getElementById('photoJobFilter');filter.value='all';renderPhotos();
+}
+async function renderPhotos(){
+ const grid=document.getElementById('photoGrid');if(!grid)return;
+ photoUrls.forEach(URL.revokeObjectURL);photoUrls=[];
+ const f=document.getElementById('photoJobFilter').value;
+ document.getElementById('photoCount').textContent=photoRecords.length+' photos';
+ if(f==='all'){
+   const jobs=data.jobs;
+   if(!jobs.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><b>No projects yet</b>Create a job first, then import its property photos.</div>';return}
+   grid.className='project-grid';
+   grid.innerHTML=jobs.map(j=>{
+     const items=getProjectPhotos(j.id),cover=getProjectCover(j.id);
+     let media='<div class="project-placeholder"><span>▧</span>No cover photo yet</div>';
+     if(cover){const u=URL.createObjectURL(cover.blob);photoUrls.push(u);media=`<img class="project-cover" src="${u}" alt="${esc(j.name)} cover photo" onclick="openProjectGallery('${j.id}')">`}
+     const coverLabel=cover?`<span class="cover-tag">${cover.isCover?'Chosen cover':'First photo'}</span>`:'';
+     return `<article class="project-card">${media}<div class="project-info"><strong>${esc(j.name)} ${coverLabel}</strong><div class="project-meta">${items.length} photo${items.length===1?'':'s'} · ${esc(j.client||'No client')}</div><div class="project-actions"><button class="primary" onclick="openProjectGallery('${j.id}')">Open gallery</button></div></div></article>`;
+   }).join('');
+   return;
+ }
+ grid.className='photo-grid';
+ const job=data.jobs.find(j=>j.id===f);
+ const rows=getProjectPhotos(f);
+ const back=`<div class="gallery-heading"><div><div class="gallery-kicker">PROJECT GALLERY</div><strong>${esc(job?.name||'Project gallery')}</strong><div class="muted">${rows.length} ${rows.length===1?'photo':'photos'} · Original files are kept safe</div></div><button class="secondary gallery-back" onclick="showAllProjects()">← All projects</button></div>`;
+ if(!rows.length){grid.innerHTML=back+'<div class="empty" style="grid-column:1/-1"><b>No photos in this project yet</b>Import photos using the button above.</div>';return}
+ grid.innerHTML=back+rows.map(p=>{
+   const u=URL.createObjectURL(p.blob);photoUrls.push(u);
+   return `<article class="photo-card"><div class="photo-image-wrap"><img class="photo-thumb" src="${u}" alt="${esc(p.name)}" onclick="previewPhoto('${p.id}')"><button class="photo-preview-action" onclick="previewPhoto('${p.id}')" aria-label="Preview photo">↗</button>${p.isCover?'<span class="photo-cover-badge">★ Cover image</span>':''}</div><div class="photo-info"><div class="photo-title-row"><strong title="${esc(p.name)}">${esc(p.name)}</strong><span class="photo-file-type">${esc(p.type)}</span></div><div class="photo-meta">${bytes(p.size)} <span>·</span> ${new Date(p.addedAt||Date.now()).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div><label class="photo-status-field"><span>WORKFLOW STATUS</span><select aria-label="Photo status" onchange="updatePhotoStatus('${p.id}',this.value)">${['Imported','Selected','Editing','Edited','Delivered'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}</select></label><div class="photo-actions"><button class="primary photo-edit-btn" onclick="openEditor('${p.id}')">✎ Edit photo</button><button class="tiny-btn photo-cover-btn" onclick="setProjectCover('${p.id}')" ${p.isCover?'disabled':''}>${p.isCover?'✓ Cover':'Set cover'}</button><button class="tiny-btn danger photo-delete-btn" onclick="deletePhoto('${p.id}')" aria-label="Delete photo" title="Delete photo">⌫</button></div></div></article>`;
+ }).join('');
+}
+async function updatePhotoStatus(id,status){const p=photoRecords.find(x=>x.id===id);if(p){p.status=status;await photoRequest('readwrite','put',p);await loadPhotos()}}
+async function deletePhoto(id){const p=photoRecords.find(x=>x.id===id);if(p&&await showConfirm('Delete '+p.name+' from the photo library?')){const wasCover=!!p.isCover;await photoRequest('readwrite','delete',id);if(wasCover){const next=photoRecords.filter(x=>x.jobId===p.jobId&&x.id!==id).sort((a,b)=>new Date(a.addedAt||0)-new Date(b.addedAt||0))[0];if(next){next.isCover=true;await photoRequest('readwrite','put',next)}}await loadPhotos()}}
+
+
+
+let editingFinanceId=null;
+function ensureFinanceData(){if(!Array.isArray(data.income))data.income=[];if(!Array.isArray(data.expenses))data.expenses=[]}
+function financeAll(){ensureFinanceData();return [...data.income.map(x=>({...x,type:'income'})),...data.expenses.map(x=>({...x,type:'expense'}))]}
+function financeInvoicePaidAmount(inv){if(Array.isArray(inv.payments)&&inv.payments.length)return inv.payments.reduce((s,p)=>s+(Number(p.amount)||0),0);return inv.status==='Paid'?(Number(inv.total)||0):0}
+function financeInvoiceOutstanding(inv){return Math.max(0,(Number(inv.total)||0)-financeInvoicePaidAmount(inv))}
+function financeAll(){ensureFinanceData();const linked=(data.invoices||[]).map(inv=>({id:'invoice-'+inv.id,type:'income',sourceType:'invoice',sourceId:inv.id,date:inv.date||'',description:'Invoice '+(inv.number||'')+' · '+(inv.clientName||inv.jobName||'Client'),category:'Invoice income',amount:Number(inv.total)||0,paidAmount:financeInvoicePaidAmount(inv),outstanding:financeInvoiceOutstanding(inv),status:financeInvoiceOutstanding(inv)<=0?'Paid':'Unpaid',jobId:inv.jobId||null}));return [...linked,...data.income.map(x=>({...x,type:'income',sourceType:'manual'})),...data.expenses.map(x=>({...x,type:'expense',sourceType:'expense'}))]}
+function renderFinances(){
+ ensureFinanceData();const invoices=data.invoices||[],quotes=data.quotes||[];
+ const invoiceTotal=invoices.reduce((s,x)=>s+(Number(x.total)||0),0),received=invoices.reduce((s,x)=>s+financeInvoicePaidAmount(x),0)+data.income.filter(x=>x.status==='Paid').reduce((s,x)=>s+(Number(x.amount)||0),0),outstanding=invoices.reduce((s,x)=>s+financeInvoiceOutstanding(x),0)+data.income.filter(x=>x.status!=='Paid').reduce((s,x)=>s+(Number(x.amount)||0),0),expensesTotal=data.expenses.reduce((s,x)=>s+(Number(x.amount)||0),0),accepted=quotes.filter(q=>q.status==='Accepted').reduce((s,q)=>s+(Number(q.total)||0),0);
+ const stats=[['Payments received',money(received),'Invoice payments + manual income'],['Outstanding',money(outstanding),'Unpaid invoice balances'],['Expenses',money(expensesTotal),'Recorded business expenses'],['Net cash position',money(received-expensesTotal),'Received less expenses']];
+ document.getElementById('financeStats').innerHTML=stats.map(x=>`<div class="finance-stat"><div class="finance-stat-label">${x[0]}</div><div class="finance-stat-value">${x[1]}</div><div class="finance-stat-note">${x[2]}</div></div>`).join('');
+ const linked=document.getElementById('financeLinkedSummary');if(linked)linked.innerHTML=[['Accepted quotes',money(accepted),quotes.filter(q=>q.status==='Accepted').length+' accepted'],['Total invoiced',money(invoiceTotal),invoices.length+' invoices'],['Received',money(received),'Calculated from payments'],['Outstanding',money(outstanding),'Invoice balances']].map(x=>`<div class="finance-linked-card"><small>${x[0]}</small><strong>${x[1]}</strong><small>${x[2]}</small></div>`).join('');
+ const type=document.getElementById('financeTypeFilter')?.value||'all',status=document.getElementById('financeStatusFilter')?.value||'all',rows=financeAll().filter(x=>(type==='all'||x.type===type)&&(status==='all'||x.status===status)).sort((a,b)=>(b.date||'').localeCompare(a.date||'')),list=document.getElementById('financeList');
+ list.innerHTML=rows.length?rows.map(x=>{const job=(data.jobs||[]).find(j=>j.id===x.jobId),isInv=x.sourceType==='invoice';return `<div class="finance-row"><div><strong>${isInv?'Invoice income':x.type==='income'?'Manual income':'Expense'} · ${esc(x.description)}</strong><div class="finance-meta">${esc(x.date||'No date')} · ${esc(x.category||'Uncategorised')}${job?' · '+esc(job.name):''}${isInv?' · '+money(x.paidAmount)+' received / '+money(x.outstanding)+' outstanding':''}</div><span class="finance-status">${esc(x.status||'Paid')}${isInv?' · Linked invoice':''}</span></div><div><div class="finance-amount">${x.type==='expense'?'-':'+'}${money(x.amount)}</div><div class="finance-row-actions">${isInv?`<button class="tiny-btn" onclick="openInvoiceFinanceDetail('${x.sourceId}')">Payment details</button>`:`<button class="tiny-btn" onclick="editFinance('${x.id}','${x.type}')">Edit</button>${x.type==='income'&&x.status!=='Paid'?`<button class="tiny-btn" onclick="markIncomePaid('${x.id}')">Mark received</button>`:''}<button class="tiny-btn danger" onclick="deleteFinance('${x.id}','${x.type}')">Delete</button>`}</div></div></div>`}).join(''):'<div class="finance-empty"><strong>No transactions match these filters</strong>Invoices will appear automatically. Add an expense or manual income to get started.</div>';
+}
+function openInvoiceFinanceDetail(id){const inv=(data.invoices||[]).find(x=>x.id===id);if(inv)showToast((inv.number||'Invoice')+' · '+money(financeInvoicePaidAmount(inv))+' received · '+money(financeInvoiceOutstanding(inv))+' outstanding')}
+
+function openFinanceForm(type='income',id=null){
+ ensureFinanceData();editingFinanceId=id;const rec=id?(type==='income'?data.income:data.expenses).find(x=>x.id===id):null;
+ document.getElementById('financeModalTitle').textContent=rec?'Edit transaction':type==='income'?'Record income':'Add expense';
+ document.getElementById('fType').value=type;document.getElementById('fDate').value=rec?.date||new Date().toISOString().slice(0,10);
+ document.getElementById('fDescription').value=rec?.description||'';document.getElementById('fAmount').value=rec?.amount??'';
+ document.getElementById('fNotes').value=rec?.notes||'';document.getElementById('fStatus').value=rec?.status||'Paid';
+ document.getElementById('fJob').innerHTML='<option value="">No job linked</option>'+data.jobs.map(j=>`<option value="${j.id}">${esc(j.name)}</option>`).join('');document.getElementById('fJob').value=rec?.jobId||'';
+ updateFinanceForm(rec?.category);document.getElementById('financeModalBackdrop').classList.add('show');
+}
+function updateFinanceForm(selected=''){
+ const type=document.getElementById('fType').value,opts=type==='income'?['Photography services','Other income']:['Travel & fuel','Equipment','Software & subscriptions','Insurance','Marketing & advertising','Office & administration','Other expense'];
+ document.getElementById('fCategory').innerHTML=opts.map(x=>`<option>${x}</option>`).join('');if(selected&&opts.includes(selected))document.getElementById('fCategory').value=selected;
+ document.getElementById('fStatusWrap').style.display=type==='income'?'':'none';
+}
+function closeFinanceModal(){document.getElementById('financeModalBackdrop').classList.remove('show')}
+function saveFinanceForm(e){
+ e.preventDefault();ensureFinanceData();const type=fType.value,arr=type==='income'?data.income:data.expenses;
+ const rec={id:editingFinanceId||'txn-'+Date.now(),date:fDate.value,description:fDescription.value.trim(),category:fCategory.value,amount:Number(fAmount.value),jobId:fJob.value||null,status:type==='income'?fStatus.value:'Paid',notes:fNotes.value.trim()};
+ if(editingFinanceId){const oldArr=type==='income'?data.income:data.expenses,idx=oldArr.findIndex(x=>x.id===editingFinanceId);if(idx>=0)oldArr[idx]=rec}
+ else arr.push(rec);
+ save();closeFinanceModal();renderFinances();render();
+}
+function editFinance(id,type){openFinanceForm(type,id)}
+function markIncomePaid(id){const x=data.income.find(x=>x.id===id);if(x){x.status='Paid';x.paidDate=new Date().toISOString().slice(0,10);save();renderFinances();render()}}
+async function deleteFinance(id,type){if(!await showConfirm('Delete this transaction?'))return;const arr=type==='income'?data.income:data.expenses;const idx=arr.findIndex(x=>x.id===id);if(idx>=0)arr.splice(idx,1);save();renderFinances();render()}
+
+let editingQuoteId=null,editingPackageId=null,quoteLineCounter=0;
+const money=n=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(n)||0);
+function ensureQuoteData(){if(!Array.isArray(data.packages))data.packages=[];if(!Array.isArray(data.quotes))data.quotes=[]}
+
+function switchPricingTab(tab){
+ const allowed=['packages','quotes','invoices'];if(!allowed.includes(tab))return;
+ allowed.forEach(key=>{
+  const panel=document.getElementById('pricing-panel-'+key),button=document.getElementById('pricing-tab-'+key);
+  if(panel){panel.classList.toggle('active',key===tab);panel.hidden=key!==tab}
+  if(button){button.classList.toggle('active',key===tab);button.setAttribute('aria-selected',key===tab?'true':'false')}
+ });
+ if(tab==='quotes')renderQuotes();
+ if(tab==='invoices')renderInvoices();
+}
+const JRVS_LIST_DEFAULT_LIMIT=5, JRVS_LIST_SEARCH_LIMIT=10;
+function listLimit(items, term){return items.slice(0, term?JRVS_LIST_SEARCH_LIMIT:JRVS_LIST_DEFAULT_LIMIT)}
+function listLimitMessage(total, shown, term, noun){if(!total)return '';return shown<total?'Showing '+shown+' of '+total+' '+noun+'. '+(term?'Refine your search to narrow the results.':'Search to find older '+noun+'.'):'Showing all '+total+' '+noun+'.'}
+function renderQuotes(){
+ ensureQuoteData();renderInvoices();
+ const active=data.packages.filter(p=>!p.archived),quotes=data.quotes;
+ const total=quotes.reduce((s,q)=>s+(Number(q.total)||0),0),accepted=quotes.filter(q=>q.status==='Accepted').length;
+ const pending=quotes.filter(q=>q.status==='Sent').length;
+ const stats=[['Service packages',active.length,'Reusable packages & extras','▦'],['Quotes created',quotes.length,'All quotations','▤'],['Accepted quotes',accepted,'Approved by clients','✓'],['Total quoted',money(total),'Combined quote value','$']];
+ document.getElementById('quoteStats').innerHTML=stats.map(x=>`<div class="quote-stat"><div class="quote-stat-top"><span class="quote-stat-label">${x[0]}:</span><span class="quote-stat-icon">${x[3]}</span></div><div class="quote-stat-value">${x[1]}</div><div class="quote-stat-note">${x[2]}</div></div>`).join('');
+ const pc=document.getElementById('pricingPackageCount'),qc=document.getElementById('pricingQuoteCount'),ic=document.getElementById('pricingInvoiceCount');
+ if(pc)pc.textContent=String(active.length);if(qc)qc.textContent=String(quotes.length);if(ic)ic.textContent=String((data.invoices||[]).length);
+ const pl=document.getElementById('packageList');
+ const packageTerm=(document.getElementById('packageSearch')?.value||'').trim().toLowerCase();
+ const matchingPackages=active.filter(p=>[p.name,p.description,p.isExtra?'Optional extra':'Service package',p.price].join(' ').toLowerCase().includes(packageTerm)).sort((a,b)=>(b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||''));
+ const visiblePackages=listLimit(matchingPackages,packageTerm);
+ const packageNote=document.getElementById('packageLimitNote');
+ if(packageNote)packageNote.textContent=listLimitMessage(matchingPackages.length,visiblePackages.length,packageTerm,'packages');
+ pl.innerHTML=visiblePackages.length?visiblePackages.map(p=>`<div class="package-card"><div class="package-card-main"><div><div class="package-name">${esc(p.name)}</div><div class="package-description">${esc(p.description||'No description added yet.')}</div><span class="package-tag">${p.isExtra?'OPTIONAL EXTRA':'SERVICE PACKAGE'}</span></div><div class="package-price">${money(p.price)}</div></div><div class="package-actions"><button class="tiny-btn" onclick="editPackage('${p.id}')">Edit package</button><button class="tiny-btn danger" onclick="deletePackage('${p.id}')">Delete</button></div></div>`).join(''):`<div class="quote-empty"><strong>${active.length?'No matching packages':'No service packages yet'}</strong><span>${active.length?'Try another package name or description.':'Add your first package to make creating quotes quicker.'}</span></div>`;
+ const ql=document.getElementById('quoteList');
+ const search=(document.getElementById('quoteSearch')?.value||'').toLowerCase().trim();
+ const filter=document.getElementById('quoteStatusFilter')?.value||'all';
+ const matchingQuotes=quotes.slice().sort((a,b)=>(b.createdAt||b.date||'').localeCompare(a.createdAt||a.date||'')).filter(q=>{
+  const client=data.clients.find(c=>c.id===q.clientId),job=data.jobs.find(j=>j.id===q.jobId);
+  const hay=[q.number,q.clientName,client?.name,client?.company,client?.email,q.jobName,job?.name,job?.address,job?.client,job?.status,q.status,q.date].join(' ').toLowerCase();
+  return (!search||hay.includes(search))&&(filter==='all'||q.status===filter);
+ });
+ const shown=listLimit(matchingQuotes,search);
+ const quoteNote=document.getElementById('quoteLimitNote');
+ if(quoteNote)quoteNote.textContent=listLimitMessage(matchingQuotes.length,shown.length,search,'quotations');
+ ql.innerHTML=shown.length?shown.map(q=>{
+  const client=data.clients.find(c=>c.id===q.clientId),job=data.jobs.find(j=>j.id===q.jobId);
+  const clientName=client?.name||q.clientName||'Client not linked',jobName=job?.name||q.jobName||'No job linked';
+  const status=String(q.status||'Draft').toLowerCase();
+  return `<div class="quote-card"><div class="quote-card-top"><div><div class="quote-card-ref">${esc(q.number||'Quotation')}</div><div class="quote-card-client">${esc(clientName)}</div><div class="quote-card-meta"><span class="quote-meta-chip">Property: ${esc(jobName)}</span><span class="quote-meta-chip">Date: ${esc(q.date||'Not set')}</span>${q.validUntil?`<span class="quote-meta-chip">Valid until: ${esc(q.validUntil)}</span>`:''}</div></div><div class="quote-card-total">${money(q.total)}<br><span class="quote-status-pill ${status}">${esc(q.status||'Draft')}</span></div></div><div class="quote-card-actions"><button class="tiny-btn" onclick="editQuote('${q.id}')">Edit quote</button><button class="tiny-btn" onclick="printBusinessDocument('quote','${q.id}')">Download / print PDF</button>${q.status==='Accepted'?`<button class="tiny-btn" onclick="createInvoiceFromQuote('${q.id}')">${data.invoices.some(inv=>inv.quoteId===q.id)?'＋ Create another invoice':'＋ Create invoice'}</button>`:''}${client?`<button class="tiny-btn" onclick="viewClient('${client.id}')">View client</button>`:''}${job?`<button class="tiny-btn" onclick="viewJob('${job.id}')">View job</button>`:''}<button class="tiny-btn" onclick="changeQuoteStatus('${q.id}')">Change status</button>${q.status==='Accepted'&&!q.jobId?`<button class="tiny-btn" onclick="convertQuoteToJob('${q.id}')">＋ Create job</button>`:''}<button class="tiny-btn danger" onclick="deleteQuote('${q.id}')">Delete</button></div></div>`;
+ }).join(''):`<div class="quote-empty"><strong>${quotes.length?'No matching quotations':'No quotations created yet'}</strong><span>${quotes.length?'Try a different search or status filter.':'Create your first quote and link it to a client and property job.'}</span></div>`;
+}
+function openPackageForm(id=null){
+ ensureQuoteData();editingPackageId=id;const p=id?data.packages.find(x=>x.id===id):null;
+ document.getElementById('packageModalTitle').textContent=p?'Edit package':'Add package';
+ document.getElementById('pkgName').value=p?.name||'';document.getElementById('pkgDesc').value=p?.description||'';
+ document.getElementById('pkgPrice').value=p?.price??'';document.getElementById('pkgExtra').value=p?.isExtra?'yes':'no';
+ document.getElementById('packageModalBackdrop').classList.add('show');
+}
+function closePackageModal(){document.getElementById('packageModalBackdrop').classList.remove('show')}
+function savePackageForm(e){e.preventDefault();ensureQuoteData();const p={id:editingPackageId||('pkg-'+Date.now()),name:pkgName.value.trim(),description:pkgDesc.value.trim(),price:Number(pkgPrice.value),isExtra:pkgExtra.value==='yes',archived:false};
+ if(editingPackageId){const i=data.packages.findIndex(x=>x.id===editingPackageId);if(i>=0)data.packages[i]=p}else data.packages.push(p);
+ save();closePackageModal();renderQuotes()}
+function editPackage(id){openPackageForm(id)}
+async function deletePackage(id){if(await showConfirm('Delete this package? Existing saved quotes will not change.')){data.packages=data.packages.filter(p=>p.id!==id);save();renderQuotes();renderAttention()}}
+
+function updateQuoteJobOptions(clientId,selectedJobId=''){
+ const client=data.clients.find(c=>c.id===clientId);
+ const select=document.getElementById('qJob');
+ const jobs=client?data.jobs.filter(j=>(j.client||'').trim().toLowerCase()===(client.name||'').trim().toLowerCase()):[];
+ select.innerHTML='<option value="">No job linked</option>'+jobs.map(j=>`<option value="${j.id}">${esc(j.name)}</option>`).join('');
+ if(selectedJobId&&jobs.some(j=>j.id===selectedJobId))select.value=selectedJobId;
+ else select.value='';
+ select.disabled=!client||jobs.length===0;
+ if(!client)select.innerHTML='<option value="">Choose a client first</option>';
+ else if(!jobs.length)select.innerHTML='<option value="">No jobs linked to this client</option>';
+}
+function openQuoteForm(id=null){
+ ensureQuoteData();editingQuoteId=id;const q=id?data.quotes.find(x=>x.id===id):null;
+ const clients=data.clients;document.getElementById('qClient').innerHTML='<option value="">Choose client</option>'+clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+ document.getElementById('qJob').innerHTML='<option value="">Choose a client first</option>';
+ document.getElementById('quoteModalTitle').textContent=q?'Edit quote':'Create quote';
+ document.getElementById('qClient').value=q?.clientId||'';updateQuoteJobOptions(q?.clientId||'',q?.jobId||'');
+ document.getElementById('qDate').value=q?.date||new Date().toISOString().slice(0,10);
+ const defaultValid=new Date((q?.date||new Date().toISOString().slice(0,10))+'T00:00:00');defaultValid.setDate(defaultValid.getDate()+30);const defaultValidStr=defaultValid.getFullYear()+'-'+String(defaultValid.getMonth()+1).padStart(2,'0')+'-'+String(defaultValid.getDate()).padStart(2,'0');document.getElementById('qValid').value=q?.validUntil||defaultValidStr;document.getElementById('qGst').value=q?.gstMode||'exclusive';
+ document.getElementById('qStatus').value=q?.status||'Draft';document.getElementById('qNotes').value=q?.notes||'';
+ document.getElementById('quoteLines').innerHTML='';quoteLineCounter=0;
+ (q?.items||[]).forEach(item=>addQuoteLine(item));if(!q)addQuoteLine();
+ document.getElementById('quoteModalBackdrop').classList.add('show');calcQuoteTotals();
+}
+function closeQuoteModal(){document.getElementById('quoteModalBackdrop').classList.remove('show')}
+function addQuoteLine(item=null){
+ const id=++quoteLineCounter,wrap=document.createElement('div');wrap.className='quote-line';wrap.dataset.line=id;
+ const opts=data.packages.filter(p=>!p.archived).map(p=>`<option value="${p.id}" data-price="${p.price}" data-name="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+ wrap.innerHTML=`<select class="line-package" aria-label="Package"><option value="">Custom item</option>${opts}</select><input class="line-qty" type="number" min="1" step="1" value="1" aria-label="Quantity"><input class="line-price" type="number" min="0" step="0.01" placeholder="Price" aria-label="Unit price"><button type="button" class="tiny-btn danger" onclick="this.parentElement.remove();calcQuoteTotals()">×</button>`;
+ document.getElementById('quoteLines').appendChild(wrap);
+ const sel=wrap.querySelector('.line-package'),qty=wrap.querySelector('.line-qty'),price=wrap.querySelector('.line-price');
+ if(item){sel.value=item.packageId||'';qty.value=item.qty||1;price.value=item.price??0}
+ sel.addEventListener('change',()=>{const o=sel.selectedOptions[0];if(o.dataset.price)price.value=o.dataset.price;calcQuoteTotals()});
+ qty.addEventListener('input',calcQuoteTotals);price.addEventListener('input',calcQuoteTotals);
+}
+function calcQuoteTotals(){
+ const lines=[...document.querySelectorAll('#quoteLines .quote-line')];let subtotal=0;
+ lines.forEach(line=>{subtotal+=(Number(line.querySelector('.line-qty').value)||0)*(Number(line.querySelector('.line-price').value)||0)});
+ const mode=document.getElementById('qGst').value;let gst=0,total=subtotal;
+ if(mode==='exclusive'){gst=subtotal*.1;total=subtotal+gst}else if(mode==='inclusive'){gst=subtotal/11}
+ document.getElementById('quoteTotals').innerHTML=`<div class="quote-total-row"><span>Subtotal ${mode==='inclusive'?'(GST inclusive)':''}</span><strong>${money(subtotal)}</strong></div><div class="quote-total-row"><span>GST component</span><strong>${money(gst)}</strong></div><div class="quote-total-row" style="border-top:1px solid #d5dccb;margin-top:6px;padding-top:9px;font-size:16px"><strong>Total AUD</strong><strong>${money(total)}</strong></div>`;
+}
+document.addEventListener('input',e=>{if(e.target.id==='qGst')calcQuoteTotals()});
+document.addEventListener('change',e=>{if(e.target.id==='qGst')calcQuoteTotals()});
+function saveQuoteForm(e){
+ e.preventDefault();ensureQuoteData();const client=data.clients.find(c=>c.id===qClient.value);if(!client){showToast('Please add or select a client first.');return}
+ const job=data.jobs.find(j=>j.id===qJob.value)||null;
+ const items=[...document.querySelectorAll('#quoteLines .quote-line')].map(line=>{const s=line.querySelector('.line-package'),opt=s.selectedOptions[0];return {packageId:s.value||null,name:opt?.dataset.name||'Custom item',qty:Number(line.querySelector('.line-qty').value)||1,price:Number(line.querySelector('.line-price').value)||0}}).filter(x=>x.qty>0);
+ if(!items.length){showToast('Add at least one quote item.');return}
+ const subtotal=items.reduce((s,x)=>s+x.qty*x.price,0),mode=qGst.value,gst=mode==='exclusive'?subtotal*.1:mode==='inclusive'?subtotal/11:0,total=mode==='exclusive'?subtotal+gst:subtotal;
+ const existing=editingQuoteId?data.quotes.find(x=>x.id===editingQuoteId):null;
+ const q={id:editingQuoteId||'quote-'+Date.now(),number:existing?.number||'JRVS-'+String(Date.now()).slice(-6),clientId:client.id,clientName:client.name,jobId:job?.id||null,jobName:job?.name||'',date:qDate.value,validUntil:qValid.value,gstMode:mode,status:qStatus.value,items,subtotal,gst,total,notes:qNotes.value.trim(),createdAt:existing?.createdAt||new Date().toISOString()};
+ if(existing){const i=data.quotes.findIndex(x=>x.id===editingQuoteId);data.quotes[i]=q}else data.quotes.push(q);
+ save();closeQuoteModal();renderQuotes();renderAttention();
+}
+
+
+// Document generation: print-ready quotation and invoice PDFs. All records remain local.
+if(!Array.isArray(data.invoices))data.invoices=[];
+function renderInvoices(){
+ const host=document.getElementById('invoiceList');if(!host)return;
+ const filter=document.getElementById('invoiceStatusFilter')?.value||'all';
+ const term=(document.getElementById('invoiceSearch')?.value||'').trim().toLowerCase();
+ const matchingRows=data.invoices.slice().sort((a,b)=>(b.createdAt||b.date||'').localeCompare(a.createdAt||a.date||'')).filter(inv=>{
+  const overdue=invoiceIsOverdue(inv)&&inv.status!=='Paid';
+  const status=inv.status==='Paid'?'Paid':overdue?'Overdue':'Unpaid';
+  const matchesStatus=filter==='all'||status===filter;
+  const client=data.clients.find(c=>c.id===inv.clientId),job=data.jobs.find(j=>j.id===inv.jobId);
+  const haystack=[inv.number,inv.clientName,client?.name,client?.company,client?.email,inv.jobName,job?.name,job?.address,job?.client,inv.status,status,inv.date,inv.dueDate,inv.notes].join(' ').toLowerCase();
+  return matchesStatus&&(!term||haystack.includes(term));
+ });
+ const rows=listLimit(matchingRows,term);
+ const invoiceNote=document.getElementById('invoiceLimitNote');
+ if(invoiceNote)invoiceNote.textContent=listLimitMessage(matchingRows.length,rows.length,term,'invoices');
+ host.innerHTML=rows.length?rows.map(inv=>{const overdue=invoiceIsOverdue(inv)&&inv.status!=='Paid';const st=inv.status==='Paid'?'Paid':overdue?'Overdue':'Unpaid';return `<div class="quote-card"><div class="quote-card-top"><div><div class="quote-card-ref">${esc(inv.number||'Invoice')}</div><div class="quote-card-client">${esc(inv.clientName||'Client')}</div><div class="quote-card-meta"><span class="quote-meta-chip">${esc(inv.jobName||'No property linked')}</span><span class="quote-meta-chip">Issued: ${esc(inv.date||'—')}</span><span class="quote-meta-chip">Due: ${esc(inv.dueDate||'—')}</span></div></div><div class="quote-card-total">${money(inv.total)}<br><span class="invoice-status-pill ${st.toLowerCase()}">${st}</span></div></div><div class="quote-card-actions"><button class="tiny-btn" onclick="printBusinessDocument('invoice','${inv.id}')">Download / print PDF</button>${inv.status!=='Paid'?`<button class="tiny-btn" onclick="markInvoicePaid('${inv.id}')">Mark paid</button>`:''}<button class="tiny-btn danger" onclick="deleteInvoice('${inv.id}')">Delete</button></div></div>`}).join(''):`<div class="quote-empty"><strong>${data.invoices.length?'No matching invoices':'No invoices yet'}</strong><span>${data.invoices.length?'Try another client, property or invoice number.':'Accept a quotation, then create an invoice from it.'}</span></div>`;
+}
+function invoiceIsOverdue(inv){return !!(inv.dueDate&&inv.status!=='Paid'&&inv.dueDate<new Date().toISOString().slice(0,10))}
+function openInvoiceCreator(){
+ const eligible=(data.quotes||[]).filter(q=>q.status==='Accepted');
+ const back=document.getElementById('invoiceCreateBackdrop'),select=document.getElementById('invoiceQuoteSelect');
+ if(!eligible.length){showToast('Accept a quotation before creating an invoice.');return}
+ select.innerHTML=eligible.map(q=>{const count=data.invoices.filter(i=>i.quoteId===q.id).length;return `<option value="${esc(q.id)}">${esc(q.number||'Quotation')} — ${esc(q.clientName||'Client')} — ${money(q.total)}${count?` (${count} invoice${count===1?'':'s'} already created)`:''}</option>`}).join('');
+ back.classList.add('show');back.setAttribute('aria-hidden','false');
+}
+function closeInvoiceCreator(){const back=document.getElementById('invoiceCreateBackdrop');if(back){back.classList.remove('show');back.setAttribute('aria-hidden','true')}}
+function submitInvoiceCreator(){const id=document.getElementById('invoiceQuoteSelect')?.value;if(!id)return;closeInvoiceCreator();createInvoiceFromQuote(id)}
+function createInvoiceFromQuote(id){
+ const q=data.quotes.find(x=>x.id===id);if(!q)return;if(q.status!=='Accepted'){showToast('Only accepted quotations can be converted into invoices.');return}
+ const due=new Date();due.setDate(due.getDate()+14);
+ const inv={id:'invoice-'+Date.now(),number:'INV-'+String(Date.now()).slice(-6),quoteId:q.id,clientId:q.clientId,clientName:q.clientName,jobId:q.jobId||null,jobName:q.jobName||'',date:new Date().toISOString().slice(0,10),dueDate:due.toISOString().slice(0,10),gstMode:q.gstMode||'exclusive',items:(q.items||[]).map(x=>({...x})),subtotal:Number(q.subtotal)||0,gst:Number(q.gst)||0,total:Number(q.total)||0,notes:q.notes||'',status:'Unpaid',createdAt:new Date().toISOString()};
+ data.invoices.push(inv);save();renderInvoices();showToast(`Invoice ${inv.number} created. You can now print or save it as a PDF.`);
+}
+function markInvoicePaid(id){const inv=data.invoices.find(x=>x.id===id);if(!inv)return;inv.status='Paid';inv.paidDate=new Date().toISOString().slice(0,10);save();renderInvoices()}
+async function deleteInvoice(id){if(!await showConfirm('Delete this invoice? The original quotation will remain unchanged.'))return;data.invoices=data.invoices.filter(x=>x.id!==id);save();renderInvoices()}
+function printBusinessDocument(type,id){
+ const record=type==='quote'?data.quotes.find(x=>x.id===id):data.invoices.find(x=>x.id===id);if(!record)return;
+ const client=data.clients.find(c=>c.id===record.clientId)||{};const job=data.jobs.find(j=>j.id===record.jobId)||{};
+ const title=type==='quote'?'Quotation':'Invoice';const rows=(record.items||[]).map(item=>`<tr><td>${esc(item.name)}</td><td class="num">${Number(item.qty)||1}</td><td class="num">${money(item.price)}</td><td class="num">${money((Number(item.qty)||1)*(Number(item.price)||0))}</td></tr>`).join('');
+ const gstLabel=record.gstMode==='none'?'GST not charged':record.gstMode==='inclusive'?'GST included':'GST (10%)';const logoUrl='data:image/jpeg;base64,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';
+ const html=`<!doctype html><html><head><meta charset="utf-8"><title>${title} ${esc(record.number)}</title><style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#263024;margin:0;background:#fff;font-size:12px}.sheet{max-width:800px;margin:35px auto;padding:42px 48px;border:1px solid #e5e7df}.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #899B68;padding-bottom:22px}.brand img{width:115px;height:auto;max-height:85px;object-fit:contain}.brand small{display:block;letter-spacing:3px;color:#6f7d58;margin-top:7px}.doc{text-align:right}.doc h1{font-size:28px;margin:0 0 8px;color:#65764d}.doc strong{font-size:13px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:25px;margin:28px 0}.meta h3{font-size:10px;letter-spacing:1.2px;color:#7b8668;margin:0 0 8px}.meta p{line-height:1.6;margin:0}.meta .right{text-align:right}table{width:100%;border-collapse:collapse;margin-top:20px}th{background:#899B68;color:#fff;text-align:left;padding:11px 9px;font-size:10px;letter-spacing:.5px}td{padding:12px 9px;border-bottom:1px solid #e8eadf}td.num,th.num{text-align:right}.totals{width:290px;margin:20px 0 0 auto}.totals div{display:flex;justify-content:space-between;padding:6px 0}.totals .grand{border-top:2px solid #899B68;margin-top:5px;padding-top:12px;font-size:17px;font-weight:bold}.intro-note{margin:24px 0 8px;padding:15px 17px;background:#f5f5ef;border-left:3px solid #899B68;border-radius:5px;line-height:1.65;color:#46513d}.payment-panel{margin-top:26px;padding:17px 19px;background:#f5f5ef;border:1px solid #e4e8da;border-radius:7px;line-height:1.65}.payment-panel h3{margin:0 0 8px;color:#65764d;font-size:12px;letter-spacing:.8px}.payment-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 24px}.payment-grid p{margin:0}.notes{margin-top:24px;padding:16px;background:#f5f5ef;border-radius:8px;white-space:pre-wrap;line-height:1.55}.foot{border-top:1px solid #e5e7df;margin-top:35px;padding-top:14px;color:#7b806f;font-size:10px;display:flex;justify-content:space-between}.muted{color:#72786c}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}.sheet{margin:0 auto;border:0;padding:20mm 16mm;max-width:none}button{display:none}}@page{size:A4;margin:0}</style></head><body><main class="sheet"><header class="head"><div class="brand"><img src="${logoUrl}" alt="JRVS Property Co"><small>PROPERTY PHOTOGRAPHY</small></div><div class="doc"><h1>${title}</h1><strong>${esc(record.number||'')}</strong><p class="muted">${type==='quote'?'Date':'Issue date'}: ${esc(record.date||'—')}</p>${type==='quote'?`<p class="muted">Valid until: ${esc(record.validUntil||(()=>{const d=new Date((record.date||new Date().toISOString().slice(0,10))+'T00:00:00');d.setDate(d.getDate()+30);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})())}</p>`:''}${type==='invoice'?`<p class="muted">Due date: ${esc(record.dueDate||'—')}</p>`:''}</div></header><section class="meta"><div><h3>BILL TO</h3><p><strong>${esc(record.clientName||client.name||'Client')}</strong><br>${esc(client.company||'')}<br>${esc(client.email||'')}<br>${esc(client.phone||'')}</p></div><div class="right"><h3>PROPERTY / JOB</h3><p><strong>${esc(record.jobName||job.name||'')}</strong><br>${esc(job.address||'')}<br><span class="muted">${type==='invoice'?'Payment status: '+esc(record.status||'Unpaid'): 'Quotation prepared by JRVS Property Co.'}</span></p></div></section>${type==='quote'?`<section class="intro-note"><strong>Thank you for the opportunity.</strong><br>Thank you for considering JRVS Property Co. and giving us the opportunity to provide a quote for your property. We appreciate your consideration and would be pleased to answer any questions about the services outlined below.</section>`:''}<table><thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Amount</th></tr></thead><tbody>${rows}</tbody></table><section class="totals"><div><span>Subtotal</span><strong>${money(record.subtotal)}</strong></div><div><span>${gstLabel}</span><strong>${money(record.gst)}</strong></div><div class="grand"><span>Total AUD</span><span>${money(record.total)}</span></div></section>${type==='invoice'?`<section class="payment-panel"><h3>PAYMENT DETAILS</h3><p style="margin:0 0 10px">Please make payment by the due date shown above. Use <strong>${esc(record.number||'Invoice number')}</strong> as your payment reference.</p><div class="payment-grid"><p><strong>Account name:</strong> To be provided</p><p><strong>BSB:</strong> To be provided</p><p><strong>Account number:</strong> To be provided</p><p><strong>Payment reference:</strong> ${esc(record.number||'Invoice number')}</p></div><p style="margin:10px 0 0;color:#72786c;font-size:10px">Bank details will be updated when JRVS Property Co. payment details are finalised.</p></section>`:''}${record.notes?`<section class="notes"><strong>Notes & terms</strong><br>${esc(record.notes)}</section>`:''}<footer class="foot"><span>JRVS Property Co.</span><span>${type==='invoice'?'Thank you for choosing JRVS Property Co. We appreciate your business.':'JRVS Property Co. · Property Photography'}</span></footer></main><script>window.addEventListener('load',()=>{setTimeout(()=>window.print(),350)});</script></body></html>`;
+ const w=window.open('','_blank');if(!w){showToast('Please allow pop-ups for this app to generate your PDF.');return}w.document.open();w.document.write(html);w.document.close();
+}
+
+function convertQuoteToJob(id){
+ const q=data.quotes.find(x=>x.id===id);if(!q||q.status!=='Accepted'||q.jobId)return;
+ const client=data.clients.find(c=>c.id===q.clientId);
+ const linkedJobName=(q.jobName||'').trim();
+ const name=linkedJobName||`Photography — ${q.clientName||client?.name||'New job'}`;
+ const job={id:'job-'+Date.now(),name,client:client?.name||q.clientName||'',date:'',status:'Booked',address:'',notes:`Created from accepted quotation ${q.number}.\\nQuoted services: ${(q.items||[]).map(x=>`${x.qty} × ${x.name}`).join(', ')}\\nQuoted total: ${money(q.total)}`};
+ data.jobs.push(job);q.jobId=job.id;q.jobName=job.name;q.convertedAt=new Date().toISOString();
+ save();render();renderQuotes();
+ showPage('jobs');viewJob(job.id);
+}
+function editQuote(id){openQuoteForm(id)}
+function changeQuoteStatus(id){const q=data.quotes.find(x=>x.id===id);if(!q)return;const states=['Draft','Sent','Accepted','Declined'];q.status=states[(states.indexOf(q.status)+1)%states.length];save();renderQuotes();renderAttention()}
+async function deleteQuote(id){if(await showConfirm('Delete this quotation?')){data.quotes=data.quotes.filter(q=>q.id!==id);save();renderQuotes();renderAttention()}}
+
+let editorPhoto=null,editorImage=null,editorRotation=0,editorBusy=false,editorHistory=[],editorHistoryIndex=-1,editorHistoryTimer=null,editorCompare=false,editorPreviewFrame=0;
+const EDITOR_PREVIEW_MAX=1600;
+function openEditor(id){
+ const p=photoRecords.find(x=>x.id===id);if(!p)return;editorPhoto=p;editorRotation=0;
+ ['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);editorHistory=[];editorHistoryIndex=-1;editorCompare=false;captureEditorHistory();
+ document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';document.getElementById('editorExportProfile').value='agency';document.getElementById('editorTitle').textContent=p.name;
+ document.getElementById('editorSubtitle').textContent=p.jobName+' · Original remains unchanged';document.getElementById('editorStatus').textContent='';
+ const img=new Image(),url=URL.createObjectURL(p.blob);
+ img.onload=()=>{if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=img;editorImage._url=url;document.getElementById('editorBackdrop').classList.add('show');drawEditor()};
+ img.onerror=()=>{URL.revokeObjectURL(url);showToast(p.isRaw?'RAW original stored safely. Browser RAW decoding is not yet built into this release; convert to JPEG to edit.':'This image could not be opened in the editor.')};img.src=url;
+}
+function closeEditor(){document.getElementById('editorBackdrop').classList.remove('show');if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=null;editorPhoto=null}
+function rotateEditor(deg){editorRotation=(editorRotation+deg+360)%360;drawEditor();captureEditorHistory()}
+function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';editorRotation=0;drawEditor();captureEditorHistory()}
+function editorChanged(){
+ // Coalesce rapid slider events into one preview render per animation frame.
+ if(!editorPreviewFrame)editorPreviewFrame=requestAnimationFrame(()=>{editorPreviewFrame=0;drawEditor()});
+ clearTimeout(editorHistoryTimer);editorHistoryTimer=setTimeout(captureEditorHistory,250);
+}
+const EDITOR_KEYS=['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'];
+function currentEditorState(){return {values:Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value])),rotation:editorRotation,crop:document.getElementById('cropRatio').value,preset:document.getElementById('editorPreset').value}}
+function captureEditorHistory(){const state=currentEditorState(),last=editorHistory[editorHistoryIndex];if(last&&JSON.stringify(last)===JSON.stringify(state))return;editorHistory=editorHistory.slice(0,editorHistoryIndex+1);editorHistory.push(state);if(editorHistory.length>60)editorHistory.shift();editorHistoryIndex=editorHistory.length-1}
+function restoreEditorHistory(i){if(i<0||i>=editorHistory.length)return;editorHistoryIndex=i;const s=editorHistory[i];Object.entries(s.values).forEach(([k,v])=>document.getElementById(k).value=v);editorRotation=s.rotation;document.getElementById('cropRatio').value=s.crop;document.getElementById('editorPreset').value=s.preset;drawEditor()}
+function editorUndo(){clearTimeout(editorHistoryTimer);captureEditorHistory();restoreEditorHistory(editorHistoryIndex-1)}
+function editorRedo(){restoreEditorHistory(editorHistoryIndex+1)}
+function toggleEditorCompare(){editorCompare=!editorCompare;drawEditor()}
+
+function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX){
+ if(!editorImage||!editorPhoto)return null;
+ const sw0=editorImage.naturalWidth,sh0=editorImage.naturalHeight;
+ const scale=maxDimension>0?Math.min(1,maxDimension/Math.max(sw0,sh0)):1;
+ const sw=Math.max(1,Math.round(sw0*scale)),sh=Math.max(1,Math.round(sh0*scale));
+ const rot=editorRotation*Math.PI/180,swapped=editorRotation%180!==0;
+ let rw=swapped?sh:sw,rh=swapped?sw:sh,ratio=document.getElementById('cropRatio').value;
+ if(ratio!=='original'){const a=ratio.split(':').map(Number),target=a[0]/a[1],current=rw/rh;if(current>target)rw=rh*target;else rh=rw/target}
+ const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(rw));canvas.height=Math.max(1,Math.round(rh));
+ const ctx=canvas.getContext('2d',{willReadFrequently:true});
+ const temp=document.createElement('canvas');temp.width=swapped?sh:sw;temp.height=swapped?sw:sh;
+ const t=temp.getContext('2d');t.translate(temp.width/2,temp.height/2);t.rotate(rot);t.drawImage(editorImage,-sw/2,-sh/2,sw,sh);
+ const pv=+document.getElementById('perspectiveV').value,ph=+document.getElementById('perspectiveH').value;
+ ctx.save();ctx.translate(canvas.width/2,canvas.height/2);ctx.transform(1,ph/100,-pv/100,1,0,0);
+ ctx.drawImage(temp,(temp.width-rw)/2-canvas.width/2,(temp.height-rh)/2-canvas.height/2,rw,rh);ctx.restore();
+ const image=ctx.getImageData(0,0,canvas.width,canvas.height),d=image.data;
+ const v=Object.fromEntries(EDITOR_KEYS.map(k=>[k,+document.getElementById(k).value]));
+ Object.keys(v).forEach(k=>{const el=document.getElementById(k+'Val');if(el)el.textContent=v[k]>0?'+'+v[k]:v[k]});
+ const c=(259*(v.contrast+255))/(255*(259-v.contrast)),exposure=Math.pow(2,v.exposure),hist=new Uint32Array(64),width=canvas.width,height=canvas.height;
+ for(let i=0;i<d.length;i+=4){
+  let r=d[i],g=d[i+1],b=d[i+2],lum=.2126*r+.7152*g+.0722*b,shadow=1-lum/255,high=lum/255,tone=v.brightness+v.shadows*shadow*.75+v.highlights*high*.75;
+  r=((r-128)*c+128+tone+v.warmth*.65+v.temperature*.42+v.tint*.12)*exposure;g=((g-128)*c+128+tone+v.tint*.28)*exposure;b=((b-128)*c+128+tone-v.warmth*.65-v.temperature*.42)*exposure;
+  const white=Math.max(0,(lum-180)/75)*v.whites*.55,black=Math.max(0,(75-lum)/75)*v.blacks*.55;r+=white+black;g+=white+black;b+=white+black;
+  const grey=.2126*r+.7152*g+.0722*b,sat=1+v.saturation/100+v.vibrance/100*(1-Math.min(1,Math.abs(grey-128)/128));
+  let rr=grey+(r-grey)*sat,gg=grey+(g-grey)*sat,bb=grey+(b-grey)*sat;const pixel=i/4,edge=Math.max(0,Math.min(1,Math.hypot((pixel%width)/width-.5,Math.floor(pixel/width)/height-.5)*1.6));const vig=1-v.vignette/100*edge*.65;const detail=1+v.clarity/160+v.sharpening/500;rr=(rr-128)*detail+128;gg=(gg-128)*detail+128;bb=(bb-128)*detail+128;d[i]=Math.max(0,Math.min(255,rr*vig));d[i+1]=Math.max(0,Math.min(255,gg*vig));d[i+2]=Math.max(0,Math.min(255,bb*vig));const l=Math.max(0,Math.min(255,.2126*d[i]+.7152*d[i+1]+.0722*d[i+2]));hist[Math.min(63,Math.floor(l/4))]++;
+ }
+ ctx.putImageData(image,0,0);
+ return {canvas,hist};
+}
+function drawEditor(){
+ const visible=document.getElementById('editorCanvas');if(!visible||!editorImage||!editorPhoto)return;
+ const rendered=createEditorRenderCanvas(EDITOR_PREVIEW_MAX);if(!rendered)return;
+ visible.width=rendered.canvas.width;visible.height=rendered.canvas.height;
+ const ctx=visible.getContext('2d');ctx.clearRect(0,0,visible.width,visible.height);ctx.drawImage(rendered.canvas,0,0);
+ if(editorCompare){ctx.save();ctx.globalAlpha=1;ctx.drawImage(editorImage,0,0,visible.width,visible.height);ctx.restore()}
+ drawEditorHistogram(rendered.hist);
+}
+async function createFullQualityEditorBlob(mime,quality){
+ const rendered=createEditorRenderCanvas(0);if(!rendered)throw Error('No image to export');
+ return await new Promise(resolve=>rendered.canvas.toBlob(resolve,mime,quality));
+}
+function drawEditorHistogram(hist){const c=document.getElementById('editorHistogram');if(!c||!hist)return;const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);const max=Math.max(1,...hist);x.fillStyle='#a9bd83';hist.forEach((n,i)=>{const h=n/max*(c.height-8);x.fillRect(i*c.width/64,c.height-h,(c.width/64)-1,h)})}
+
+function applyEditorPreset(name){
+ // JRVS original presets: restrained starting points for property listings.
+ // Presets set global adjustments only; they never alter source photos.
+ const presets={
+  none:{},
+  natural:{brightness:5,contrast:7,saturation:1,warmth:0,highlights:-18,shadows:18,exposure:0.10,whites:7,blacks:-5,temperature:-2,tint:0,vibrance:3,clarity:5,sharpening:12,vignette:0},
+  bright:{brightness:10,contrast:3,saturation:0,warmth:-1,highlights:-24,shadows:28,exposure:0.22,whites:12,blacks:-4,temperature:-3,tint:0,vibrance:2,clarity:3,sharpening:10,vignette:0},
+  window:{brightness:5,contrast:5,saturation:0,warmth:0,highlights:-42,shadows:32,exposure:0.08,whites:5,blacks:-7,temperature:-2,tint:0,vibrance:2,clarity:5,sharpening:10,vignette:0},
+  warm:{brightness:5,contrast:6,saturation:3,warmth:5,highlights:-20,shadows:16,exposure:0.08,whites:6,blacks:-7,temperature:5,tint:1,vibrance:5,clarity:4,sharpening:10,vignette:0},
+  modern:{brightness:3,contrast:12,saturation:-2,warmth:-2,highlights:-22,shadows:14,exposure:0.04,whites:8,blacks:-12,temperature:-5,tint:0,vibrance:1,clarity:10,sharpening:18,vignette:0},
+  soft:{brightness:8,contrast:-3,saturation:-4,warmth:2,highlights:-26,shadows:24,exposure:0.12,whites:5,blacks:4,temperature:1,tint:1,vibrance:-1,clarity:-3,sharpening:7,vignette:0},
+  luxury:{brightness:1,contrast:17,saturation:-3,warmth:1,highlights:-30,shadows:12,exposure:0,whites:8,blacks:-18,temperature:-1,tint:0,vibrance:0,clarity:12,sharpening:20,vignette:4},
+  wood:{brightness:4,contrast:8,saturation:2,warmth:4,highlights:-22,shadows:18,exposure:0.06,whites:6,blacks:-8,temperature:3,tint:0,vibrance:3,clarity:8,sharpening:14,vignette:0},
+  bathroom:{brightness:9,contrast:4,saturation:-5,warmth:-4,highlights:-32,shadows:24,exposure:0.16,whites:14,blacks:-5,temperature:-7,tint:1,vibrance:-1,clarity:6,sharpening:14,vignette:0},
+  exterior:{brightness:4,contrast:11,saturation:4,warmth:-2,highlights:-24,shadows:18,exposure:0.04,whites:8,blacks:-10,temperature:-3,tint:0,vibrance:8,clarity:9,sharpening:18,vignette:0},
+  sunny:{brightness:5,contrast:8,saturation:5,warmth:2,highlights:-34,shadows:16,exposure:0.04,whites:10,blacks:-8,temperature:1,tint:0,vibrance:9,clarity:8,sharpening:16,vignette:0},
+  twilight:{brightness:-5,contrast:15,saturation:4,warmth:3,highlights:-36,shadows:12,exposure:-0.12,whites:3,blacks:-16,temperature:-3,tint:1,vibrance:7,clarity:10,sharpening:16,vignette:7}
+ };
+ const p=presets[name]||presets.none;
+ const defaults={brightness:0,contrast:0,saturation:0,warmth:0,highlights:0,shadows:0,perspectiveV:0,perspectiveH:0,exposure:0,whites:0,blacks:0,temperature:0,tint:0,vibrance:0,clarity:0,sharpening:0,vignette:0};
+ Object.entries({...defaults,...p}).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=v});
+ drawEditor();captureEditorHistory();
+}
+function autoEnhanceEditor(){
+ if(!editorImage)return;
+ const c=document.createElement('canvas'),x=c.getContext('2d',{willReadFrequently:true});
+ const max=320,scale=Math.min(1,max/Math.max(editorImage.naturalWidth,editorImage.naturalHeight));
+ c.width=Math.max(1,Math.round(editorImage.naturalWidth*scale));c.height=Math.max(1,Math.round(editorImage.naturalHeight*scale));
+ x.drawImage(editorImage,0,0,c.width,c.height);
+ const d=x.getImageData(0,0,c.width,c.height).data;let sum=0,sq=0,n=0;
+ for(let i=0;i<d.length;i+=16){const l=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];sum+=l;sq+=l*l;n++}
+ const mean=sum/Math.max(1,n),std=Math.sqrt(Math.max(0,sq/Math.max(1,n)-mean*mean));
+ document.getElementById('brightness').value=Math.max(-12,Math.min(20,Math.round((128-mean)*.16)));
+ document.getElementById('contrast').value=Math.max(-8,Math.min(24,Math.round((48-std)*.45)));
+ document.getElementById('highlights').value=-10;
+ document.getElementById('shadows').value=mean<115?20:mean>155?8:12;
+ document.getElementById('saturation').value=2;
+ document.getElementById('editorPreset').value='none';drawEditor();captureEditorHistory();
+}
+function editorSettings(){return Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value]))}
+async function batchApplyEditor(){
+ if(!editorPhoto||!editorImage||editorBusy)return;
+ const targets=photoRecords.filter(p=>p.jobId===editorPhoto.jobId&&p.id!==editorPhoto.id&&p.type==='Original');
+ if(!targets.length){showToast('No other original photos in this project to batch edit.');return}
+ if(!await showConfirm(`Apply these adjustments to ${targets.length} other original photos? Each will be saved as a separate edited copy.`))return;
+ editorBusy=true;const btns=document.querySelectorAll('#editorBackdrop button');btns.forEach(b=>b.disabled=true);
+ const originalPhoto=editorPhoto,originalImage=editorImage,settings=editorSettings();let done=0;
+ try{
+  for(const target of targets){
+   const url=URL.createObjectURL(target.blob);
+   try{
+    const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=url});
+    editorPhoto=target;editorImage=img;drawEditor();
+    const profile=document.getElementById('editorExportProfile').value;
+    const mime=profile==='png'?'image/png':'image/jpeg';
+    const quality=profile==='web'?.86:profile==='max'?.99:.94;
+    const blob=await createFullQualityEditorBlob(mime,quality);
+    if(!blob)throw Error('Export failed');
+    const rec={id:Date.now().toString()+Math.random().toString(16).slice(2),jobId:target.jobId,jobName:target.jobName,name:target.name.replace(/\.[^.]+$/,'')+'_edited.jpg',type:'Edited',size:blob.size,mime:blob.type,addedAt:new Date().toISOString(),status:'Edited',isCover:false,sourcePhotoId:target.id,blob};
+    await photoRequest('readwrite','put',rec);done++;
+   }finally{URL.revokeObjectURL(url)}
+  }
+  showToast(`${done} edited copies saved to ${originalPhoto.jobName}.`);
+ }catch(e){showToast(`Batch edit stopped after ${done} photos. The originals remain unchanged.`)}
+ finally{
+  editorPhoto=originalPhoto;editorImage=originalImage;
+  Object.entries(settings).forEach(([k,v])=>document.getElementById(k).value=v);
+  drawEditor();btns.forEach(b=>b.disabled=false);editorBusy=false;await loadPhotos();
+ }
+}
+async function mergeHdrSelection(){
+ const files=[...(document.getElementById('hdrFiles').files||[])];
+ if(files.length<2||files.length>5){showToast('Select between 2 and 5 bracketed photos.');return}
+ if(!editorPhoto)return;
+ const imgs=[];
+ try{
+  for(const f of files){const url=URL.createObjectURL(f);try{imgs.push(await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=url}))}finally{URL.revokeObjectURL(url)}}
+  const w=Math.min(...imgs.map(i=>i.naturalWidth)),hh=Math.min(...imgs.map(i=>i.naturalHeight));
+  const canv=document.createElement('canvas');canv.width=w;canv.height=hh;const cx=canv.getContext('2d',{willReadFrequently:true});
+  const layers=imgs.map(im=>{const c=document.createElement('canvas');c.width=w;c.height=hh;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0,w,hh);return x.getImageData(0,0,w,hh).data});
+  const out=cx.createImageData(w,hh),d=out.data;
+  for(let i=0;i<d.length;i+=4){
+   let total=0,rr=0,gg=0,bb=0;
+   for(const a of layers){const lum=.2126*a[i]+.7152*a[i+1]+.0722*a[i+2];const weight=Math.max(.04,1-Math.abs(lum-128)/160);total+=weight;rr+=a[i]*weight;gg+=a[i+1]*weight;bb+=a[i+2]*weight}
+   d[i]=rr/total;d[i+1]=gg/total;d[i+2]=bb/total;d[i+3]=255;
+  }
+  cx.putImageData(out,0,0);
+  const blob=await new Promise(resolve=>canv.toBlob(resolve,'image/jpeg',.95));if(!blob)throw Error('Merge failed');
+  const rec={id:Date.now().toString()+Math.random().toString(16).slice(2),jobId:editorPhoto.jobId,jobName:editorPhoto.jobName,name:'HDR_'+Date.now()+'.jpg',type:'Edited',size:blob.size,mime:'image/jpeg',addedAt:new Date().toISOString(),status:'Edited',isCover:false,sourcePhotoId:editorPhoto.id,blob};
+  await photoRequest('readwrite','put',rec);await loadPhotos();showToast('Exposure-fused HDR-style image saved to this project.');
+ }catch(e){showToast('HDR merge could not be completed. Check that the selected photos are compatible.')}
+}
+async function saveEditedPhoto(){
+ if(!editorPhoto||!editorImage||editorBusy)return;editorBusy=true;const btn=document.querySelector('#editorBackdrop .editor-actions .primary');btn.disabled=true;
+ document.getElementById('editorStatus').textContent='Preparing edited copy…';
+ try{const profile=document.getElementById('editorExportProfile').value;
+ const mime=profile==='png'?'image/png':'image/jpeg',quality=profile==='web'?.86:profile==='max'?.99:.94;
+ document.getElementById('editorStatus').textContent='Rendering full-resolution export…';
+ const blob=await createFullQualityEditorBlob(mime,quality);if(!blob)throw Error('No output');
+ const rec={id:Date.now().toString()+Math.random().toString(16).slice(2),jobId:editorPhoto.jobId,jobName:editorPhoto.jobName,name:editorPhoto.name.replace(/\.[^.]+$/,'')+'_edited.'+(mime==='image/png'?'png':'jpg'),type:'Edited',size:blob.size,mime:blob.type,addedAt:new Date().toISOString(),status:'Edited',isCover:false,sourcePhotoId:editorPhoto.id,blob};
+ await photoRequest('readwrite','put',rec);document.getElementById('editorStatus').textContent='Edited copy saved to this project gallery.';
+ const jobId=editorPhoto.jobId;setTimeout(async()=>{closeEditor();document.getElementById('photoJobFilter').value=jobId;await loadPhotos()},500)
+ }catch(e){document.getElementById('editorStatus').textContent='Could not save the edited copy. Check available browser storage.'}
+ finally{editorBusy=false;btn.disabled=false}
+}
+
+let previewUrl=null;
+function previewPhoto(id){const p=photoRecords.find(x=>x.id===id);if(!p)return;if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=URL.createObjectURL(p.blob);document.getElementById('photoPreviewImage').src=previewUrl;document.getElementById('photoPreviewName').textContent=p.name+' · '+p.jobName;document.getElementById('photoPreviewBackdrop').classList.add('show')}
+function closePhotoPreview(){document.getElementById('photoPreviewBackdrop').classList.remove('show');document.getElementById('photoPreviewImage').src='';if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null}}
+document.getElementById('photoFiles').addEventListener('change',e=>{if(e.target.files.length)importPhotos([...e.target.files]);e.target.value=''});
+document.getElementById('photoJobFilter').addEventListener('change',renderPhotos);
+document.getElementById('today').textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+['versionBadge','sideVersion','settingsVersion','footerVersion'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=(id==='versionBadge'?'● Version ':'V')+APP_VERSION});
+render();loadPhotos();renderQuotes();renderFinances();jrvsCloudInit();
+function compareVersions(a,b){const aa=String(a).split('.').map(Number),bb=String(b).split('.').map(Number);for(let i=0;i<Math.max(aa.length,bb.length);i++){const x=aa[i]||0,y=bb[i]||0;if(x>y)return 1;if(x<y)return -1}return 0}
+let updateCheckRunning=false;
+async function checkForUpdates(manual=false){
+ if(updateCheckRunning)return;updateCheckRunning=true;
+ const status=document.getElementById('updateStatus');
+ try{
+  const r=await fetch('./version.json?check='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('Version file unavailable');
+  const remote=await r.json(),rv=remote.version;
+  if(rv&&compareVersions(rv,APP_VERSION)>0){
+   const guard='jrvs-update-attempt-'+rv;
+   if(localStorage.getItem(guard)==='1'){if(status)status.textContent='Update '+rv+' was detected but has not completed. Current version '+APP_VERSION+' is being kept open to prevent a refresh loop.';return}
+   localStorage.setItem(guard,'1');
+   if(status)status.textContent='A newer version ('+rv+') is available. Refreshing once…';
+   if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.getRegistration();if(reg)await reg.update()}
+   setTimeout(()=>location.reload(),900);
+  }else{
+   Object.keys(localStorage).filter(k=>k.startsWith('jrvs-update-attempt-')).forEach(k=>localStorage.removeItem(k));
+   if(status)status.textContent='You are up to date · Version '+APP_VERSION;
+  }
+ }catch(e){if(status)status.textContent='Update check unavailable right now. Your current version is still usable.'}
+ finally{updateCheckRunning=false}
+}
+
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+ e.preventDefault();deferredInstallPrompt=e;
+ const b=document.getElementById('installAppButton'),s=document.getElementById('installAppStatus');
+ if(b)b.hidden=false;if(s)s.textContent='Ready to install';
+});
+window.addEventListener('appinstalled',()=>{
+ deferredInstallPrompt=null;
+ const b=document.getElementById('installAppButton'),s=document.getElementById('installAppStatus');
+ if(b)b.hidden=true;if(s)s.textContent='Installed — launch JRVS from your desktop';
+});
+async function installJRVSApp(){
+ if(!deferredInstallPrompt){showToast('Use Chrome or Edge menu → Install JRVS Property Co.');return}
+ deferredInstallPrompt.prompt();
+ const choice=await deferredInstallPrompt.userChoice;
+ if(choice?.outcome==='accepted'){const s=document.getElementById('installAppStatus');if(s)s.textContent='Installation accepted';}
+ deferredInstallPrompt=null;
+ const b=document.getElementById('installAppButton');if(b)b.hidden=true;
+}
+
+if('serviceWorker'in navigator&&location.protocol!=='file:'){window.addEventListener('load',async()=>{try{await navigator.serviceWorker.register('./sw.js');}catch(e){}checkForUpdates()})}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUpdates()});

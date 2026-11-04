@@ -10,3 +10,10 @@ This is a UI/list rendering change. It retains the existing localStorage keys, p
 
 ## Validation
 Static checks only; live browser and Supabase workflows have not been exercised in this build.
+
+
+## V0.3.2 – Quote & Invoice Documents
+- Quotes include a customer thank-you message and default to 30-day validity (editable on the quote form).
+- Invoices include payment instructions, invoice-number payment reference, due-date guidance and clearly marked placeholders for bank account details.
+- No existing customer, job, quote, invoice, photo, calendar or cloud data is reset or migrated.
+- Existing five-item default list limits and seven-day upcoming-events window are retained.
