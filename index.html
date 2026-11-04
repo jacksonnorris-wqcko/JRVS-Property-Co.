@@ -776,6 +776,47 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 @media(max-width:600px){#page-settings .cloud-control-card{padding:16px}#page-settings .cloud-sync-panel{align-items:stretch;flex-direction:column}#page-settings .cloud-sync-button{width:100%}#page-settings .cloud-account-caption{display:none}#page-settings .cloud-details-hint{display:none}}
 
 </style>
+<style id="jrvs-v040-polish">
+/* JRVS Property Co. V0.4.0 — cohesive visual refinement */
+:root{
+ --sage:#899B68;--sage-dark:#687B4E;--sage-deep:#536640;--cream:#F7F1DF;
+ --paper:#fffefa;--ink:#283025;--muted:#737b6b;--line:#e7e8de;
+ --surface:#f5f5ef;--surface-soft:#eff1e8;--shadow:0 5px 18px rgba(43,54,34,.055);
+ --shadow-hover:0 12px 28px rgba(43,54,34,.10);--radius:16px;
+}
+html{scroll-behavior:smooth}body{background:var(--surface);color:var(--ink);letter-spacing:.005em}
+button,input,select,textarea{font-family:inherit}button{transition:background .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:3px solid rgba(137,155,104,.32);outline-offset:2px}
+.shell{grid-template-columns:252px minmax(0,1fr);background:var(--surface)}
+aside{position:sticky;top:0;height:100vh;min-height:100vh;overflow-y:auto;background:linear-gradient(180deg,#f7f2e3 0%,#f3eedf 100%);border-right:1px solid #e7e3d5;padding:26px 17px 18px;gap:30px}
+.brand{padding:2px 9px}.brand img{width:46px;height:46px;border-radius:13px}.brand-mark{font-size:21px;letter-spacing:1.1px}.brand small{font-size:9px;letter-spacing:2.1px}
+.nav-label{font-size:9px;letter-spacing:1.8px;margin:0 0 10px 3px;color:#89907e}
+nav{gap:5px}.nav-btn{min-height:43px;padding:10px 12px;border-radius:11px;color:#5e6755;font-size:13px;font-weight:650;gap:12px}.nav-btn span:first-child{width:21px;font-size:17px;opacity:.82}.nav-btn:hover{background:#e9ecdf;color:#3e4d34;transform:translateX(2px)}.nav-btn.active{background:#e4e9d8;color:#3d4d31;box-shadow:inset 3px 0 0 var(--sage);font-weight:750}
+.side-bottom{border:1px solid #e4e2d6;background:#ffffff70;border-radius:13px;padding:14px;line-height:1.65}
+main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
+.top{align-items:flex-start;margin-bottom:26px;gap:22px}.top h1{font-size:clamp(27px,2.2vw,34px);line-height:1.12;letter-spacing:-1.1px;font-weight:760}.eyebrow{font-size:10px;letter-spacing:1.65px}.sub{font-size:13px;margin-top:7px}.top-tools{gap:10px}.global-search input{min-height:40px;border-radius:11px;background:#fffefa;border:1px solid var(--line)}
+.version{background:#fffefa;border:1px solid var(--line);padding:8px 12px;font-weight:650}
+.welcome{border-radius:18px;padding:25px 28px;background:linear-gradient(115deg,#81945f 0%,#899B68 58%,#96a579 100%);box-shadow:0 10px 24px rgba(88,107,62,.15);margin-bottom:20px}.welcome h2{font-size:22px;letter-spacing:-.45px}.welcome p{font-size:13px}.welcome .date{font-weight:600;letter-spacing:.02em}
+.stats{gap:13px;margin-bottom:20px}.stat,.panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}.stat{padding:18px 19px;min-height:112px;transition:transform .18s ease,box-shadow .18s ease}.stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}.stat-label{font-size:11px;letter-spacing:.025em}.stat-value{font-size:28px;letter-spacing:-1.1px;font-weight:760}.stat-note{font-size:11px}
+.panel{padding:19px 20px;margin-bottom:16px}.panel-head{margin-bottom:15px;gap:12px}.panel h3{font-size:15px;font-weight:740;letter-spacing:-.2px}.muted{font-size:12px;line-height:1.5}
+.primary,.secondary,.header-action{min-height:38px;border-radius:10px;font-size:12px;font-weight:700}.primary{background:var(--sage);box-shadow:0 3px 8px rgba(87,105,62,.13)}.primary:hover{background:var(--sage-dark);box-shadow:0 5px 12px rgba(87,105,62,.18);transform:translateY(-1px)}.secondary{background:#eef1e7;color:#536343}.secondary:hover{background:#e3e9d8;color:#3f5131;transform:translateY(-1px)}.header-action{padding:9px 13px}
+.row-card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 2px 8px rgba(43,54,34,.025);transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}.row-card:hover{border-color:#d6ddc9;box-shadow:var(--shadow);transform:translateY(-1px)}
+.list{gap:9px}.job{padding:13px 2px}.job strong{font-size:13px}.pill{font-size:10px;letter-spacing:.01em;padding:5px 9px}
+.toolbar{margin-bottom:17px;gap:14px}.toolbar h2{font-size:21px;letter-spacing:-.5px}.form-grid{gap:15px}.field{gap:7px}.field label{font-size:11px;letter-spacing:.025em}.field input,.field select,.field textarea,.photo-toolbar select{min-height:41px;border:1px solid #dfe3d6;border-radius:10px;background:#fffefa;padding:10px 12px;transition:border-color .18s ease,box-shadow .18s ease}.field input:focus,.field select:focus,.field textarea:focus,.photo-toolbar select:focus{border-color:#9aaa7f;box-shadow:0 0 0 3px rgba(137,155,104,.12);outline:0}
+.project-grid,.photo-grid{gap:15px}.project-card,.photo-card{border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}.project-card:hover,.photo-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-hover);border-color:#d9dfce}.project-info{padding:14px}.photo-info{padding:12px}.project-info strong,.photo-info strong{font-size:13px}.project-meta,.photo-meta{font-size:11px}.project-actions{gap:8px}.tiny-btn{border-radius:8px;padding:7px 10px}.tiny-btn:hover{background:#eef1e7;border-color:#d8dfcc}.tiny-btn.danger:hover{background:#fbefec;border-color:#e9c9c2}
+.empty{background:#fafaf5;border-color:#dfe3d6;border-radius:13px;padding:30px 16px;line-height:1.6}.empty b{font-size:13px}
+.modal-backdrop{backdrop-filter:blur(5px);background:rgba(31,38,27,.48)}.modal{border:1px solid #e7e8de;border-radius:19px;padding:25px;box-shadow:0 24px 70px rgba(18,25,15,.22)}.modal-head h2{font-size:20px;letter-spacing:-.4px}.close{border:1px solid var(--line);background:#f2f3ec;border-radius:9px}.close:hover{background:#e6eadc}
+.settings-header{margin-bottom:20px}.settings-card{background:var(--paper);border:1px solid var(--line);border-radius:17px;box-shadow:var(--shadow);padding:19px 20px;margin-bottom:15px}.settings-card-head{gap:13px;margin-bottom:15px}.settings-card-head h3{font-size:15px;letter-spacing:-.2px}.settings-card-head p{font-size:12px;line-height:1.5}.settings-icon{width:40px;height:40px;border-radius:12px;background:#edf0e5;color:#65794d;display:grid;place-items:center}.settings-card .row-card{box-shadow:none}.settings-note{border:1px solid #e4e8da;background:#f2f4ec;border-radius:12px;padding:13px 15px;font-size:12px;line-height:1.6}
+.media-toolbar{gap:12px;padding:13px;background:#fafaf5;border:1px solid var(--line);border-radius:14px}.media-field span{font-size:10px;letter-spacing:1px}.media-field input{min-height:40px;border:1px solid #dfe3d6;border-radius:10px;background:#fffefa;padding:9px 12px}.media-count{font-size:11px;font-weight:650;color:var(--muted)}
+.footer{padding-top:8px;font-size:10px}
+/* Consistent scrollbars and reduced-motion support */
+*{scrollbar-color:#cbd3bd transparent;scrollbar-width:thin}::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:#cbd3bd;border:2px solid transparent;background-clip:padding-box;border-radius:20px}::-webkit-scrollbar-thumb:hover{background:#aeb99b;border:2px solid transparent;background-clip:padding-box}
+@media(max-width:1100px){.shell{grid-template-columns:220px minmax(0,1fr)}main{padding:25px 22px 38px}.top{flex-wrap:wrap}.top-tools{width:100%;justify-content:flex-start;flex-wrap:wrap}}
+@media(max-width:900px){.shell{grid-template-columns:1fr}aside{position:sticky;top:0;height:auto;min-height:0;padding:9px 12px;background:#f7f2e6f5;backdrop-filter:blur(12px);gap:8px}.brand{padding:0 5px}.brand img{width:35px;height:35px}nav{padding-bottom:2px}.nav-btn{min-height:36px}.nav-btn:hover{transform:none}main{padding:21px 16px 34px}.top{margin-bottom:19px}.top-tools{gap:8px}.stats{gap:10px}.panel{padding:16px}.welcome{padding:21px 22px}}
+@media(max-width:600px){.top-tools{display:grid;grid-template-columns:1fr}.global-search{width:100%}.header-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.header-action{padding:8px 7px;font-size:11px}.version{justify-self:start}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat{min-height:100px;padding:13px}.stat-value{font-size:23px}.welcome{border-radius:15px}.toolbar{align-items:flex-start;flex-direction:column}.toolbar>div:last-child{width:100%}.row-card{align-items:flex-start;flex-wrap:wrap}.row-actions{justify-content:flex-start}.settings-card{padding:16px}.media-toolbar{padding:10px}.project-grid,.photo-grid{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
+
+</style>
 </head>
 <body>
 <div class="shell">
@@ -868,7 +909,7 @@ main{margin:0 auto;align-self:start;min-height:100vh}
       <div class="finance-transactions-panel"><div class="finance-panel-head"><div><h3>Transactions</h3><p>Invoice income is linked automatically. Add expenses and other income as they occur.</p></div></div><div class="finance-toolbar"><div class="finance-filters"><select id="financeTypeFilter" onchange="renderFinances()"><option value="all">All transactions</option><option value="income">Income</option><option value="expense">Expenses</option></select><select id="financeStatusFilter" onchange="renderFinances()"><option value="all">All statuses</option><option value="Paid">Paid / received</option><option value="Unpaid">Unpaid / outstanding</option></select></div></div><div class="finance-list-head"><span>Transaction</span><span style="text-align:right">Amount</span><span style="text-align:right">Actions</span></div><div id="financeList"></div></div>
     </section>
     <section class="page" id="page-settings"><div class="panel">
-      <div class="settings-header"><div><div class="eyebrow">WORKSPACE PREFERENCES</div><h2>Settings</h2><p>Manage your JRVS account, device setup and app updates.</p></div><span class="settings-version" id="settingsVersion">V0.3.5.1</span></div>
+      <div class="settings-header"><div><div class="eyebrow">WORKSPACE PREFERENCES</div><h2>Settings</h2><p>Manage your JRVS account, device setup and app updates.</p></div><span class="settings-version" id="settingsVersion">V0.4.0</span></div>
       <div class="settings-layout"><div class="settings-main">
         <section class="settings-card cloud-control-card"><div class="settings-card-head"><span class="settings-icon cloud-large-icon">☁</span><div class="cloud-heading-copy"><h3>JRVS Cloud</h3><p>Your private workspace across your devices.</p></div><span class="pill cloud-state-pill" id="cloudConnectionBadge">Local only</span></div>
           <div class="cloud-account-hero"><div class="cloud-account-mark">✉</div><div class="cloud-account-copy"><strong id="cloudAccountStatus">Not connected</strong><small>JRVS business account</small></div><span class="cloud-account-caption" id="cloudAccountHint">Sign in to sync devices</span></div>
@@ -1202,7 +1243,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.3.4';
+const APP_VERSION='0.4.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}

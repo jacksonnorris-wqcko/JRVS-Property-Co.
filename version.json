@@ -1,6 +1,6 @@
 {
-  "version": "0.3.5.1",
+  "version": "0.4.0",
   "name": "JRVS Property Co.",
-  "releaseDate": "2026-11-04",
-  "notes": "Install JRVS action now invokes the native PWA install prompt when supported and provides device-specific installation guidance otherwise. Existing cloud sync and data preserved."
+  "releaseDate": "2026-11-05",
+  "notes": "Full application visual refinement: consistent spacing, typography, surfaces, navigation, cards, forms, controls, responsive layouts, focus states and reduced-motion support. Internal app version alignment corrected. Existing data, photo library, cloud sync and workflows retained."
 }
