@@ -1,6 +1,6 @@
 {
-  "version": "0.4.0.1",
+  "version": "0.4.1",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-05",
-  "notes": "Dashboard welcome banner readability fix: explicit high-contrast dark text on a soft sage-cream surface, with a clearly separated date chip. No business data or sync changes."
+  "notes": "Dashboard welcome redesign with high-contrast cream styling, live Wollongong local time and current local weather plus today's high/low and rain chance. Existing business data, photos and cloud sync preserved."
 }

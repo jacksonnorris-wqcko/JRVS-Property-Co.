@@ -837,7 +837,13 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
   <main>
     <header class="top"><div><div class="eyebrow" id="pageEyebrow">Business workspace</div><h1 id="pageTitle">Dashboard</h1><p class="sub" id="pageSub">A clear view of what's happening in your business.</p></div><div class="top-tools"><div class="global-search" id="globalSearchWrap"><span class="search-icon">⌕</span><input id="globalSearchInput" type="search" placeholder="Search jobs, clients, quotes..." autocomplete="off" aria-label="Search all JRVS records"><div class="global-search-results" id="globalSearchResults" hidden></div></div><div class="header-actions"><button class="header-action secondary" type="button" onclick="openModal('job')"><span>＋</span> New job</button><button class="header-action primary" type="button" onclick="openQuoteForm()"><span>＋</span> New quote</button><button class="header-action secondary" type="button" onclick="openModal('client')"><span>＋</span> New client</button></div><div class="version" id="versionBadge">● V0.3.0</div></div></header>
     <section class="page active" id="page-dashboard">
-      <div class="welcome"><div><h2>Good to see you.</h2><p>Your business, organised in one place.</p></div><div class="date" id="today"></div></div>
+      <div class="welcome" id="dashboardWelcome">
+        <div class="welcome-copy"><div class="welcome-kicker">YOUR WORKSPACE</div><h2>Good to see you.</h2><p>Your business, organised in one place.</p><div class="welcome-date" id="today"></div></div>
+        <div class="welcome-info">
+          <div class="welcome-info-card welcome-clock"><span class="welcome-info-label">LOCAL TIME</span><strong id="welcomeClock">--:--</strong><small id="welcomeDaypart">Wollongong time</small></div>
+          <div class="welcome-info-card welcome-weather"><div class="weather-top"><span class="welcome-info-label">TODAY IN WOLLONGONG</span><span id="weatherIcon" aria-hidden="true">☀</span></div><strong id="weatherTemp">Loading…</strong><small id="weatherSummary">Checking local forecast</small><span class="weather-range" id="weatherRange"></span><span class="weather-credit">Weather · Open-Meteo</span></div>
+        </div>
+      </div>
       <div class="stats">
         <div class="stat"><div class="stat-label">Active jobs</div><div class="stat-value" id="activeJobs">0</div><div class="stat-note">Jobs currently underway</div></div>
         <div class="stat"><div class="stat-label">Clients</div><div class="stat-value" id="clientCount">0</div><div class="stat-note">Saved client records</div></div>
@@ -1243,7 +1249,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.4.0.1';
+const APP_VERSION='0.4.1';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -1832,6 +1838,27 @@ function printBusinessDocument(type,id){
 #page-dashboard .welcome p{color:#68745d!important;opacity:1!important}
 #page-dashboard .welcome .date{color:#536343!important;background:#e1e8d6;border:1px solid #d5dfc7;border-radius:999px;padding:8px 12px;font-weight:750;line-height:1.35;white-space:nowrap}
 @media(max-width:600px){#page-dashboard .welcome{padding:19px 20px!important;min-height:0;gap:12px}#page-dashboard .welcome .date{white-space:normal;align-self:flex-start}}
+
+/* V0.4.1 — high-contrast dashboard welcome, clock and local forecast */
+#page-dashboard #dashboardWelcome{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(330px,430px)!important;align-items:center!important;gap:28px!important;min-height:174px!important;padding:25px 28px!important;background:#F7F1DF!important;color:#34402D!important;border:1px solid #e5dfcc!important;border-radius:18px!important;box-shadow:0 8px 24px rgba(52,64,45,.07)!important}
+#page-dashboard #dashboardWelcome .welcome-copy{min-width:0!important}
+#page-dashboard #dashboardWelcome .welcome-kicker{font-size:10px!important;font-weight:800!important;letter-spacing:1.6px!important;color:#66794d!important;margin-bottom:8px!important}
+#page-dashboard #dashboardWelcome h2{font-size:25px!important;line-height:1.2!important;letter-spacing:-.55px!important;font-weight:780!important;color:#34402D!important;margin:0 0 7px!important}
+#page-dashboard #dashboardWelcome p{font-size:14px!important;line-height:1.5!important;color:#566047!important;opacity:1!important;margin:0!important}
+#page-dashboard #dashboardWelcome .welcome-date{font-size:12px!important;font-weight:700!important;color:#536343!important;margin-top:15px!important}
+#page-dashboard #dashboardWelcome .welcome-info{display:grid!important;grid-template-columns:.82fr 1.18fr!important;gap:10px!important;min-width:0!important}
+#page-dashboard #dashboardWelcome .welcome-info-card{display:flex!important;flex-direction:column!important;justify-content:center!important;min-width:0!important;min-height:112px!important;padding:15px 16px!important;border:1px solid #e1e4d5!important;border-radius:13px!important;background:#fffdf7!important;color:#34402D!important;box-shadow:0 2px 8px rgba(52,64,45,.035)!important}
+#page-dashboard #dashboardWelcome .welcome-info-label{font-size:9px!important;line-height:1.3!important;font-weight:850!important;letter-spacing:1.1px!important;color:#687653!important}
+#page-dashboard #dashboardWelcome .welcome-clock strong{font-size:25px!important;line-height:1.2!important;letter-spacing:-.5px!important;color:#34402D!important;margin:9px 0 5px!important;font-variant-numeric:tabular-nums!important}
+#page-dashboard #dashboardWelcome .welcome-info-card small{font-size:10px!important;line-height:1.4!important;color:#68745d!important}
+#page-dashboard #dashboardWelcome .weather-top{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:8px!important}
+#page-dashboard #dashboardWelcome #weatherIcon{font-size:23px!important;line-height:1!important}
+#page-dashboard #dashboardWelcome #weatherTemp{font-size:23px!important;line-height:1.2!important;color:#34402D!important;margin:5px 0 2px!important;font-weight:780!important}
+#page-dashboard #dashboardWelcome #weatherSummary{font-size:10px!important;line-height:1.35!important;color:#566047!important;white-space:normal!important}
+#page-dashboard #dashboardWelcome .weather-range{font-size:10px!important;line-height:1.35!important;color:#68745d!important;margin-top:5px!important}
+#page-dashboard #dashboardWelcome .weather-credit{font-size:8px!important;line-height:1.2!important;color:#8a907f!important;margin-top:5px!important}
+@media(max-width:760px){#page-dashboard #dashboardWelcome{grid-template-columns:1fr!important;gap:18px!important;padding:21px!important}#page-dashboard #dashboardWelcome .welcome-info{grid-template-columns:.8fr 1.2fr!important}}
+@media(max-width:420px){#page-dashboard #dashboardWelcome .welcome-info{grid-template-columns:1fr 1.35fr!important;gap:7px!important}#page-dashboard #dashboardWelcome .welcome-info-card{padding:12px 10px!important;min-height:105px!important}#page-dashboard #dashboardWelcome .welcome-clock strong,#page-dashboard #dashboardWelcome #weatherTemp{font-size:21px!important}}
 </style></head><body><main class="sheet"><header class="head"><div class="brand"><img src="${logoUrl}" alt="JRVS Property Co"><small>PROPERTY PHOTOGRAPHY</small></div><div class="doc"><h1>${title}</h1><strong>${esc(record.number||'')}</strong><p class="muted">${type==='quote'?'Date':'Issue date'}: ${esc(record.date||'—')}</p>${type==='quote'?`<p class="muted">Valid until: ${esc(record.validUntil||(()=>{const d=new Date((record.date||new Date().toISOString().slice(0,10))+'T00:00:00');d.setDate(d.getDate()+30);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})())}</p>`:''}${type==='invoice'?`<p class="muted">Due date: ${esc(record.dueDate||'—')}</p>`:''}</div></header><section class="meta"><div><h3>BILL TO</h3><p><strong>${esc(record.clientName||client.name||'Client')}</strong><br>${esc(client.company||'')}<br>${esc(client.email||'')}<br>${esc(client.phone||'')}</p></div><div class="right"><h3>PROPERTY / JOB</h3><p><strong>${esc(record.jobName||job.name||'')}</strong><br>${esc(job.address||'')}<br><span class="muted">${type==='invoice'?'Payment status: '+esc(record.status||'Unpaid'): 'Quotation prepared by JRVS Property Co.'}</span></p></div></section>${type==='quote'?`<section class="intro-note"><strong>Thank you for the opportunity.</strong><br>Thank you for considering JRVS Property Co. and giving us the opportunity to provide a quote for your property. We appreciate your consideration and would be pleased to answer any questions about the services outlined below.</section>`:''}<table><thead><tr><th>Description</th><th class="num">Qty</th><th class="num">Unit price</th><th class="num">Amount</th></tr></thead><tbody>${rows}</tbody></table><section class="totals"><div><span>Subtotal</span><strong>${money(record.subtotal)}</strong></div><div><span>${gstLabel}</span><strong>${money(record.gst)}</strong></div><div class="grand"><span>Total AUD</span><span>${money(record.total)}</span></div></section>${type==='invoice'?`<section class="payment-panel"><h3>PAYMENT DETAILS</h3><p style="margin:0 0 10px">Please make payment by the due date shown above. Use <strong>${esc(record.number||'Invoice number')}</strong> as your payment reference.</p><div class="payment-grid"><p><strong>Account name:</strong> To be provided</p><p><strong>BSB:</strong> To be provided</p><p><strong>Account number:</strong> To be provided</p><p><strong>Payment reference:</strong> ${esc(record.number||'Invoice number')}</p></div><p style="margin:10px 0 0;color:#72786c;font-size:10px">Bank details will be updated when JRVS Property Co. payment details are finalised.</p></section>`:''}${record.notes?`<section class="notes"><strong>Notes & terms</strong><br>${esc(record.notes)}</section>`:''}<footer class="foot"><span>JRVS Property Co.</span><span>${type==='invoice'?'Thank you for choosing JRVS Property Co. We appreciate your business.':'JRVS Property Co. · Property Photography'}</span></footer></main><script>window.addEventListener('load',()=>{setTimeout(()=>window.print(),350)});<\/script></body></html>`;
  const w=window.open('','_blank');if(!w){showToast('Please allow pop-ups for this app to generate your PDF.');return}w.document.open();w.document.write(html);w.document.close();
 }
@@ -2031,7 +2058,30 @@ function previewPhoto(id){const p=photoRecords.find(x=>x.id===id);if(!p)return;i
 function closePhotoPreview(){document.getElementById('photoPreviewBackdrop').classList.remove('show');document.getElementById('photoPreviewImage').src='';if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null}}
 document.getElementById('photoFiles').addEventListener('change',e=>{if(e.target.files.length)importPhotos([...e.target.files]);e.target.value=''});
 document.getElementById('photoJobFilter').addEventListener('change',renderPhotos);
-document.getElementById('today').textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+function updateWelcomeClock(){
+ const now=new Date();
+ const clock=document.getElementById('welcomeClock');
+ if(clock)clock.textContent=new Intl.DateTimeFormat('en-AU',{timeZone:'Australia/Sydney',hour:'numeric',minute:'2-digit',hour12:true}).format(now);
+ const date=document.getElementById('today');
+ if(date)date.textContent=new Intl.DateTimeFormat('en-AU',{timeZone:'Australia/Sydney',weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(now);
+ const h=Number(new Intl.DateTimeFormat('en-AU',{timeZone:'Australia/Sydney',hour:'2-digit',hourCycle:'h23'}).format(now));
+ const part=document.getElementById('welcomeDaypart');if(part)part.textContent=h<12?'Have a great morning':h<17?'Hope your day is going well':'Have a good evening';
+}
+updateWelcomeClock();setInterval(updateWelcomeClock,30000);
+function weatherDescription(code){const map={0:['Clear sky','☀'],1:['Mainly clear','🌤'],2:['Partly cloudy','⛅'],3:['Overcast','☁'],45:['Fog','🌫'],48:['Depositing rime fog','🌫'],51:['Light drizzle','🌦'],53:['Drizzle','🌦'],55:['Heavy drizzle','🌧'],56:['Freezing drizzle','🌧'],57:['Freezing drizzle','🌧'],61:['Light rain','🌧'],63:['Rain','🌧'],65:['Heavy rain','🌧'],66:['Freezing rain','🌧'],67:['Freezing rain','🌧'],71:['Light snow','🌨'],73:['Snow','🌨'],75:['Heavy snow','❄'],77:['Snow grains','🌨'],80:['Rain showers','🌦'],81:['Rain showers','🌧'],82:['Heavy showers','⛈'],85:['Snow showers','🌨'],86:['Heavy snow showers','❄'],95:['Thunderstorm','⛈'],96:['Thunderstorm with hail','⛈'],99:['Thunderstorm with hail','⛈']};return map[code]||['Conditions unavailable','🌤']}
+async function loadWelcomeWeather(){
+ const temp=document.getElementById('weatherTemp'),summary=document.getElementById('weatherSummary'),range=document.getElementById('weatherRange'),icon=document.getElementById('weatherIcon');
+ try{
+  const url='https://api.open-meteo.com/v1/forecast?latitude=-34.4278&longitude=150.8931&current=temperature_2m,apparent_temperature,weather_code,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&timezone=Australia%2FSydney&forecast_days=1';
+  const response=await fetch(url,{cache:'no-store'});if(!response.ok)throw new Error('Weather unavailable');const data=await response.json();
+  const current=data.current||{},daily=data.daily||{},desc=weatherDescription(current.weather_code);
+  if(temp)temp.textContent=Number.isFinite(current.temperature_2m)?Math.round(current.temperature_2m)+'°C':'—';
+  if(summary)summary.textContent=desc[0]+(Number.isFinite(current.precipitation_probability)?' · '+current.precipitation_probability+'% rain chance':'');
+  if(icon)icon.textContent=desc[1];
+  if(range&&daily.temperature_2m_min?.length)range.textContent='H '+Math.round(daily.temperature_2m_max[0])+'°  ·  L '+Math.round(daily.temperature_2m_min[0])+'°'+(Number.isFinite(daily.precipitation_probability_max?.[0])?'  ·  '+daily.precipitation_probability_max[0]+'% rain today':'');
+ }catch(e){if(temp)temp.textContent='Unavailable';if(summary)summary.textContent='Forecast could not be loaded';if(range)range.textContent='Check your internet connection';if(icon)icon.textContent='—'}
+}
+loadWelcomeWeather();setInterval(loadWelcomeWeather,30*60*1000);
 ['versionBadge','sideVersion','settingsVersion','footerVersion'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=(id==='versionBadge'?'● Version ':'V')+APP_VERSION});
 render();loadPhotos();renderQuotes();renderFinances();jrvsCloudInit();
 function compareVersions(a,b){const aa=String(a).split('.').map(Number),bb=String(b).split('.').map(Number);for(let i=0;i<Math.max(aa.length,bb.length);i++){const x=aa[i]||0,y=bb[i]||0;if(x>y)return 1;if(x<y)return -1}return 0}
