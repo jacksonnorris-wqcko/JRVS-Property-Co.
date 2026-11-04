@@ -737,6 +737,44 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 @media(max-width:950px){#page-settings .settings-layout{grid-template-columns:1fr}}
 @media(max-width:700px){#page-photos .media-filters{grid-template-columns:1fr 1fr}#page-photos .media-filters .media-field:first-child{grid-column:1/-1}#page-settings .settings-header{align-items:flex-start;flex-direction:column}#page-settings .settings-card{padding:15px}}
 
+
+/* V0.3.5 cloud sync control centre */
+#page-settings .cloud-control-card{padding:22px;background:linear-gradient(145deg,#fffefa 0%,#f8f9f3 100%);border-color:#dfe5d5}
+#page-settings .cloud-control-card .settings-card-head{align-items:center;margin-bottom:19px}
+#page-settings .cloud-large-icon{width:46px;height:46px;border-radius:15px;font-size:21px}
+#page-settings .cloud-heading-copy{flex:1;min-width:0}
+#page-settings .cloud-heading-copy h3{font-size:17px;letter-spacing:-.25px}
+#page-settings .cloud-state-pill{white-space:nowrap}
+#page-settings .cloud-account-hero{display:flex;align-items:center;gap:12px;padding:15px 16px;background:#fff;border:1px solid #e8ebdf;border-radius:14px}
+#page-settings .cloud-account-mark{width:38px;height:38px;display:grid;place-items:center;background:#f0f2e9;border-radius:12px;color:#6d8053;font-size:17px}
+#page-settings .cloud-account-copy{display:grid;gap:3px;min-width:0;flex:1}
+#page-settings .cloud-account-copy strong{font-size:13px;overflow-wrap:anywhere}
+#page-settings .cloud-account-copy small,#page-settings .cloud-account-caption{font-size:11px;color:var(--muted)}
+#page-settings .cloud-sync-panel{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-top:13px;padding:18px 17px;background:#f0f3e9;border:1px solid #e1e7d7;border-radius:14px}
+#page-settings .cloud-sync-copy{display:grid;gap:4px;min-width:0}
+#page-settings .cloud-sync-label{font-size:9px;letter-spacing:1.1px;font-weight:800;color:#74835e}
+#page-settings .cloud-sync-copy strong{font-size:14px;line-height:1.35}
+#page-settings .cloud-sync-copy small{font-size:11px;color:var(--muted)}
+#page-settings .cloud-sync-button{min-width:118px;min-height:42px;box-shadow:0 5px 12px #687b4e24}
+#page-settings .cloud-sync-button span{font-size:17px;margin-right:4px}
+#page-settings .cloud-device-strip{display:flex;align-items:center;gap:11px;padding:13px 3px 8px}
+#page-settings .cloud-device-icon{width:32px;height:32px;display:grid;place-items:center;background:#f1f2ed;border-radius:10px;color:#687b4e}
+#page-settings .cloud-device-strip>div{display:grid;gap:2px;flex:1}
+#page-settings .cloud-device-strip strong{font-size:12px}
+#page-settings .cloud-device-strip small{font-size:10px;color:var(--muted)}
+#page-settings .cloud-device-state{font-size:10px;font-weight:700;color:#718454;background:#edf1e5;padding:5px 9px;border-radius:20px}
+#page-settings .cloud-account-details,#page-settings .cloud-help-details{border-top:1px solid #e9ebdf;margin-top:11px;padding-top:11px}
+#page-settings .cloud-account-details summary,#page-settings .cloud-help-details summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;list-style:none;font-size:12px;font-weight:750;color:var(--ink);padding:4px 1px}
+#page-settings .cloud-account-details summary::-webkit-details-marker,#page-settings .cloud-help-details summary::-webkit-details-marker{display:none}
+#page-settings .cloud-account-details summary:after,#page-settings .cloud-help-details summary:after{content:'＋';color:#718454;font-size:16px;margin-left:auto}
+#page-settings .cloud-account-details[open] summary:after,#page-settings .cloud-help-details[open] summary:after{content:'−'}
+#page-settings .cloud-details-hint{font-size:10px;font-weight:500;color:var(--muted)}
+#page-settings .cloud-account-form{padding-top:12px}
+#page-settings .cloud-account-form .form-grid{margin-top:0!important}
+#page-settings .cloud-account-form .settings-actions{margin-top:12px}
+#page-settings .cloud-help-details .settings-note{margin-top:10px}
+@media(max-width:600px){#page-settings .cloud-control-card{padding:16px}#page-settings .cloud-sync-panel{align-items:stretch;flex-direction:column}#page-settings .cloud-sync-button{width:100%}#page-settings .cloud-account-caption{display:none}#page-settings .cloud-details-hint{display:none}}
+
 </style>
 </head>
 <body>
@@ -830,14 +868,14 @@ main{margin:0 auto;align-self:start;min-height:100vh}
       <div class="finance-transactions-panel"><div class="finance-panel-head"><div><h3>Transactions</h3><p>Invoice income is linked automatically. Add expenses and other income as they occur.</p></div></div><div class="finance-toolbar"><div class="finance-filters"><select id="financeTypeFilter" onchange="renderFinances()"><option value="all">All transactions</option><option value="income">Income</option><option value="expense">Expenses</option></select><select id="financeStatusFilter" onchange="renderFinances()"><option value="all">All statuses</option><option value="Paid">Paid / received</option><option value="Unpaid">Unpaid / outstanding</option></select></div></div><div class="finance-list-head"><span>Transaction</span><span style="text-align:right">Amount</span><span style="text-align:right">Actions</span></div><div id="financeList"></div></div>
     </section>
     <section class="page" id="page-settings"><div class="panel">
-      <div class="settings-header"><div><div class="eyebrow">WORKSPACE PREFERENCES</div><h2>Settings</h2><p>Manage your JRVS account, device setup and app updates.</p></div><span class="settings-version" id="settingsVersion">V0.3.4</span></div>
+      <div class="settings-header"><div><div class="eyebrow">WORKSPACE PREFERENCES</div><h2>Settings</h2><p>Manage your JRVS account, device setup and app updates.</p></div><span class="settings-version" id="settingsVersion">V0.3.5</span></div>
       <div class="settings-layout"><div class="settings-main">
-        <section class="settings-card"><div class="settings-card-head"><span class="settings-icon">☁</span><div><h3>JRVS Cloud Sync</h3><p>Connect your desktop and iPhone to the same private business account. Local records remain on this device.</p></div></div>
-          <div class="row-card"><div><strong>Account</strong><small id="cloudAccountStatus">Not connected</small></div><span class="pill" id="cloudConnectionBadge">Local only</span></div>
-          <div class="form-grid" style="margin-top:13px"><div class="field"><label for="cloudEmail">Email address</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field"><label for="cloudPassword">Password</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="Your JRVS cloud password"></div></div>
-          <div class="settings-actions"><button class="primary" type="button" onclick="jrvsCloudSignUp()">Create account</button><button class="secondary" type="button" onclick="jrvsCloudSignIn()">Sign in</button><button class="secondary" type="button" onclick="jrvsCloudSignOut()">Sign out</button></div>
-          <div class="row-card"><div><strong>Synchronisation</strong><small id="cloudSyncStatus">Not connected to cloud.</small></div><button class="primary" id="cloudSyncButton" type="button" onclick="jrvsCloudSync()" disabled>Sync now</button></div>
-          <div class="settings-note">First sync asks whether to upload this device's existing data or restore data already in the cloud. Photos are transferred in original quality. Keep the app open during the first transfer.</div>
+        <section class="settings-card cloud-control-card"><div class="settings-card-head"><span class="settings-icon cloud-large-icon">☁</span><div class="cloud-heading-copy"><h3>JRVS Cloud</h3><p>Your private workspace across your devices.</p></div><span class="pill cloud-state-pill" id="cloudConnectionBadge">Local only</span></div>
+          <div class="cloud-account-hero"><div class="cloud-account-mark">✉</div><div class="cloud-account-copy"><strong id="cloudAccountStatus">Not connected</strong><small>JRVS business account</small></div><span class="cloud-account-caption" id="cloudAccountHint">Sign in to sync devices</span></div>
+          <div class="cloud-sync-panel"><div class="cloud-sync-copy"><span class="cloud-sync-label">SYNCHRONISATION</span><strong id="cloudSyncStatus">Not connected to cloud.</strong><small>Sync your business records and photo library.</small></div><button class="primary cloud-sync-button" id="cloudSyncButton" type="button" onclick="jrvsCloudSync()" disabled><span aria-hidden="true">↻</span> Sync now</button></div>
+          <div class="cloud-device-strip"><span class="cloud-device-icon">▣</span><div><strong>This device</strong><small>Local records are kept on this device.</small></div><span class="cloud-device-state">Active</span></div>
+          <details class="cloud-account-details"><summary><span>Account & sign-in</span><span class="cloud-details-hint">Manage credentials</span></summary><div class="cloud-account-form"><div class="form-grid"><div class="field"><label for="cloudEmail">Email address</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field"><label for="cloudPassword">Password</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="Your JRVS cloud password"></div></div><div class="settings-actions"><button class="primary" type="button" onclick="jrvsCloudSignUp()">Create account</button><button class="secondary" type="button" onclick="jrvsCloudSignIn()">Sign in</button><button class="secondary" type="button" onclick="jrvsCloudSignOut()">Sign out</button></div></div></details>
+          <details class="cloud-help-details"><summary>How synchronisation works</summary><div class="settings-note">First sync asks whether to upload this device's existing data or restore data already in the cloud. Photos are transferred in original quality. Keep the app open during the first transfer. Never clear browser data to troubleshoot sync.</div></details>
         </section>
         <section class="settings-card"><div class="settings-card-head"><span class="settings-icon">↻</span><div><h3>App updates</h3><p>Check that you're running the latest JRVS release.</p></div></div>
           <div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div>
@@ -987,6 +1025,7 @@ try {
 function jrvsCloudUi(){
  const email=document.getElementById('cloudAccountStatus'),badge=document.getElementById('cloudConnectionBadge'),btn=document.getElementById('cloudSyncButton'),status=document.getElementById('cloudSyncStatus');
  if(email)email.textContent=jrvsCloudSession?.user?.email||'Not connected';
+ const hint=document.getElementById('cloudAccountHint');if(hint)hint.textContent=jrvsCloudSession?'Account connected':'Sign in to sync devices';
  if(badge){badge.textContent=jrvsCloudSession?'Connected':'Local only';badge.classList.toggle('success',!!jrvsCloudSession)}
  if(btn)btn.disabled=!jrvsCloudSession||jrvsCloudBusy;
  if(status&&jrvsCloudSession&&status.textContent==='Not connected to cloud.')status.textContent='Signed in. Ready to synchronise.';

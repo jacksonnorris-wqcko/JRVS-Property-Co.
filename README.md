@@ -39,3 +39,12 @@ Static checks only; live browser and Supabase workflows have not been exercised 
 - Reworked Settings into clearer Cloud Sync, App Updates, Install JRVS, and Data & Privacy sections.
 - Preserved existing Supabase configuration, localStorage records, IndexedDB photo library, brand palette, list caps and calendar rules.
 - No SQL changes required.
+
+
+## V0.3.5 – Cloud Sync & Settings Redesign
+- Redesigned Cloud Sync as a control-centre card with a prominent synchronisation action.
+- Moved email/password and account actions into a collapsible Account & sign-in section.
+- Moved first-sync guidance into a collapsible help section.
+- Kept existing Supabase authentication and sync implementation unchanged.
+- No database migration, SQL changes, or data reset required.
+- Device indicator identifies only the current device; it does not claim live remote-device presence.
