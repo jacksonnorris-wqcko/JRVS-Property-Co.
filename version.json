@@ -1,6 +1,6 @@
 {
-  "version": "0.5.6",
+  "version": "0.5.7",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-05",
-  "notes": "Repair project gallery Original/Edited switching; update in-app version labels, release metadata and README."
+  "notes": "Added full-resolution photo downloads, individual photo downloads and multi-select ZIP export."
 }

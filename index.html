@@ -527,7 +527,7 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 #page-photos .photo-meta{font-size:10px;margin:6px 0 13px;display:flex;gap:6px;align-items:center}
 #page-photos .photo-status-field{display:grid;gap:5px;margin-bottom:12px}
 #page-photos .photo-status-field select{width:100%;min-width:0;padding:9px 10px;border:1px solid #e1e4d9;border-radius:9px;background:#fffefa;color:#56614d;font-size:11px}
-#page-photos .photo-actions{display:grid;grid-template-columns:minmax(0,1fr) auto 38px;gap:7px;align-items:center}
+#page-photos .photo-actions{display:grid;grid-template-columns:minmax(0,1fr) auto auto 38px;gap:7px;align-items:center}
 #page-photos .photo-edit-btn{min-height:38px;padding:8px 12px;font-size:11px}
 #page-photos .photo-cover-btn{min-height:38px;padding:8px 10px;font-size:10px;white-space:nowrap}
 #page-photos .photo-delete-btn{height:38px;width:38px;padding:0;font-size:16px}
@@ -1303,7 +1303,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.5.6';
+const APP_VERSION='0.5.7';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -1698,14 +1698,81 @@ async function renderPhotos(){
  grid.className='photo-grid';
  const job=data.jobs.find(j=>j.id===f);
  const rows=getProjectPhotos(f).filter(p=>(kind==='all'||p.type===kind)&&(!search||p.name.toLowerCase().includes(search)||String(p.status||'').toLowerCase().includes(search)));
- const back=`<div class="gallery-heading"><div><div class="gallery-kicker">PROJECT GALLERY</div><strong>${esc(job?.name||'Project gallery')}</strong><div class="muted">${rows.length} matching ${rows.length===1?'photo':'photos'} · Original files are kept safe</div></div><button class="secondary gallery-back" onclick="showAllProjects()">← All projects</button></div><div class="batch-studio"><span class="batch-count" id="batchSelectionCount">0 photos selected</span><button class="secondary" type="button" onclick="selectAllVisiblePhotos()">Select all visible</button><button class="secondary" type="button" onclick="clearPhotoSelection()">Clear selection</button><select id="batchPreset"><option value="natural">Natural Listing</option><option value="bright">Bright &amp; Airy</option><option value="window">Window Balanced</option><option value="warm">Warm Lifestyle</option><option value="modern">Crisp Modern</option><option value="soft">Soft Neutral</option><option value="luxury">Luxury Contrast</option><option value="wood">Wood &amp; Stone</option><option value="bathroom">Bathroom Clean</option><option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option></select><button class="primary" type="button" onclick="applyBatchPresetToSelection()">Apply preset to selected</button><div class="batch-progress" id="batchProgress">Select photos, then apply one consistent preset. Originals are never changed.</div></div>`;
+ const back=`<div class="gallery-heading"><div><div class="gallery-kicker">PROJECT GALLERY</div><strong>${esc(job?.name||'Project gallery')}</strong><div class="muted">${rows.length} matching ${rows.length===1?'photo':'photos'} · Original files are kept safe</div></div><button class="secondary gallery-back" onclick="showAllProjects()">← All projects</button></div><div class="batch-studio"><span class="batch-count" id="batchSelectionCount">0 photos selected</span><button class="secondary" type="button" onclick="selectAllVisiblePhotos()">Select all visible</button><button class="secondary" type="button" onclick="clearPhotoSelection()">Clear selection</button><button class="secondary" type="button" onclick="downloadSelectedPhotosZip()">↓ Download selected (.zip)</button><select id="batchPreset"><option value="natural">Natural Listing</option><option value="bright">Bright &amp; Airy</option><option value="window">Window Balanced</option><option value="warm">Warm Lifestyle</option><option value="modern">Crisp Modern</option><option value="soft">Soft Neutral</option><option value="luxury">Luxury Contrast</option><option value="wood">Wood &amp; Stone</option><option value="bathroom">Bathroom Clean</option><option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option></select><button class="primary" type="button" onclick="applyBatchPresetToSelection()">Apply preset to selected</button><div class="batch-progress" id="batchProgress">Select photos, then apply one consistent preset. Originals are never changed.</div></div>`;
  if(!rows.length){grid.innerHTML=back+'<div class="empty" style="grid-column:1/-1"><b>No matching photos</b>Try a different filename or status.</div>';return}
  grid.innerHTML=back+rows.map(p=>{
    const u=URL.createObjectURL(p.blob);photoUrls.push(u);
-   return `<article class="photo-card ${selectedPhotoIds.has(p.id)?'is-batch-selected':''}"><div class="photo-image-wrap"><label class="photo-select-wrap"><input type="checkbox" ${selectedPhotoIds.has(p.id)?'checked':''} onchange="togglePhotoSelection('${p.id}',this.checked)">Select</label><img class="photo-thumb" src="${u}" alt="${esc(p.name)}" onclick="previewPhoto('${p.id}')"><button class="photo-preview-action" onclick="previewPhoto('${p.id}')" aria-label="Preview photo">↗</button>${p.isCover?'<span class="photo-cover-badge">★ Cover image</span>':''}</div><div class="photo-info"><div class="photo-title-row"><strong title="${esc(p.name)}">${esc(p.name)}</strong><span class="photo-file-type">${esc(p.type)}</span></div><div class="photo-meta">${bytes(p.size)} <span>·</span> ${new Date(p.addedAt||Date.now()).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div><label class="photo-status-field"><span>WORKFLOW STATUS</span><select aria-label="Photo status" onchange="updatePhotoStatus('${p.id}',this.value)">${['Imported','Selected','Editing','Edited','Delivered'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}</select></label><div class="photo-actions"><button class="primary photo-edit-btn" onclick="openEditor('${p.id}')">✎ Edit photo</button><button class="tiny-btn photo-cover-btn" onclick="setProjectCover('${p.id}')" ${p.isCover?'disabled':''}>${p.isCover?'✓ Cover':'Set cover'}</button><button class="tiny-btn danger photo-delete-btn" onclick="deletePhoto('${p.id}')" aria-label="Delete photo" title="Delete photo">⌫</button></div></div></article>`;
+   return `<article class="photo-card ${selectedPhotoIds.has(p.id)?'is-batch-selected':''}"><div class="photo-image-wrap"><label class="photo-select-wrap"><input type="checkbox" ${selectedPhotoIds.has(p.id)?'checked':''} onchange="togglePhotoSelection('${p.id}',this.checked)">Select</label><img class="photo-thumb" src="${u}" alt="${esc(p.name)}" onclick="previewPhoto('${p.id}')"><button class="photo-preview-action" onclick="previewPhoto('${p.id}')" aria-label="Preview photo">↗</button>${p.isCover?'<span class="photo-cover-badge">★ Cover image</span>':''}</div><div class="photo-info"><div class="photo-title-row"><strong title="${esc(p.name)}">${esc(p.name)}</strong><span class="photo-file-type">${esc(p.type)}</span></div><div class="photo-meta">${bytes(p.size)} <span>·</span> ${new Date(p.addedAt||Date.now()).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div><label class="photo-status-field"><span>WORKFLOW STATUS</span><select aria-label="Photo status" onchange="updatePhotoStatus('${p.id}',this.value)">${['Imported','Selected','Editing','Edited','Delivered'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}</select></label><div class="photo-actions"><button class="primary photo-edit-btn" onclick="openEditor('${p.id}')">✎ Edit photo</button><button class="tiny-btn photo-cover-btn" onclick="setProjectCover('${p.id}')" ${p.isCover?'disabled':''}>${p.isCover?'✓ Cover':'Set cover'}</button><button class="tiny-btn" onclick="downloadPhoto('${p.id}')" title="Download original file">↓ Download</button><button class="tiny-btn danger photo-delete-btn" onclick="deletePhoto('${p.id}')" aria-label="Delete photo" title="Delete photo">⌫</button></div></div></article>`;
  }).join('');
 }
 const selectedPhotoIds=new Set();
+
+// Export the stored photo blobs directly: no resizing, recompression or thumbnail export.
+function safeDownloadName(name){
+ const clean=String(name||'photo').replace(/[\\/:*?"<>|\u0000-\u001f]/g,'_').replace(/[. ]+$/,'').trim();
+ return clean||'photo';
+}
+function triggerBlobDownload(blob,filename){
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=safeDownloadName(filename);a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+function downloadPhoto(id){
+ const p=photoRecords.find(x=>String(x.id)===String(id));
+ if(!p||!(p.blob instanceof Blob)){showToast('Could not find the full-size photo file.','error');return}
+ triggerBlobDownload(p.blob,p.name||'JRVS-photo');
+ showToast('Full-size photo download started.');
+}
+function zipCrc32(bytes){
+ let crc=0xffffffff;
+ for(let i=0;i<bytes.length;i++){
+  crc^=bytes[i];
+  for(let j=0;j<8;j++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);
+ }
+ return (crc^0xffffffff)>>>0;
+}
+function zipDosDate(dateValue){
+ const d=new Date(dateValue||Date.now()),year=Math.max(1980,d.getFullYear());
+ return {time:(d.getHours()<<11)|(d.getMinutes()<<5)|Math.floor(d.getSeconds()/2),date:((year-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate()};
+}
+async function makeStoredZip(files){
+ const enc=new TextEncoder(),local=[],central=[];let offset=0;
+ for(const file of files){
+  const nameBytes=enc.encode(file.path),data=new Uint8Array(await file.blob.arrayBuffer());
+  if(data.length>0xffffffff||offset>0xffffffff)throw Error('This ZIP is too large for the browser ZIP exporter. Export a smaller selection.');
+  const crc=zipCrc32(data),stamp=zipDosDate(file.date),localHeader=new Uint8Array(30+nameBytes.length),lv=new DataView(localHeader.buffer);
+  lv.setUint32(0,0x04034b50,true);lv.setUint16(4,20,true);lv.setUint16(6,0x0800,true);lv.setUint16(8,0,true);
+  lv.setUint16(10,stamp.time,true);lv.setUint16(12,stamp.date,true);lv.setUint32(14,crc,true);lv.setUint32(18,data.length,true);lv.setUint32(22,data.length,true);lv.setUint16(26,nameBytes.length,true);lv.setUint16(28,0,true);localHeader.set(nameBytes,30);
+  const centralHeader=new Uint8Array(46+nameBytes.length),cv=new DataView(centralHeader.buffer);
+  cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x0800,true);cv.setUint16(10,0,true);
+  cv.setUint16(12,stamp.time,true);cv.setUint16(14,stamp.date,true);cv.setUint32(16,crc,true);cv.setUint32(20,data.length,true);cv.setUint32(24,data.length,true);
+  cv.setUint16(28,nameBytes.length,true);cv.setUint16(30,0,true);cv.setUint16(32,0,true);cv.setUint16(34,0,true);cv.setUint16(36,0,true);cv.setUint32(38,0,true);cv.setUint32(42,offset,true);centralHeader.set(nameBytes,46);
+  local.push(localHeader,data);central.push(centralHeader);offset+=localHeader.length+data.length;
+ }
+ const centralSize=central.reduce((n,b)=>n+b.length,0),end=new Uint8Array(22),ev=new DataView(end.buffer);
+ ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);ev.setUint16(8,files.length,true);ev.setUint16(10,files.length,true);ev.setUint32(12,centralSize,true);ev.setUint32(16,offset,true);ev.setUint16(20,0,true);
+ return new Blob([...local,...central,end],{type:'application/zip'});
+}
+async function downloadSelectedPhotosZip(){
+ const ids=[...selectedPhotoIds],photos=ids.map(id=>photoRecords.find(p=>String(p.id)===String(id))).filter(p=>p&&p.blob instanceof Blob);
+ if(!photos.length){showToast('Select one or more photos to download.');return}
+ const totalBytes=photos.reduce((n,p)=>n+p.blob.size,0);
+ if(photos.length>65535||totalBytes>300*1024*1024){showToast('That selection is too large to package safely in one browser ZIP. Please export a smaller batch (up to 300 MB).','error');return}
+ const btn=[...document.querySelectorAll('.batch-studio button')].find(b=>b.getAttribute('onclick')==='downloadSelectedPhotosZip()');
+ if(btn){btn.disabled=true;btn.textContent='Preparing ZIP…'}
+ try{
+  const jobName=safeDownloadName(photos[0].jobName||'JRVS-Project'),used=new Set();
+  const files=photos.map((p,i)=>{
+   let name=safeDownloadName(p.name||`photo-${i+1}`),key=name.toLowerCase(),n=1;
+   while(used.has(key)){const dot=name.lastIndexOf('.'),stem=dot>0?name.slice(0,dot):name,ext=dot>0?name.slice(dot):'';name=`${stem} (${++n})${ext}`;key=name.toLowerCase()}
+   used.add(key);return {path:`${jobName}/${name}`,blob:p.blob,date:p.addedAt};
+  });
+  const zip=await makeStoredZip(files),stamp=new Date().toISOString().slice(0,10);
+  triggerBlobDownload(zip,`${jobName}-photos-${stamp}.zip`);
+  showToast(`ZIP ready: ${photos.length} full-size photo${photos.length===1?'':'s'} exported.`);
+ }catch(e){console.error('JRVS photo ZIP export failed',e);showToast(`ZIP export failed: ${e.message||'Unknown error'}`,'error')}
+ finally{if(btn){btn.disabled=false;btn.textContent='↓ Download selected (.zip)'}}
+}
 function togglePhotoSelection(id,checked){if(checked)selectedPhotoIds.add(id);else selectedPhotoIds.delete(id);const card=[...document.querySelectorAll('.photo-card')].find(el=>el.querySelector(`input[onchange*="${id}"]`));if(card)card.classList.toggle('is-batch-selected',checked);updateBatchSelectionCount()}
 function updateBatchSelectionCount(){const el=document.getElementById('batchSelectionCount');if(el)el.textContent=selectedPhotoIds.size+' photo'+(selectedPhotoIds.size===1?'':'s')+' selected'}
 function selectAllVisiblePhotos(){document.querySelectorAll('#photoGrid .photo-select-wrap input').forEach(input=>{input.checked=true;const m=input.getAttribute('onchange')?.match(/togglePhotoSelection\('([^']+)'/);if(m)selectedPhotoIds.add(m[1]);input.closest('.photo-card')?.classList.add('is-batch-selected')});updateBatchSelectionCount()}
