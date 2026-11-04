@@ -1,6 +1,6 @@
 {
-  "version": "0.4.1",
+  "version": "0.4.1.1",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-05",
-  "notes": "Dashboard welcome redesign with high-contrast cream styling, live Wollongong local time and current local weather plus today's high/low and rain chance. Existing business data, photos and cloud sync preserved."
+  "notes": "Dashboard welcome component refinement. Corrected stylesheet placement, rebuilt responsive welcome/time/weather layout, and removed dashboard styles accidentally embedded in the PDF template."
 }
