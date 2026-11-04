@@ -711,6 +711,32 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 .job-detail-row .tiny-btn{margin-top:4px}
 .job-invoice-status{font-size:11px;color:var(--muted);margin-top:3px}
 @media(min-width:1051px){#jobDetailContent{max-width:100%}.job-detail-info{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* V0.3.4 desktop polish: photo search + calmer settings workspace */
+#page-photos .media-field input{width:100%;min-height:43px;padding:10px 13px;border:1px solid #dfe2d6;border-radius:11px;background:#fffefa;color:var(--ink);font-size:13px;outline-color:var(--sage)}
+#page-photos .media-filters{flex:1;display:grid;grid-template-columns:minmax(230px,1.3fr) minmax(180px,.8fr) minmax(170px,.8fr);gap:12px}
+#page-photos .media-toolbar{align-items:end}
+#page-settings>.panel{padding:0;background:transparent;border:0;box-shadow:none}
+#page-settings .settings-header{display:flex;justify-content:space-between;align-items:end;gap:18px;margin:0 0 22px}
+#page-settings .settings-header h2{font-size:25px;letter-spacing:-.6px;margin:3px 0 5px}
+#page-settings .settings-header p{margin:0;color:var(--muted);font-size:13px}
+#page-settings .settings-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.72fr);gap:16px;align-items:start}
+#page-settings .settings-main,#page-settings .settings-side{display:grid;gap:15px;min-width:0}
+#page-settings .settings-card{background:var(--paper);border:1px solid var(--line);border-radius:17px;padding:19px;box-shadow:0 8px 24px #35422a09}
+#page-settings .settings-card-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px}
+#page-settings .settings-icon{width:38px;height:38px;display:grid;place-items:center;flex:none;border-radius:12px;background:#edf0e5;color:#61744b;font-size:18px}
+#page-settings .settings-card-head h3{font-size:15px;margin:1px 0 3px}
+#page-settings .settings-card-head p{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
+#page-settings .settings-card .row-card{background:#fffefa;box-shadow:none;border-color:#ecece2;margin-top:9px}
+#page-settings .settings-card .field input{min-height:43px}
+#page-settings .settings-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+#page-settings .settings-note{margin-top:12px;font-size:12px;line-height:1.55;border:1px solid #e5e9dc;background:#f3f5ed}
+#page-settings .settings-card .settings-note:first-child{margin-top:0}
+#page-settings .settings-version{font-size:12px;color:var(--sage-dark);font-weight:800;background:#edf0e5;padding:7px 10px;border-radius:30px;white-space:nowrap}
+#page-settings .settings-inline{display:flex;justify-content:space-between;align-items:center;gap:12px}
+@media(max-width:950px){#page-settings .settings-layout{grid-template-columns:1fr}}
+@media(max-width:700px){#page-photos .media-filters{grid-template-columns:1fr 1fr}#page-photos .media-filters .media-field:first-child{grid-column:1/-1}#page-settings .settings-header{align-items:flex-start;flex-direction:column}#page-settings .settings-card{padding:15px}}
+
 </style>
 </head>
 <body>
@@ -767,7 +793,7 @@ main{margin:0 auto;align-self:start;min-height:100vh}
     <section class="page" id="page-jobs"><div class="toolbar"><div><h2 style="margin:0">Jobs</h2><div class="muted">Manage property photography work.</div></div><div class="row-actions"><input id="jobSearch" type="search" placeholder="Search jobs…" oninput="render()"><button class="primary" onclick="openModal('job')">＋ New job</button></div></div><div id="jobsList" class="list"></div><div class="list-limit-note" id="jobsLimitNote"></div></section>
     <section class="page" id="page-clients"><div class="toolbar"><div><h2 style="margin:0">Clients</h2><div class="muted">Keep client contact details together.</div></div><div class="row-actions"><input id="clientSearch" type="search" placeholder="Search clients…" oninput="render()"><button class="primary" onclick="openModal('client')">＋ Add client</button></div></div><div id="clientsList" class="list"></div><div class="list-limit-note" id="clientsLimitNote"></div></section>
     <section class="page" id="page-photos"><div class="media-workspace">
-      <div class="media-toolbar"><div class="media-filters"><label class="media-field"><span>PROJECT</span><select id="photoJobFilter" aria-label="Filter photos by job"><option value="all">All projects</option></select></label><label class="media-field"><span>LIBRARY</span><select id="photoKind" aria-label="Photo type"><option value="Original">Original photos</option><option value="Edited">Edited photos</option></select></label></div><div class="media-toolbar-actions"><span class="media-count" id="photoCount">0 photos</span><button class="primary media-import" onclick="document.getElementById('photoFiles').click()">＋ Import photos</button><input id="photoFiles" type="file" accept="image/*,.cr2,.cr3,.nef,.arw,.dng,.raf,.orf,.rw2,.pef,.srw" multiple hidden></div></div>
+      <div class="media-toolbar"><div class="media-filters"><label class="media-field"><span>SEARCH PHOTOS & PROJECTS</span><input id="photoSearch" type="search" placeholder="Search project or filename…" aria-label="Search photos and projects" oninput="renderPhotos()"></label><label class="media-field"><span>PROJECT</span><select id="photoJobFilter" aria-label="Filter photos by job"><option value="all">All projects</option></select></label><label class="media-field"><span>LIBRARY</span><select id="photoKind" aria-label="Photo type"><option value="Original">Original photos</option><option value="Edited">Edited photos</option></select></label></div><div class="media-toolbar-actions"><span class="media-count" id="photoCount">0 photos</span><button class="primary media-import" onclick="document.getElementById('photoFiles').click()">＋ Import photos</button><input id="photoFiles" type="file" accept="image/*,.cr2,.cr3,.nef,.arw,.dng,.raf,.orf,.rw2,.pef,.srw" multiple hidden></div></div>
       <div class="media-guidance"><span class="media-guidance-icon">▧</span><span>Manage your property galleries, choose hero images and edit photos without leaving the workspace.</span></div>
       <div id="photoGrid" class="project-grid"><div class="empty" style="grid-column:1/-1"><b>No photos imported yet</b>Select a job and import your first property photos.</div></div>
     </div></section>
@@ -803,21 +829,30 @@ main{margin:0 auto;align-self:start;min-height:100vh}
       <div id="financeStats" class="finance-stats"></div>
       <div class="finance-transactions-panel"><div class="finance-panel-head"><div><h3>Transactions</h3><p>Invoice income is linked automatically. Add expenses and other income as they occur.</p></div></div><div class="finance-toolbar"><div class="finance-filters"><select id="financeTypeFilter" onchange="renderFinances()"><option value="all">All transactions</option><option value="income">Income</option><option value="expense">Expenses</option></select><select id="financeStatusFilter" onchange="renderFinances()"><option value="all">All statuses</option><option value="Paid">Paid / received</option><option value="Unpaid">Unpaid / outstanding</option></select></div></div><div class="finance-list-head"><span>Transaction</span><span style="text-align:right">Amount</span><span style="text-align:right">Actions</span></div><div id="financeList"></div></div>
     </section>
-    <section class="page" id="page-settings"><div class="panel"><h3>Application settings</h3>
-<div class="cloud-panel" style="margin:14px 0;padding:16px;border:1px solid var(--line);border-radius:14px;background:#fbfbf5">
-<h3 style="margin:0 0 6px">JRVS Cloud Sync</h3>
-<p class="muted" style="font-size:12px;margin:0 0 12px">Connect your desktop and iPhone to the same private business account. Your existing local records remain on this device.</p>
-<div class="row-card"><div><strong>Account</strong><small id="cloudAccountStatus">Not connected</small></div><span class="pill" id="cloudConnectionBadge">Local only</span></div>
-<div class="field" style="margin-top:12px"><label for="cloudEmail">Email address</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>
-<div class="field" style="margin-top:9px"><label for="cloudPassword">Password</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="Your JRVS cloud password"></div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-<button class="primary" type="button" onclick="jrvsCloudSignUp()">Create account</button>
-<button class="secondary" type="button" onclick="jrvsCloudSignIn()">Sign in</button>
-<button class="secondary" type="button" onclick="jrvsCloudSignOut()">Sign out</button>
-</div>
-<div class="row-card" style="margin-top:12px"><div><strong>Synchronisation</strong><small id="cloudSyncStatus">Not connected to cloud.</small></div><button class="primary" id="cloudSyncButton" type="button" onclick="jrvsCloudSync()" disabled>Sync now</button></div>
-<div class="settings-note">First sync will ask whether to upload this device's existing data or restore data already in the cloud. Photos are uploaded in original quality. Keep this app open during the first transfer.</div>
-</div><div class="row-card" style="margin-top:14px"><div><strong>Application version</strong><small>Use this to confirm updates are being received.</small></div><span class="pill" id="settingsVersion">V0.2.5</span></div><div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div><div class="row-card"><div><strong>Install JRVS as a desktop app</strong><small>Install a standalone window and launch JRVS from your Windows Start menu or desktop.</small></div><button class="primary" id="installAppButton" type="button" onclick="installJRVSApp()" hidden>Install app</button><span class="pill" id="installAppStatus">Add to Home Screen on iPhone</span></div><div class="settings-note">iPhone: open this site in Safari, tap Share, then Add to Home Screen. Windows: use the Chrome or Edge install option. Launch JRVS from its home-screen or desktop icon. This app continues to use browser-local storage on this device.</div><div class="row-card"><div><strong>Data storage</strong><small>Business records are stored locally and can be synchronised to your private JRVS cloud account.</small></div><span class="pill">Local</span></div><div class="settings-note">Keep your cloud account credentials secure. Automatic app updates do not replace or delete your saved records.</div></div></section>
+    <section class="page" id="page-settings"><div class="panel">
+      <div class="settings-header"><div><div class="eyebrow">WORKSPACE PREFERENCES</div><h2>Settings</h2><p>Manage your JRVS account, device setup and app updates.</p></div><span class="settings-version" id="settingsVersion">V0.3.4</span></div>
+      <div class="settings-layout"><div class="settings-main">
+        <section class="settings-card"><div class="settings-card-head"><span class="settings-icon">☁</span><div><h3>JRVS Cloud Sync</h3><p>Connect your desktop and iPhone to the same private business account. Local records remain on this device.</p></div></div>
+          <div class="row-card"><div><strong>Account</strong><small id="cloudAccountStatus">Not connected</small></div><span class="pill" id="cloudConnectionBadge">Local only</span></div>
+          <div class="form-grid" style="margin-top:13px"><div class="field"><label for="cloudEmail">Email address</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="you@example.com"></div><div class="field"><label for="cloudPassword">Password</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="Your JRVS cloud password"></div></div>
+          <div class="settings-actions"><button class="primary" type="button" onclick="jrvsCloudSignUp()">Create account</button><button class="secondary" type="button" onclick="jrvsCloudSignIn()">Sign in</button><button class="secondary" type="button" onclick="jrvsCloudSignOut()">Sign out</button></div>
+          <div class="row-card"><div><strong>Synchronisation</strong><small id="cloudSyncStatus">Not connected to cloud.</small></div><button class="primary" id="cloudSyncButton" type="button" onclick="jrvsCloudSync()" disabled>Sync now</button></div>
+          <div class="settings-note">First sync asks whether to upload this device's existing data or restore data already in the cloud. Photos are transferred in original quality. Keep the app open during the first transfer.</div>
+        </section>
+        <section class="settings-card"><div class="settings-card-head"><span class="settings-icon">↻</span><div><h3>App updates</h3><p>Check that you're running the latest JRVS release.</p></div></div>
+          <div class="row-card"><div><strong>Update status</strong><small id="updateStatus">Checking for updates when available.</small></div><button class="secondary" onclick="checkForUpdates(true)">Check now</button></div>
+        </section>
+      </div><div class="settings-side">
+        <section class="settings-card"><div class="settings-card-head"><span class="settings-icon">▣</span><div><h3>Install JRVS</h3><p>Use JRVS as a standalone app on your devices.</p></div></div>
+          <div class="row-card"><div><strong>Desktop app</strong><small>Launch from your Windows Start menu or desktop.</small></div><button class="primary" id="installAppButton" type="button" onclick="installJRVSApp()" hidden>Install app</button><span class="pill" id="installAppStatus">Add to Home Screen on iPhone</span></div>
+          <div class="settings-note">Windows: use the Chrome or Edge install option. iPhone: open this site in Safari, tap Share, then Add to Home Screen.</div>
+        </section>
+        <section class="settings-card"><div class="settings-card-head"><span class="settings-icon">◈</span><div><h3>Data & privacy</h3><p>Understand where your business information is stored.</p></div></div>
+          <div class="row-card"><div><strong>Data storage</strong><small>Records are stored locally and can sync to your private JRVS cloud account.</small></div><span class="pill">Local + Cloud</span></div>
+          <div class="settings-note">Automatic app updates do not replace or delete saved records. Keep your cloud account credentials secure. Avoid clearing browser data, as this can remove local records and photos that have not been synchronised.</div>
+        </section>
+      </div></div>
+    </div></section>
     <div class="footer">JRVS Property Co. · <span id="footerVersion">V0.2.0</span> · Built for better business days.</div>
   </main>
 </div>
@@ -1128,7 +1163,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.3.3.1';
+const APP_VERSION='0.3.4';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -1473,25 +1508,26 @@ async function renderPhotos(){
  const grid=document.getElementById('photoGrid');if(!grid)return;
  photoUrls.forEach(URL.revokeObjectURL);photoUrls=[];
  const f=document.getElementById('photoJobFilter').value;
+ const search=(document.getElementById('photoSearch')?.value||'').trim().toLowerCase();
+ const kind=document.getElementById('photoKind')?.value||'all';
  document.getElementById('photoCount').textContent=photoRecords.length+' photos';
  if(f==='all'){
-   const jobs=data.jobs;
-   if(!jobs.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><b>No projects yet</b>Create a job first, then import its property photos.</div>';return}
+   const jobs=data.jobs.filter(j=>{const items=getProjectPhotos(j.id);const text=[j.name,j.client,j.address,...items.map(p=>p.name)].join(' ').toLowerCase();return (!search||text.includes(search))&&items.some(p=>kind==='all'||p.type===kind)});
+   if(!jobs.length){grid.className='project-grid';grid.innerHTML='<div class="empty" style="grid-column:1/-1"><b>No matching projects</b>Try another project name or photo filename.</div>';return}
    grid.className='project-grid';
    grid.innerHTML=jobs.map(j=>{
-     const items=getProjectPhotos(j.id),cover=getProjectCover(j.id);
+     const items=getProjectPhotos(j.id).filter(p=>kind==='all'||p.type===kind),cover=getProjectCover(j.id);
      let media='<div class="project-placeholder"><span>▧</span>No cover photo yet</div>';
      if(cover){const u=URL.createObjectURL(cover.blob);photoUrls.push(u);media=`<img class="project-cover" src="${u}" alt="${esc(j.name)} cover photo" onclick="openProjectGallery('${j.id}')">`}
      const coverLabel=cover?`<span class="cover-tag">${cover.isCover?'Chosen cover':'First photo'}</span>`:'';
      return `<article class="project-card">${media}<div class="project-info"><strong>${esc(j.name)} ${coverLabel}</strong><div class="project-meta">${items.length} photo${items.length===1?'':'s'} · ${esc(j.client||'No client')}</div><div class="project-actions"><button class="primary" onclick="openProjectGallery('${j.id}')">Open gallery</button></div></div></article>`;
-   }).join('');
-   return;
+   }).join('');return;
  }
  grid.className='photo-grid';
  const job=data.jobs.find(j=>j.id===f);
- const rows=getProjectPhotos(f);
- const back=`<div class="gallery-heading"><div><div class="gallery-kicker">PROJECT GALLERY</div><strong>${esc(job?.name||'Project gallery')}</strong><div class="muted">${rows.length} ${rows.length===1?'photo':'photos'} · Original files are kept safe</div></div><button class="secondary gallery-back" onclick="showAllProjects()">← All projects</button></div>`;
- if(!rows.length){grid.innerHTML=back+'<div class="empty" style="grid-column:1/-1"><b>No photos in this project yet</b>Import photos using the button above.</div>';return}
+ const rows=getProjectPhotos(f).filter(p=>(kind==='all'||p.type===kind)&&(!search||p.name.toLowerCase().includes(search)||String(p.status||'').toLowerCase().includes(search)));
+ const back=`<div class="gallery-heading"><div><div class="gallery-kicker">PROJECT GALLERY</div><strong>${esc(job?.name||'Project gallery')}</strong><div class="muted">${rows.length} matching ${rows.length===1?'photo':'photos'} · Original files are kept safe</div></div><button class="secondary gallery-back" onclick="showAllProjects()">← All projects</button></div>`;
+ if(!rows.length){grid.innerHTML=back+'<div class="empty" style="grid-column:1/-1"><b>No matching photos</b>Try a different filename or status.</div>';return}
  grid.innerHTML=back+rows.map(p=>{
    const u=URL.createObjectURL(p.blob);photoUrls.push(u);
    return `<article class="photo-card"><div class="photo-image-wrap"><img class="photo-thumb" src="${u}" alt="${esc(p.name)}" onclick="previewPhoto('${p.id}')"><button class="photo-preview-action" onclick="previewPhoto('${p.id}')" aria-label="Preview photo">↗</button>${p.isCover?'<span class="photo-cover-badge">★ Cover image</span>':''}</div><div class="photo-info"><div class="photo-title-row"><strong title="${esc(p.name)}">${esc(p.name)}</strong><span class="photo-file-type">${esc(p.type)}</span></div><div class="photo-meta">${bytes(p.size)} <span>·</span> ${new Date(p.addedAt||Date.now()).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div><label class="photo-status-field"><span>WORKFLOW STATUS</span><select aria-label="Photo status" onchange="updatePhotoStatus('${p.id}',this.value)">${['Imported','Selected','Editing','Edited','Delivered'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}</select></label><div class="photo-actions"><button class="primary photo-edit-btn" onclick="openEditor('${p.id}')">✎ Edit photo</button><button class="tiny-btn photo-cover-btn" onclick="setProjectCover('${p.id}')" ${p.isCover?'disabled':''}>${p.isCover?'✓ Cover':'Set cover'}</button><button class="tiny-btn danger photo-delete-btn" onclick="deletePhoto('${p.id}')" aria-label="Delete photo" title="Delete photo">⌫</button></div></div></article>`;

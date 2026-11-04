@@ -32,3 +32,10 @@ Static checks only; live browser and Supabase workflows have not been exercised 
 - Added New client beside New job and New quote in the desktop header actions.
 - Recent jobs now uses the available dashboard content width.
 - No data migration, database or Supabase changes.
+
+
+## V0.3.4 – Photo Search & Settings Refresh
+- Added photo/project search by project name, client, address, photo filename and photo workflow status.
+- Reworked Settings into clearer Cloud Sync, App Updates, Install JRVS, and Data & Privacy sections.
+- Preserved existing Supabase configuration, localStorage records, IndexedDB photo library, brand palette, list caps and calendar rules.
+- No SQL changes required.

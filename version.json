@@ -1,6 +1,6 @@
 {
-  "version": "0.3.3.1",
+  "version": "0.3.4",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-04",
-  "notes": "Dashboard tidy-up: removed duplicate bottom Quick actions panel and added New client alongside New job and New quote in the desktop header. Existing records, branding, list limits, photo storage and cloud sync retained."
+  "notes": "Photo library search across projects and filenames, plus desktop-first settings workspace visual overhaul. Existing business records, photo storage, branding, list limits and cloud sync preserved."
 }
