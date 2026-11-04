@@ -1,6 +1,6 @@
 {
-  "version": "0.3.3",
+  "version": "0.3.3.1",
   "name": "JRVS Property Co.",
   "releaseDate": "2026-11-04",
-  "notes": "Desktop-first job workflow refinement: quick job-stage updates, job detail shortcuts, linked invoice visibility and actions, and create-quote-from-job workflow. Existing data, cloud sync, photo storage, branding, list limits and calendar window retained."
+  "notes": "Dashboard tidy-up: removed duplicate bottom Quick actions panel and added New client alongside New job and New quote in the desktop header. Existing records, branding, list limits, photo storage and cloud sync retained."
 }

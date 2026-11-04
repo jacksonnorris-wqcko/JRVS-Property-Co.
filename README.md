@@ -25,3 +25,10 @@ Static checks only; live browser and Supabase workflows have not been exercised 
 - Added linked invoice visibility, PDF access and mark-as-paid action from the job detail view.
 - Preserves existing localStorage keys, IndexedDB photo library, Supabase configuration, cloud sync, brand palette, list caps and seven-day upcoming-events window.
 - No SQL changes or data reset required.
+
+
+## V0.3.3.1 Dashboard tidy-up
+- Removed the duplicate Quick actions panel from the bottom of the dashboard.
+- Added New client beside New job and New quote in the desktop header actions.
+- Recent jobs now uses the available dashboard content width.
+- No data migration, database or Supabase changes.
