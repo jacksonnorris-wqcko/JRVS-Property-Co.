@@ -1,28 +1,23 @@
-# JRVS Property Co. — V0.5.8
+# JRVS Property Co. — V0.5.9
 
-## Photo workspace redesign
+## Photo workspace grid correction
 
-- Reorganised the project photo gallery into a cleaner, more spacious layout.
-- Moved selection actions into a dedicated selection bar.
-- Kept multi-select ZIP export as the primary delivery action.
-- Moved batch preset editing into a collapsible section so it no longer competes with photo selection and export.
-- Improved photo card proportions, spacing, filenames, status controls and action buttons.
-- Added responsive layouts for tablet and mobile screens.
-- Preserved the existing photo storage, full-resolution download and ZIP export logic.
+- Fixed the project gallery layout so the gallery heading, photo selection/export bar, and collapsible batch-editing panel span the full gallery width.
+- Photo cards now flow beneath the full-width controls instead of sharing the same grid row as narrow side panels.
+- Kept the responsive stacked selection bar on smaller screens.
+- Preserved V0.5.8 photo cards, ZIP export, individual full-resolution downloads, editing and existing photo storage.
 
 ## Deploying
 
 1. Extract this ZIP.
-2. Upload **all files and folders inside it** to the root of the existing GitHub repository.
+2. Upload all files and folders inside it to the root of the existing GitHub repository.
 3. Replace matching files when prompted.
-4. Do not delete browser/site data or reset IndexedDB. Existing business records and photo-library data are stored locally and should be preserved.
+4. Do not clear browser/site data or reset IndexedDB. Existing business records and photo-library data should be preserved.
 
 ## Release version
 
-- App version: `0.5.8`
-- `version.json`: `0.5.8`
-- Service-worker cache: `jrvs-property-co-v0.5.8`
+- App version: `0.5.9`
+- `version.json`: `0.5.9`
+- Service-worker cache: `jrvs-property-co-v0.5.9`
 
-## Important
-
-This release changes the photo workspace presentation and layout. It does not intentionally migrate, clear, or reset local photo records, business data, or Supabase data.
+This release is a presentation/layout correction. It does not intentionally migrate, clear, or reset local business records, photo records, or Supabase data.
