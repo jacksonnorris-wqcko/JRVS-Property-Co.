@@ -780,6 +780,70 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 .batch-studio{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#f7f1df;border:1px solid #d9dfca;border-radius:14px;padding:12px 14px;margin:12px 0 16px;color:#34402d}
 .batch-studio .batch-count{font-weight:800;margin-right:auto}.batch-studio select{min-width:190px}.photo-select-wrap{position:absolute;top:10px;left:10px;z-index:3;background:#fffdf0;border:1px solid #899b68;border-radius:9px;padding:6px 9px;box-shadow:0 2px 8px #0002;font-size:12px;font-weight:750;color:#34402d}.photo-select-wrap input{accent-color:#66794d;width:17px;height:17px;vertical-align:middle;margin:0 5px 0 0}.photo-card.is-batch-selected{outline:3px solid #899b68;outline-offset:2px}.batch-progress{font-size:12px;color:#566047;min-width:100%}
 @media(max-width:700px){.batch-studio{align-items:stretch}.batch-studio select,.batch-studio button{width:100%}.batch-studio .batch-count{width:100%}}
+
+/* V0.5.8 — Photo workspace redesign */
+.photo-toolbar{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(180px,1fr) minmax(180px,1fr) auto auto;gap:12px;align-items:end;padding:16px 18px;background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);margin:14px 0 18px}
+.photo-toolbar .media-field{min-width:0}
+.photo-toolbar .media-field input,.photo-toolbar select{width:100%;min-width:0;min-height:44px}
+.photo-toolbar .media-count{align-self:center;white-space:nowrap;padding:0 4px}
+.photo-toolbar button{min-height:44px;white-space:nowrap}
+.gallery-heading{margin:22px 0 14px;padding:0 2px 4px}
+.gallery-heading>div:first-child{display:grid;gap:4px}
+.gallery-heading strong{font-size:22px;letter-spacing:-.45px}
+.gallery-heading .muted{font-size:12px}
+.photo-selection-bar{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:14px 17px;margin:0 0 14px;background:#f5f3e9;border:1px solid #e4e4d7;border-radius:14px}
+.selection-summary{display:grid;gap:2px;min-width:160px}
+.selection-summary strong{font-size:14px}
+.selection-summary span{font-size:11px;color:var(--muted)}
+.selection-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.selection-actions button{min-height:40px}
+.photo-zip-btn{padding-inline:18px;box-shadow:0 4px 12px #66794d25}
+.batch-tools{margin:0 0 18px;border:1px solid var(--line);border-radius:12px;background:#fffefa;overflow:hidden}
+.batch-tools summary{cursor:pointer;list-style:none;padding:11px 14px;font-size:12px;font-weight:750;color:#536146;display:flex;align-items:center;gap:9px}
+.batch-tools summary::-webkit-details-marker{display:none}
+.batch-tools summary:after{content:"＋";margin-left:auto;color:var(--sage-dark);font-size:16px}
+.batch-tools[open] summary:after{content:"−"}
+.batch-tools summary span{font-weight:450;color:var(--muted)}
+.batch-tools-content{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:0 14px 14px}
+.batch-tools-content select{min-height:40px;min-width:210px;padding:8px 11px;border:1px solid var(--line);border-radius:9px;background:white}
+.batch-progress{font-size:11px;color:var(--muted);flex:1 1 220px;min-width:180px}
+.photo-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;align-items:stretch}
+.photo-card{border-radius:16px;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.photo-card:hover{transform:translateY(-2px);box-shadow:0 14px 32px #35422a16}
+.photo-image-wrap{height:auto;aspect-ratio:4/3}
+.photo-thumb{height:100%;object-fit:cover}
+.photo-info{padding:14px}
+.photo-title-row{align-items:flex-start;gap:8px}
+.photo-title-row strong{font-size:12px;line-height:1.45;overflow-wrap:anywhere;min-width:0}
+.photo-file-type{flex:0 0 auto}
+.photo-meta{font-size:11px;margin-top:7px}
+.photo-status-field{margin-top:13px;gap:6px}
+.photo-status-field select{min-height:39px}
+.photo-actions{grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.photo-actions button{min-height:39px;padding:8px 9px;font-size:11px;white-space:nowrap}
+.photo-edit-btn{grid-column:1/-1}
+.photo-select-wrap{padding:8px 11px;border-radius:10px;box-shadow:0 3px 12px #28302522}
+.photo-cover-badge{left:12px;bottom:12px}
+@media(max-width:1050px){
+ .photo-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .photo-toolbar .media-field:first-child{grid-column:1/-1}
+ .photo-toolbar .media-count{justify-self:start}
+}
+@media(max-width:680px){
+ .photo-toolbar{grid-template-columns:1fr;padding:13px;gap:10px}
+ .photo-toolbar .media-field:first-child{grid-column:auto}
+ .photo-toolbar .media-count{justify-self:start}
+ .photo-toolbar button{width:100%}
+ .gallery-heading{align-items:flex-start}
+ .gallery-heading strong{font-size:19px}
+ .photo-selection-bar{align-items:stretch;flex-direction:column;gap:12px;padding:13px}
+ .selection-actions{display:grid;grid-template-columns:1fr 1fr}
+ .selection-actions .photo-zip-btn{grid-column:1/-1}
+ .batch-tools-content{align-items:stretch;flex-direction:column}
+ .batch-tools-content select,.batch-tools-content button{width:100%}
+ .photo-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:13px}
+}
+
 </style>
 <style id="jrvs-v040-polish">
 /* JRVS Property Co. V0.4.0 — cohesive visual refinement */
@@ -1303,7 +1367,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.5.7';
+const APP_VERSION='0.5.8';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -1698,7 +1762,7 @@ async function renderPhotos(){
  grid.className='photo-grid';
  const job=data.jobs.find(j=>j.id===f);
  const rows=getProjectPhotos(f).filter(p=>(kind==='all'||p.type===kind)&&(!search||p.name.toLowerCase().includes(search)||String(p.status||'').toLowerCase().includes(search)));
- const back=`<div class="gallery-heading"><div><div class="gallery-kicker">PROJECT GALLERY</div><strong>${esc(job?.name||'Project gallery')}</strong><div class="muted">${rows.length} matching ${rows.length===1?'photo':'photos'} · Original files are kept safe</div></div><button class="secondary gallery-back" onclick="showAllProjects()">← All projects</button></div><div class="batch-studio"><span class="batch-count" id="batchSelectionCount">0 photos selected</span><button class="secondary" type="button" onclick="selectAllVisiblePhotos()">Select all visible</button><button class="secondary" type="button" onclick="clearPhotoSelection()">Clear selection</button><button class="secondary" type="button" onclick="downloadSelectedPhotosZip()">↓ Download selected (.zip)</button><select id="batchPreset"><option value="natural">Natural Listing</option><option value="bright">Bright &amp; Airy</option><option value="window">Window Balanced</option><option value="warm">Warm Lifestyle</option><option value="modern">Crisp Modern</option><option value="soft">Soft Neutral</option><option value="luxury">Luxury Contrast</option><option value="wood">Wood &amp; Stone</option><option value="bathroom">Bathroom Clean</option><option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option></select><button class="primary" type="button" onclick="applyBatchPresetToSelection()">Apply preset to selected</button><div class="batch-progress" id="batchProgress">Select photos, then apply one consistent preset. Originals are never changed.</div></div>`;
+ const back=`<div class="gallery-heading"><div><div class="gallery-kicker">PROJECT GALLERY</div><strong>${esc(job?.name||'Project gallery')}</strong><div class="muted">${rows.length} ${rows.length===1?'photo':'photos'} shown · Original files are kept safe</div></div><button class="secondary gallery-back" onclick="showAllProjects()">← All projects</button></div><section class="photo-selection-bar" aria-label="Photo selection actions"><div class="selection-summary"><strong id="batchSelectionCount">0 photos selected</strong><span>Select photos to prepare a delivery ZIP</span></div><div class="selection-actions"><button class="secondary" type="button" onclick="selectAllVisiblePhotos()">Select all</button><button class="secondary" type="button" onclick="clearPhotoSelection()">Clear</button><button class="primary photo-zip-btn" type="button" onclick="downloadSelectedPhotosZip()">↓ Download selected (.zip)</button></div></section><details class="batch-tools"><summary>Batch editing <span>Apply one preset to selected photos</span></summary><div class="batch-tools-content"><select id="batchPreset"><option value="natural">Natural Listing</option><option value="bright">Bright &amp; Airy</option><option value="window">Window Balanced</option><option value="warm">Warm Lifestyle</option><option value="modern">Crisp Modern</option><option value="soft">Soft Neutral</option><option value="luxury">Luxury Contrast</option><option value="wood">Wood &amp; Stone</option><option value="bathroom">Bathroom Clean</option><option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option></select><button class="primary" type="button" onclick="applyBatchPresetToSelection()">Apply preset to selected</button><div class="batch-progress" id="batchProgress">Original photos are never changed.</div></div></details>`;
  if(!rows.length){grid.innerHTML=back+'<div class="empty" style="grid-column:1/-1"><b>No matching photos</b>Try a different filename or status.</div>';return}
  grid.innerHTML=back+rows.map(p=>{
    const u=URL.createObjectURL(p.blob);photoUrls.push(u);
