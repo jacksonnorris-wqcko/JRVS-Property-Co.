@@ -25,3 +25,7 @@ Extract the ZIP and upload all files/folders into the existing GitHub repository
 
 ## Validation
 Static validation only. HTML structure, JavaScript syntax, duplicate element IDs, version alignment, archive integrity and key preservation were checked. Live browser interaction, iPhone rendering and Supabase account sync have not been exercised in this build; test those after deployment.
+
+
+## V0.4.0.1 Dashboard welcome banner fix
+Improves contrast and readability of the dashboard “Good to see you” banner. The banner now uses a soft sage/cream surface with explicitly dark heading, supporting text and a distinct date chip. No database, local storage, photo library or cloud-sync changes.
