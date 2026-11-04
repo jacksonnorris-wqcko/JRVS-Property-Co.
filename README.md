@@ -1,31 +1,35 @@
-# JRVS Property Co. V0.4.0 — Visual Polish & Refinement
+# JRVS Property Co. — V0.5.6
 
-A broad visual refinement release focused on making the existing application cleaner, more consistent, sharper and easier to use across desktop and mobile.
+A desktop-first, mobile-responsive property photography business manager built as a Progressive Web App (PWA).
 
-## What changed
-- Unified spacing, typography, borders, radii, shadows and control sizing across the application.
-- Refined desktop navigation, page header, dashboard cards, panels, list rows, forms, photo cards and modal presentation.
-- Improved hover and keyboard-focus feedback, input focus treatment and button interaction states.
-- Refined settings and photo workspace presentation while retaining the sage/cream JRVS identity.
-- Improved responsive layout behaviour for tablet and mobile widths.
-- Added reduced-motion support and more consistent scrollbar styling.
-- Corrected the internal app version so the UI, update checker, version.json and service-worker cache all identify V0.4.0.
+## Release V0.5.6
 
-## Preserved
-- Existing `jrvs-data` localStorage business records.
-- Existing `jrvs-calendar` localStorage events.
-- Existing `jrvs-photo-library` IndexedDB database and `photos` object store.
-- Existing Supabase project configuration, authentication, schema and cloud-sync implementation.
-- Existing jobs, clients, quotes, invoices, finances, calendar, photo library, photo search and install prompt workflows.
-- Five-record default list limits and seven-day upcoming-events window.
-- JRVS sage green `#899B68` and warm cream `#F7F1DF` brand palette and logo assets.
+- Fixed the project photo gallery so switching between **Original photos** and **Edited photos** immediately refreshes the gallery.
+- Changing the project filter or photo search also refreshes the gallery and clears the current batch selection.
+- Updated the app's internal version constant and all version labels to **V0.5.6**.
+- Updated `version.json` and the service-worker cache version to `0.5.6` so the existing update flow can detect the release.
 
-## Install
-Extract the ZIP and upload all files/folders into the existing GitHub repository root, replacing matching files. Do not upload the ZIP itself. No SQL changes are required. Keep using the same browser profile and existing app URL; do not clear browser/site data.
+## Deploying to GitHub Pages
 
-## Validation
-Static validation only. HTML structure, JavaScript syntax, duplicate element IDs, version alignment, archive integrity and key preservation were checked. Live browser interaction, iPhone rendering and Supabase account sync have not been exercised in this build; test those after deployment.
+1. Download and extract the release ZIP.
+2. Upload the **contents** of the extracted folder into the root of the existing GitHub repository, replacing the matching files. Do not upload the ZIP itself or put the files inside an extra folder.
+3. Keep the existing GitHub Pages URL and browser profile.
+4. Open the app and allow the update to complete. If the old version remains visible, close the installed PWA/browser tab completely and reopen it; do not clear browser data or site storage.
 
+## Data preservation
 
-## V0.4.0.1 Dashboard welcome banner fix
-Improves contrast and readability of the dashboard “Good to see you” banner. The banner now uses a soft sage/cream surface with explicitly dark heading, supporting text and a distinct date chip. No database, local storage, photo library or cloud-sync changes.
+This release does not intentionally change the app's local business-data keys, photo IndexedDB database, Supabase configuration, or database schema. Do not clear site data as part of deployment.
+
+## Main files
+
+- `index.html` — application interface and application logic
+- `mobile.css` — responsive/mobile styles
+- `sw.js` — service worker and cache/update handling
+- `version.json` — release version metadata
+- `manifest.json` — PWA metadata
+- `assets/` — app icons and supporting assets
+- `supabase-setup.sql` — existing Supabase setup reference (no SQL changes in this release)
+
+## Verification note
+
+This release was checked for consistent version strings, presence of the photo-filter event handlers, and JavaScript syntax. It has not been live-tested in the user's GitHub Pages deployment or against their existing browser data.

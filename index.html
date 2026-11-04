@@ -1303,7 +1303,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.5.4';
+const APP_VERSION='0.5.6';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -2175,7 +2175,9 @@ let previewUrl=null;
 function previewPhoto(id){const p=photoRecords.find(x=>x.id===id);if(!p)return;if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=URL.createObjectURL(p.blob);document.getElementById('photoPreviewImage').src=previewUrl;document.getElementById('photoPreviewName').textContent=p.name+' · '+p.jobName;document.getElementById('photoPreviewBackdrop').classList.add('show')}
 function closePhotoPreview(){document.getElementById('photoPreviewBackdrop').classList.remove('show');document.getElementById('photoPreviewImage').src='';if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null}}
 document.getElementById('photoFiles').addEventListener('change',e=>{if(e.target.files.length)importPhotos([...e.target.files]);e.target.value=''});
-document.getElementById('photoJobFilter').addEventListener('change',renderPhotos);
+document.getElementById('photoJobFilter').addEventListener('change',()=>{selectedPhotoIds.clear();renderPhotos()});
+document.getElementById('photoKind').addEventListener('change',()=>{selectedPhotoIds.clear();renderPhotos()});
+document.getElementById('photoSearch').addEventListener('input',()=>{selectedPhotoIds.clear();renderPhotos()});
 function updateWelcomeClock(){
  const now=new Date();
  const clock=document.getElementById('welcomeClock');
