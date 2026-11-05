@@ -1,24 +1,23 @@
-# JRVS Property Co. — V0.12.0
+# JRVS Property Co. — V0.13.0
 
-## Photo Studio Retouch Studio
-- Added a dedicated Retouch workspace with Clone, Heal and Move modes.
-- Alt-click or first click selects a clean sample point; paint over the unwanted area to copy from that sample.
-- Brush size, opacity and edge softness controls.
-- Clone and soft-edge Heal patch rendering are applied non-destructively to editor output and full-resolution export.
-- Added per-session undo and clear-retouch actions.
-- Existing V0.11.0 navigation, editor adjustments, compare, export, localStorage, IndexedDB photo library and Supabase schema are retained.
+## Retouch engine refinement
 
-### Retouch notes
-- Clone copies from the sampled location.
-- Heal uses a soft-edged sampled patch. It is manual spot repair, not content-aware AI object reconstruction.
-- Retouch strokes are session-based; saved edited copies retain the rendered pixels. Reopening a saved copy starts a fresh edit session.
+- Rebuilt brush coordinate mapping using the displayed canvas bounds, so brush placement remains aligned at fit and zoom sizes.
+- Added interpolated brush dabs with spacing based on brush radius to reduce gaps during faster strokes.
+- Changed pointer movement to collect brush dabs and schedule preview renders with requestAnimationFrame rather than synchronously rendering for every pointer event.
+- Retouch undo now removes one complete stroke at a time.
+- Clone sampling keeps a fixed source offset for a continuous stroke.
+- Sample patches outside the image boundary are safely skipped.
+- Retouching remains non-destructive relative to the original photo; saving creates a separate edited photo record with rendered pixels.
+- The Heal control is explicitly described as soft sampled patch repair, not content-aware AI reconstruction.
+- Existing photo records, localStorage, IndexedDB structure and Supabase schema are unchanged.
 
 ## Deploying
 1. Extract this ZIP.
 2. Upload all files and folders inside it to the root of the existing GitHub repository, replacing matching files.
-3. Keep your existing browser profile and app URL. Do not clear site data.
+3. Keep the existing browser profile and app URL. Do not clear site data.
 
 ## Release version
-- App version: `0.12.0`
-- `version.json`: `0.12.0`
-- Service-worker cache: `jrvs-property-co-v0.12.0`
+- App version: `0.13.0`
+- `version.json`: `0.13.0`
+- Service-worker cache: `jrvs-property-co-v0.13.0`

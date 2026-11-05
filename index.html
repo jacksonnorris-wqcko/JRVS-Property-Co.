@@ -1394,7 +1394,7 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
 <div class="editor-help" data-editor-group="geometry">Perspective controls provide a lightweight preview correction. Precision architectural keystone correction is a later dedicated transform upgrade.</div>
 
 <section class="jrvs-retouch-panel" data-editor-group="retouch">
- <div class="jrvs-retouch-head"><div><strong>Retouch studio</strong><div class="editor-help">Non-destructive clone &amp; spot repair</div></div><span class="jrvs-retouch-tag">NEW</span></div>
+ <div class="jrvs-retouch-head"><div><strong>Retouch studio</strong><div class="editor-help">Manual clone &amp; soft-edge spot repair</div></div><span class="jrvs-retouch-tag">NEW</span></div>
  <div class="jrvs-retouch-modes">
   <button type="button" class="secondary active" data-retouch-mode="clone" onclick="setEditorRetouchMode('clone')">Clone</button>
   <button type="button" class="secondary" data-retouch-mode="heal" onclick="setEditorRetouchMode('heal')">Heal</button>
@@ -1406,7 +1406,7 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
  <div class="editor-control"><label>Edge softness <span id="retouchHardnessValue">72%</span></label><input id="retouchHardness" type="range" min="0" max="100" value="72" oninput="editorRetouchHardness=+this.value/100;document.getElementById('retouchHardnessValue').textContent=this.value+'%'"></div>
  <div class="jrvs-retouch-source"><span>Sample source</span><strong id="retouchSourceStatus">Not set</strong></div>
  <div class="editor-tools"><button type="button" class="secondary" onclick="undoEditorRetouch()">Undo retouch</button><button type="button" class="secondary" onclick="clearEditorRetouch()">Clear retouch</button></div>
- <div class="editor-help">Clone copies pixels from your chosen source. Heal blends sampled patch edges for softer spot repairs. This is manual retouching, not AI object reconstruction.</div>
+ <div class="editor-help">Clone copies pixels from your chosen source. Heal uses a soft sampled patch for small spot repairs; it is not content-aware reconstruction. This is manual retouching, not AI object reconstruction.</div>
 </section>
 
 <div class="editor-control" data-editor-group="export"><label>Export profile</label><select id="editorExportProfile"><option value="agency">Real estate agency · JPEG high quality</option><option value="web">Web delivery · JPEG balanced</option><option value="max">Maximum quality · JPEG</option><option value="png">PNG · lossless</option></select></div>
@@ -1609,7 +1609,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.12.0';
+const APP_VERSION='0.13.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -2557,18 +2557,26 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
  }
  ctx.putImageData(image,0,0);
  if(editorRetouchStrokes.length){
-  const base=document.createElement('canvas');base.width=canvas.width;base.height=canvas.height;base.getContext('2d').drawImage(canvas,0,0);
+  const base=document.createElement('canvas');base.width=canvas.width;base.height=canvas.height;
+  base.getContext('2d').drawImage(canvas,0,0);
   const rc=canvas.getContext('2d');
-  editorRetouchStrokes.forEach(group=>group.dabs.forEach(st=>{
-   const x=st.x*canvas.width,y=st.y*canvas.height,r=Math.max(1,st.radius*canvas.width),sx=st.sx*canvas.width,sy=st.sy*canvas.height;
-   rc.save();rc.globalAlpha=st.opacity;rc.beginPath();rc.arc(x,y,r,0,Math.PI*2);rc.clip();
-   rc.drawImage(base,sx-r,sy-r,2*r,2*r,x-r,y-r,2*r,2*r);
-   if(st.mode==='heal'&&st.hardness>0){
-    const g=rc.createRadialGradient(x,y,r*(1-st.hardness),x,y,r);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.65)');
-    rc.globalCompositeOperation='destination-in';rc.fillStyle=g;rc.fillRect(x-r,y-r,2*r,2*r);rc.globalCompositeOperation='source-over';
-   }
-   rc.restore();
-  }));
+  editorRetouchStrokes.forEach(group=>{
+   group.dabs.forEach(st=>{
+    const x=st.x*canvas.width,y=st.y*canvas.height;
+    const r=Math.max(1,st.radius*canvas.width),sx=st.sx*canvas.width,sy=st.sy*canvas.height;
+    if(sx-r<0||sy-r<0||sx+r>base.width||sy+r>base.height)return;
+    rc.save();rc.globalAlpha=group.opacity;rc.beginPath();rc.arc(x,y,r,0,Math.PI*2);rc.clip();
+    rc.drawImage(base,sx-r,sy-r,2*r,2*r,x-r,y-r,2*r,2*r);
+    const feather=Math.max(0,Math.min(.98,group.hardness));
+    if(feather>0){
+     const g=rc.createRadialGradient(x,y,r*(1-feather),x,y,r);
+     g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,1)');
+     rc.globalCompositeOperation='destination-in';rc.fillStyle=g;rc.fillRect(x-r,y-r,2*r,2*r);
+     rc.globalCompositeOperation='source-over';
+    }
+    rc.restore();
+   });
+  });
  }
  return {canvas,hist};
 }
@@ -2582,30 +2590,52 @@ function setEditorRetouchMode(mode){
 }
 function retouchPoint(e){
  const c=document.getElementById('editorCanvas'),r=c.getBoundingClientRect();
- return {x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height)),radius:editorRetouchBrushSize/Math.max(1,r.width)};
+ const x=Math.max(0,Math.min(1,(e.clientX-r.left)/Math.max(1,r.width)));
+ const y=Math.max(0,Math.min(1,(e.clientY-r.top)/Math.max(1,r.height)));
+ const radius=editorRetouchBrushSize/Math.max(1,r.width);
+ return {x,y,radius};
+}
+function retouchInterpolate(from,to,spacing){
+ const dx=to.x-from.x,dy=to.y-from.y,dist=Math.hypot(dx,dy);
+ const steps=Math.max(1,Math.ceil(dist/Math.max(.001,spacing)));
+ const pts=[];
+ for(let i=1;i<=steps;i++){const t=i/steps;pts.push({x:from.x+dx*t,y:from.y+dy*t,radius:to.radius})}
+ return pts;
+}
+let editorRetouchFrame=0;
+function scheduleRetouchPreview(){
+ if(editorRetouchFrame)return;
+ editorRetouchFrame=requestAnimationFrame(()=>{editorRetouchFrame=0;drawEditor()});
 }
 function editorRetouchPointerDown(e){
- if(editorRetouchMode==='off'||!editorImage)return;
- e.preventDefault();const pt=retouchPoint(e);
+ if(editorRetouchMode==='off'||!editorImage||editorCompare)return;
+ e.preventDefault();
+ const pt=retouchPoint(e);
  if(e.altKey||!editorRetouchSource){
   editorRetouchSource={x:pt.x,y:pt.y};
-  const s=document.getElementById('retouchSourceStatus');if(s)s.textContent='Source selected';
-  const n=document.getElementById('retouchInstructions');if(n)n.textContent='Source set. Paint over the area you want to repair.';
+  const s=document.getElementById('retouchSourceStatus');if(s)s.textContent='Source set · Alt-click to move';
+  const n=document.getElementById('retouchInstructions');if(n)n.textContent='Source fixed. Paint over the distraction. Alt-click to choose another source.';
   return;
  }
- editorRetouchActive={mode:editorRetouchMode,dx:pt.x-editorRetouchSource.x,dy:pt.y-editorRetouchSource.y,points:[pt],opacity:editorRetouchOpacity,hardness:editorRetouchHardness};
- const c=document.getElementById('editorCanvas');if(c&&c.setPointerCapture)c.setPointerCapture(e.pointerId);
+ const c=document.getElementById('editorCanvas');
+ if(c&&c.setPointerCapture)c.setPointerCapture(e.pointerId);
+ const dx=pt.x-editorRetouchSource.x,dy=pt.y-editorRetouchSource.y;
+ editorRetouchActive={mode:editorRetouchMode,dx,dy,dabs:[{x:pt.x,y:pt.y,sx:pt.x-dx,sy:pt.y-dy,radius:pt.radius}],opacity:editorRetouchOpacity,hardness:editorRetouchHardness,last:pt};
 }
 function editorRetouchPointerMove(e){
- if(editorRetouchActive){editorRetouchActive.points.push(retouchPoint(e));drawEditor();return;}
+ if(!editorRetouchActive)return;
+ const pt=retouchPoint(e),st=editorRetouchActive;
+ const spacing=Math.max(.002,pt.radius*.22);
+ retouchInterpolate(st.last,pt,spacing).forEach(q=>st.dabs.push({x:q.x,y:q.y,sx:q.x-st.dx,sy:q.y-st.dy,radius:q.radius}));
+ st.last=pt;scheduleRetouchPreview();
 }
 function editorRetouchPointerUp(e){
  if(!editorRetouchActive)return;
  const st=editorRetouchActive;editorRetouchActive=null;
- editorRetouchStrokes.push({dabs:st.points.map(pt=>({mode:st.mode,x:pt.x,y:pt.y,sx:pt.x-st.dx,sy:pt.y-st.dy,radius:pt.radius,opacity:st.opacity,hardness:st.hardness}))});
+ editorRetouchStrokes.push({mode:st.mode,dabs:st.dabs,opacity:st.opacity,hardness:st.hardness});
  drawEditor();
 }
-function undoEditorRetouch(){if(!editorRetouchStrokes.length)return;editorRetouchStrokes.pop();drawEditor()}
+function undoEditorRetouch(){if(!editorRetouchStrokes.length)return;editorRetouchStrokes.pop();drawEditor();const s=document.getElementById('editorStatus');if(s)s.textContent='Last retouch stroke undone.'}
 function clearEditorRetouch(){editorRetouchStrokes=[];editorRetouchSource=null;const s=document.getElementById('retouchSourceStatus');if(s)s.textContent='Not set';setEditorRetouchMode(editorRetouchMode);drawEditor()}
 
 function drawEditor(){
