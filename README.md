@@ -1,12 +1,17 @@
-# JRVS Property Co. — V0.11.0
+# JRVS Property Co. — V0.12.0
 
-## Photo Studio navigation and workspace cleanup
+## Photo Studio Retouch Studio
+- Added a dedicated Retouch workspace with Clone, Heal and Move modes.
+- Alt-click or first click selects a clean sample point; paint over the unwanted area to copy from that sample.
+- Brush size, opacity and edge softness controls.
+- Clone and soft-edge Heal patch rendering are applied non-destructively to editor output and full-resolution export.
+- Added per-session undo and clear-retouch actions.
+- Existing V0.11.0 navigation, editor adjustments, compare, export, localStorage, IndexedDB photo library and Supabase schema are retained.
 
-- Removed the duplicate top navigation bar; the right-side editing tabs are now the only workspace navigation.
-- Scoped the Light & tonal range and Detail & finishing accordion containers to their corresponding tabs, preventing empty section headings.
-- Geometry-only rotate controls now appear in Geometry.
-- Property presets, histogram, undo/redo, before/after, batch application and save/export actions remain available.
-- Existing photos, edits, browser storage, IndexedDB photo library and Supabase data/schema are preserved.
+### Retouch notes
+- Clone copies from the sampled location.
+- Heal uses a soft-edged sampled patch. It is manual spot repair, not content-aware AI object reconstruction.
+- Retouch strokes are session-based; saved edited copies retain the rendered pixels. Reopening a saved copy starts a fresh edit session.
 
 ## Deploying
 1. Extract this ZIP.
@@ -14,6 +19,6 @@
 3. Keep your existing browser profile and app URL. Do not clear site data.
 
 ## Release version
-- App version: `0.11.0`
-- `version.json`: `0.11.0`
-- Service-worker cache: `jrvs-property-co-v0.11.0`
+- App version: `0.12.0`
+- `version.json`: `0.12.0`
+- Service-worker cache: `jrvs-property-co-v0.12.0`
