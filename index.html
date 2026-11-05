@@ -921,6 +921,16 @@ main{margin:0 auto;align-self:start;min-height:100vh}
  #editorBackdrop .editor-tool{min-height:34px!important}
 }
 
+
+/* JRVS V0.11.0 — single navigation and correctly scoped workspaces */
+#editorBackdrop .editor-workbench-strip{display:none!important}
+#editorBackdrop .editor-layout{margin-top:0!important}
+#editorBackdrop .editor-panel .editor-tabs{position:sticky;top:0;z-index:5;background:#f7f5ec;padding:5px 0 9px;margin:0 0 8px;border-bottom:1px solid rgba(65,70,54,.12)}
+#editorBackdrop .editor-panel [data-editor-group][hidden]{display:none!important}
+#editorBackdrop .editor-section[hidden]{display:none!important}
+#editorBackdrop .editor-panel .editor-section{margin:8px 0}
+#editorBackdrop .editor-panel .editor-actions{position:sticky;bottom:-1px;background:#f7f5ec;padding:10px 0 4px;z-index:4}
+
 </style>
 <style id="jrvs-v040-polish">
 /* JRVS Property Co. V0.4.0 — cohesive visual refinement */
@@ -1333,7 +1343,7 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
 
 <div class="editor-backdrop" id="editorBackdrop"><div class="editor-shell">
 <div class="editor-top"><div><div class="eyebrow">JRVS PHOTO STUDIO</div><h2 id="editorTitle">Edit photograph</h2><div class="muted" id="editorSubtitle">Non-destructive edit · Original preserved</div></div><div class="editor-top-actions"><button class="secondary" type="button" onclick="editorUndo()" title="Undo (Ctrl+Z)">↶ Undo</button><button class="secondary" type="button" onclick="editorRedo()" title="Redo (Ctrl+Shift+Z)">↷ Redo</button><button class="secondary" type="button" onclick="toggleEditorCompare()">◐ Compare view</button><button class="primary" type="button" onclick="saveEditedPhoto()">Save copy</button><button class="secondary" onclick="closeEditor()">← Gallery</button></div></div>
-<div class="editor-workbench-strip"><div class="editor-tool-group"><button type="button" class="editor-tool active" title="Develop" onclick="setEditorTab('basic')">◒<small>Develop</small></button><button type="button" class="editor-tool" title="Colour" onclick="setEditorTab('colour')">◉<small>Colour</small></button><button type="button" class="editor-tool" title="Geometry" onclick="setEditorTab('geometry')">⌗<small>Geometry</small></button><button type="button" class="editor-tool" title="Detail" onclick="setEditorTab('detail')">✣<small>Detail</small></button></div><div class="editor-workbench-meta"><span>JRVS / PHOTO STUDIO</span><span id="editorWorkStatus">READY TO DEVELOP</span></div></div><div class="editor-layout"><div class="editor-stage-wrap"><div class="editor-stage-toolbar"><span id="editorViewLabel">FIT · FULL IMAGE</span><div><button type="button" class="secondary" onclick="editorZoom(-.15)">−</button><button type="button" class="secondary" onclick="editorZoom(0)">Fit</button><button type="button" class="secondary" onclick="editorZoom(.15)">+</button></div></div><div class="editor-stage" id="editorStage"><canvas id="editorCanvas"></canvas></div><div class="editor-compare-bar" id="editorCompareBar" hidden><span>ORIGINAL</span><input id="editorCompareRange" type="range" min="5" max="95" value="50" aria-label="Before and after split" oninput="editorComparePosition=Number(this.value);drawEditor()"><span>EDITED</span><button type="button" class="secondary" onclick="toggleEditorCompare(false)">Done</button></div><div class="editor-stage-footer"><span id="editorStageStatus">Original preserved · Non-destructive editing</span><span>Full-resolution export</span></div></div><aside class="editor-panel">
+<div class="editor-layout"><div class="editor-stage-wrap"><div class="editor-stage-toolbar"><span id="editorViewLabel">FIT · FULL IMAGE</span><div><button type="button" class="secondary" onclick="editorZoom(-.15)">−</button><button type="button" class="secondary" onclick="editorZoom(0)">Fit</button><button type="button" class="secondary" onclick="editorZoom(.15)">+</button></div></div><div class="editor-stage" id="editorStage"><canvas id="editorCanvas"></canvas></div><div class="editor-compare-bar" id="editorCompareBar" hidden><span>ORIGINAL</span><input id="editorCompareRange" type="range" min="5" max="95" value="50" aria-label="Before and after split" oninput="editorComparePosition=Number(this.value);drawEditor()"><span>EDITED</span><button type="button" class="secondary" onclick="toggleEditorCompare(false)">Done</button></div><div class="editor-stage-footer"><span id="editorStageStatus">Original preserved · Non-destructive editing</span><span>Full-resolution export</span></div></div><aside class="editor-panel">
 <div class="editor-panel-heading"><div><strong>Develop controls</strong><div class="editor-help">Precise adjustments · Original always preserved</div></div><span class="editor-live-dot">● LIVE</span></div><nav class="editor-tabs" aria-label="Editing workspace"><button type="button" class="active" data-editor-tab="basic" onclick="setEditorTab('basic')">Light</button><button type="button" data-editor-tab="colour" onclick="setEditorTab('colour')">Colour</button><button type="button" data-editor-tab="detail" onclick="setEditorTab('detail')">Detail</button><button type="button" data-editor-tab="geometry" onclick="setEditorTab('geometry')">Geometry</button><button type="button" data-editor-tab="export" onclick="setEditorTab('export')">Export</button></nav>
 <div class="editor-control"><label>Property presets</label><select id="editorPreset" onchange="applyEditorPreset(this.value)">
 <option value="none">No preset — original</option>
@@ -1350,7 +1360,7 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
 <div class="editor-control" data-editor-group="basic"><label>Shadows <span id="shadowsVal">0</span></label><input id="shadows" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
 <div class="editor-history"><button class="secondary" type="button" onclick="editorUndo()">↶ Undo</button><button class="secondary" type="button" onclick="editorRedo()">↷ Redo</button><button class="secondary" type="button" onclick="toggleEditorCompare()">Before / after</button></div>
 <div><label class="muted">Live histogram</label><canvas id="editorHistogram" class="editor-histogram" width="300" height="76"></canvas></div>
-<details class="editor-section" open><summary>Light & tonal range</summary>
+<details class="editor-section" open data-editor-group="basic"><summary>Light & tonal range</summary>
 <div class="editor-control" data-editor-group="basic"><label>Exposure <span id="exposureVal">0</span></label><input id="exposure" type="range" min="-2" max="2" step="0.05" value="0" oninput="editorChanged()"></div>
 <div class="editor-control" data-editor-group="basic"><label>Whites <span id="whitesVal">0</span></label><input id="whites" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
 <div class="editor-control" data-editor-group="basic"><label>Blacks <span id="blacksVal">0</span></label><input id="blacks" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
@@ -1360,12 +1370,12 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
 <div class="editor-control" data-editor-group="colour"><label>Tint <span id="tintVal">0</span></label><input id="tint" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
 <div class="editor-control" data-editor-group="colour"><label>Vibrance <span id="vibranceVal">0</span></label><input id="vibrance" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
 </details>
-<details class="editor-section"><summary>Detail & finishing</summary>
+<details class="editor-section" data-editor-group="detail"><summary>Detail & finishing</summary>
 <div class="editor-control" data-editor-group="detail"><label>Clarity <span id="clarityVal">0</span></label><input id="clarity" type="range" min="-50" max="50" value="0" oninput="editorChanged()"></div>
 <div class="editor-control" data-editor-group="detail"><label>Sharpening <span id="sharpeningVal">0</span></label><input id="sharpening" type="range" min="0" max="100" value="0" oninput="editorChanged()"></div>
 <div class="editor-control" data-editor-group="detail"><label>Vignette <span id="vignetteVal">0</span></label><input id="vignette" type="range" min="-60" max="60" value="0" oninput="editorChanged()"></div>
 </details>
-<div><strong>Tools</strong><div class="editor-tools"><button class="secondary" onclick="rotateEditor(-90)">↶ Rotate</button><button class="secondary" onclick="rotateEditor(90)">↷ Rotate</button></div></div>
+<div data-editor-group="geometry"><strong>Transform tools</strong><div class="editor-tools"><button class="secondary" onclick="rotateEditor(-90)">↶ Rotate left</button><button class="secondary" onclick="rotateEditor(90)">↷ Rotate right</button></div></div>
 <div class="editor-control" data-editor-group="geometry"><label>Vertical perspective <span id="perspectiveVVal">0</span></label><input id="perspectiveV" type="range" min="-15" max="15" value="0" oninput="editorChanged()"></div>
 <div class="editor-control" data-editor-group="geometry"><label>Horizontal perspective <span id="perspectiveHVal">0</span></label><input id="perspectiveH" type="range" min="-15" max="15" value="0" oninput="editorChanged()"></div>
 <div class="editor-help" data-editor-group="geometry">Perspective controls provide a lightweight preview correction. Precision architectural keystone correction is a later dedicated transform upgrade.</div>
@@ -1569,7 +1579,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.10.0';
+const APP_VERSION='0.11.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
