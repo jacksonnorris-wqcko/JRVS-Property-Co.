@@ -23,3 +23,10 @@
 
 ## Migration note
 On first launch, existing jobs, quotes and invoices receive sequential display numbers if they do not already have one. Existing internal IDs and record links are preserved. Migration is stored in the existing `jrvs-data` localStorage record.
+
+
+## V0.8.0 — JRVS Photo Studio
+- Reworked photo editor into focused Light, Colour, Detail, Geometry and Export workspaces.
+- Added precise numeric entry alongside every adjustment slider.
+- Added zoom controls, compact editing toolbar, keyboard undo/redo shortcuts and persistent full-resolution export workflow.
+- Existing photo records, original blobs, edited copies and local storage keys are retained.
