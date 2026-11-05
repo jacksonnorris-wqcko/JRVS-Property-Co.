@@ -845,7 +845,7 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 }
 
 
-/* JRVS Photo Studio v0.8.0 */
+/* JRVS Photo Studio v0.9.0 — Pro Workbench */
 .editor-top-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.editor-top-actions button{min-height:36px;font-size:12px}
 .editor-layout{grid-template-columns:minmax(0,1fr) 370px!important;gap:14px!important}
 .editor-stage-wrap{min-width:0;position:sticky;top:10px;align-self:start}
@@ -865,6 +865,28 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 .editor-panel .editor-control{margin-bottom:9px}.editor-panel .editor-section{padding-top:9px}
 @media(max-width:850px){.editor-layout{grid-template-columns:1fr!important}.editor-stage-wrap{position:relative;top:auto}.editor-stage{min-height:250px!important;max-height:45dvh}.editor-stage canvas{max-height:42dvh}.editor-panel{position:relative;top:auto;max-height:none!important}.editor-top-actions{width:100%}.editor-top-actions button{flex:1}}
 
+
+/* JRVS V0.9.0 — Professional Workbench */
+.editor-backdrop{padding:12px!important;background:rgba(19,23,18,.88)!important;backdrop-filter:blur(8px)}
+.editor-shell{width:min(1800px,98vw)!important;max-width:none!important;height:calc(100dvh - 24px)!important;max-height:none!important;overflow:hidden!important;border-radius:18px!important;background:#f4f3eb!important;display:flex!important;flex-direction:column!important;padding:clamp(12px,1.5vw,24px)!important;gap:10px!important}
+.editor-top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 2px 8px!important;margin:0!important;flex-shrink:0}
+.editor-top h2{font-size:clamp(18px,1.4vw,24px)!important;letter-spacing:-.5px!important;margin:2px 0!important}
+.editor-top-actions{gap:6px!important}.editor-top-actions button{min-height:34px!important;padding:7px 11px!important}
+.editor-workbench-strip{display:flex;align-items:center;justify-content:space-between;background:#242820;border-radius:12px;padding:7px 10px;color:#f6f2e6;flex-shrink:0}
+.editor-tool-group{display:flex;gap:5px}.editor-tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:57px;min-height:43px;border:1px solid transparent;border-radius:8px;background:transparent;color:#e6e9dd;font-size:17px;cursor:pointer}.editor-tool small{font-size:9px;letter-spacing:.03em}.editor-tool:hover,.editor-tool.active{background:#414a35;border-color:#6e8053;color:#fff}.editor-workbench-meta{display:flex;gap:18px;font-size:9px;letter-spacing:.13em;color:#c5cbb9;font-weight:800}
+.editor-layout{grid-template-columns:minmax(0,1fr) minmax(330px,390px)!important;gap:12px!important;min-height:0!important;flex:1!important;overflow:hidden!important}
+.editor-stage-wrap{position:relative!important;top:auto!important;min-height:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;background:#1e211d;border-radius:14px!important;box-shadow:0 10px 30px #20251b22}
+.editor-stage-toolbar{background:#292e27!important;padding:8px 12px!important;flex-shrink:0}.editor-stage{flex:1!important;min-height:0!important;max-height:none!important;border-radius:0!important;padding:12px!important;overflow:auto!important;display:flex!important;align-items:center!important;justify-content:center!important;background:radial-gradient(ellipse at center,#30352d 0%,#1d211c 72%)!important}
+.editor-stage canvas{max-width:100%!important;max-height:100%!important;object-fit:contain!important;box-shadow:0 12px 35px #0005;transform-origin:center center}
+.editor-stage-footer{flex-shrink:0;padding:7px 12px!important;background:#292e27!important;color:#bdc4b2!important;border-radius:0 0 12px 12px!important;font-size:10px!important}
+.editor-compare-bar{display:flex;align-items:center;gap:12px;padding:9px 14px;background:#30362c;color:#f3f1e8;font-size:9px;font-weight:850;letter-spacing:.12em;flex-shrink:0}.editor-compare-bar[hidden]{display:none!important}.editor-compare-bar input{flex:1;accent-color:#a4b77c;min-width:80px}.editor-compare-bar button{min-height:28px;padding:4px 12px;font-size:10px}
+.editor-panel{position:relative!important;top:auto!important;max-height:none!important;height:100%!important;overflow-y:auto!important;overscroll-behavior:contain!important;padding:16px!important;border:1px solid #e2e4d9!important;border-radius:14px!important;background:#fffefa!important;box-shadow:0 8px 24px #303a2410!important;gap:12px!important}
+.editor-panel-heading{position:sticky;top:-16px;background:#fffefa;padding:4px 0 12px;z-index:3;border-bottom:1px solid #eceee6}.editor-tabs{top:0!important;box-shadow:0 4px 10px #fffefa}
+.editor-panel .editor-control{margin-bottom:11px!important}.editor-panel input[type=range]{accent-color:#899b68}.editor-panel details{border:1px solid #e9ebdf;border-radius:10px;padding:10px 11px;margin:7px 0;background:#fffefa}.editor-panel details summary{font-size:12px;font-weight:800;cursor:pointer;color:#394333}.editor-panel details[open] summary{margin-bottom:12px}.editor-panel .editor-help{line-height:1.5}
+.editor-panel select,.editor-panel input:not([type=range]){border-radius:8px!important}.editor-number{font-variant-numeric:tabular-nums!important}
+.editor-history{position:sticky;top:48px;z-index:2;background:#fffefa;padding:6px 0}
+@media(min-width:1200px){.editor-shell{padding:18px 22px!important}.editor-stage{padding:16px!important}.editor-layout{grid-template-columns:minmax(0,1fr) 410px!important}}
+@media(max-width:850px){.editor-backdrop{padding:0!important}.editor-shell{width:100%!important;height:100dvh!important;max-height:none!important;border-radius:0!important;padding:12px!important}.editor-top{flex-wrap:wrap}.editor-workbench-meta{display:none}.editor-layout{display:flex!important;flex-direction:column!important;overflow:auto!important}.editor-stage-wrap{flex:0 0 48dvh!important;min-height:300px!important}.editor-stage{min-height:0!important}.editor-panel{height:auto!important;max-height:none!important;overflow:visible!important}.editor-top-actions{width:auto!important}.editor-top-actions button{flex:0 1 auto!important}.editor-workbench-strip{padding:5px}.editor-tool{min-width:48px}}
 </style>
 <style id="jrvs-v040-polish">
 /* JRVS Property Co. V0.4.0 — cohesive visual refinement */
@@ -1276,8 +1298,8 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
 <div class="modal-backdrop" id="packageModalBackdrop"><div class="modal"><div class="modal-head"><h2 id="packageModalTitle">Add package</h2><button class="close" onclick="closePackageModal()">×</button></div><form id="packageForm" onsubmit="savePackageForm(event)"><div class="field"><label>Package name</label><input id="pkgName" required placeholder="e.g. Standard Property Photography"></div><div class="field"><label>Description / inclusions</label><textarea id="pkgDesc" rows="3"></textarea></div><div class="field"><label>Price (AUD)</label><input id="pkgPrice" type="number" min="0" step="0.01" required></div><div class="field"><label>Optional extra?</label><select id="pkgExtra"><option value="no">No — main package</option><option value="yes">Yes — optional add-on</option></select></div><div style="display:flex;justify-content:flex-end;gap:9px;margin-top:18px"><button type="button" class="secondary" onclick="closePackageModal()">Cancel</button><button class="primary" type="submit">Save package</button></div></form></div></div>
 
 <div class="editor-backdrop" id="editorBackdrop"><div class="editor-shell">
-<div class="editor-top"><div><div class="eyebrow">JRVS PHOTO STUDIO</div><h2 id="editorTitle">Edit photograph</h2><div class="muted" id="editorSubtitle">Non-destructive edit · Original preserved</div></div><div class="editor-top-actions"><button class="secondary" type="button" onclick="editorUndo()" title="Undo (Ctrl+Z)">↶ Undo</button><button class="secondary" type="button" onclick="editorRedo()" title="Redo (Ctrl+Shift+Z)">↷ Redo</button><button class="secondary" type="button" onclick="toggleEditorCompare()">◐ Compare</button><button class="primary" type="button" onclick="saveEditedPhoto()">Save copy</button><button class="secondary" onclick="closeEditor()">← Gallery</button></div></div>
-<div class="editor-layout"><div class="editor-stage-wrap"><div class="editor-stage-toolbar"><span id="editorViewLabel">FIT · FULL IMAGE</span><div><button type="button" class="secondary" onclick="editorZoom(-.15)">−</button><button type="button" class="secondary" onclick="editorZoom(0)">Fit</button><button type="button" class="secondary" onclick="editorZoom(.15)">+</button></div></div><div class="editor-stage" id="editorStage"><canvas id="editorCanvas"></canvas></div><div class="editor-stage-footer"><span>Preview</span><span>Export uses full image resolution</span></div></div><aside class="editor-panel">
+<div class="editor-top"><div><div class="eyebrow">JRVS PHOTO STUDIO</div><h2 id="editorTitle">Edit photograph</h2><div class="muted" id="editorSubtitle">Non-destructive edit · Original preserved</div></div><div class="editor-top-actions"><button class="secondary" type="button" onclick="editorUndo()" title="Undo (Ctrl+Z)">↶ Undo</button><button class="secondary" type="button" onclick="editorRedo()" title="Redo (Ctrl+Shift+Z)">↷ Redo</button><button class="secondary" type="button" onclick="toggleEditorCompare()">◐ Compare view</button><button class="primary" type="button" onclick="saveEditedPhoto()">Save copy</button><button class="secondary" onclick="closeEditor()">← Gallery</button></div></div>
+<div class="editor-workbench-strip"><div class="editor-tool-group"><button type="button" class="editor-tool active" title="Develop" onclick="setEditorTab('basic')">◒<small>Develop</small></button><button type="button" class="editor-tool" title="Colour" onclick="setEditorTab('colour')">◉<small>Colour</small></button><button type="button" class="editor-tool" title="Geometry" onclick="setEditorTab('geometry')">⌗<small>Geometry</small></button><button type="button" class="editor-tool" title="Detail" onclick="setEditorTab('detail')">✣<small>Detail</small></button></div><div class="editor-workbench-meta"><span>JRVS / PHOTO STUDIO</span><span id="editorWorkStatus">READY TO DEVELOP</span></div></div><div class="editor-layout"><div class="editor-stage-wrap"><div class="editor-stage-toolbar"><span id="editorViewLabel">FIT · FULL IMAGE</span><div><button type="button" class="secondary" onclick="editorZoom(-.15)">−</button><button type="button" class="secondary" onclick="editorZoom(0)">Fit</button><button type="button" class="secondary" onclick="editorZoom(.15)">+</button></div></div><div class="editor-stage" id="editorStage"><canvas id="editorCanvas"></canvas></div><div class="editor-compare-bar" id="editorCompareBar" hidden><span>ORIGINAL</span><input id="editorCompareRange" type="range" min="5" max="95" value="50" aria-label="Before and after split" oninput="editorComparePosition=Number(this.value);drawEditor()"><span>EDITED</span><button type="button" class="secondary" onclick="toggleEditorCompare(false)">Done</button></div><div class="editor-stage-footer"><span id="editorStageStatus">Original preserved · Non-destructive editing</span><span>Full-resolution export</span></div></div><aside class="editor-panel">
 <div class="editor-panel-heading"><div><strong>Develop controls</strong><div class="editor-help">Precise adjustments · Original always preserved</div></div><span class="editor-live-dot">● LIVE</span></div><nav class="editor-tabs" aria-label="Editing workspace"><button type="button" class="active" data-editor-tab="basic" onclick="setEditorTab('basic')">Light</button><button type="button" data-editor-tab="colour" onclick="setEditorTab('colour')">Colour</button><button type="button" data-editor-tab="detail" onclick="setEditorTab('detail')">Detail</button><button type="button" data-editor-tab="geometry" onclick="setEditorTab('geometry')">Geometry</button><button type="button" data-editor-tab="export" onclick="setEditorTab('export')">Export</button></nav>
 <div class="editor-control"><label>Property presets</label><select id="editorPreset" onchange="applyEditorPreset(this.value)">
 <option value="none">No preset — original</option>
@@ -1513,7 +1535,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.8.0';
+const APP_VERSION='0.9.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -2370,10 +2392,10 @@ function editQuote(id){openQuoteForm(id)}
 function changeQuoteStatus(id){const q=data.quotes.find(x=>x.id===id);if(!q)return;const states=['Draft','Sent','Accepted','Declined'];q.status=states[(states.indexOf(q.status)+1)%states.length];save();renderQuotes();renderAttention()}
 async function deleteQuote(id){if(await showConfirm('Delete this quotation?')){data.quotes=data.quotes.filter(q=>q.id!==id);save();renderQuotes();renderAttention()}}
 
-let editorPhoto=null,editorImage=null,editorRotation=0,editorBusy=false,editorHistory=[],editorHistoryIndex=-1,editorHistoryTimer=null,editorCompare=false,editorPreviewFrame=0;
+let editorPhoto=null,editorImage=null,editorRotation=0,editorBusy=false,editorHistory=[],editorHistoryIndex=-1,editorHistoryTimer=null,editorCompare=false,editorComparePosition=50,editorPreviewFrame=0;
 const EDITOR_PREVIEW_MAX=1600;
 
-// JRVS Photo Studio workspace controls (v0.8.0)
+// JRVS Photo Studio workspace controls (v0.9.0)
 let editorZoomLevel=1, editorActiveTab='basic';
 function setEditorTab(tab){editorActiveTab=tab;document.querySelectorAll('[data-editor-tab]').forEach(b=>b.classList.toggle('active',b.dataset.editorTab===tab));document.querySelectorAll('[data-editor-group]').forEach(el=>{el.hidden=el.dataset.editorGroup!==tab});}
 function editorZoom(delta){if(delta===0)editorZoomLevel=1;else editorZoomLevel=Math.max(.5,Math.min(2.5,editorZoomLevel+delta));const c=document.getElementById('editorCanvas');if(c)c.style.transform=`scale(${editorZoomLevel})`;const l=document.getElementById('editorViewLabel');if(l)l.textContent=editorZoomLevel===1?'FIT · FULL IMAGE':Math.round(editorZoomLevel*100)+'% ZOOM';}
@@ -2381,10 +2403,10 @@ function initEditorProControls(){
  const panel=document.querySelector('#editorBackdrop .editor-panel');if(!panel||panel.dataset.proReady)return;panel.dataset.proReady='1';
  document.querySelectorAll('#editorBackdrop input[type=range]').forEach(range=>{const label=range.closest('.editor-control')?.querySelector('label');if(!label)return;const value=label.querySelector('span');if(!value)return;const num=document.createElement('input');num.type='number';num.className='editor-number';num.min=range.min;num.max=range.max;num.step=range.step||'1';num.value=range.value;num.setAttribute('aria-label',label.textContent.trim()+' exact value');num.addEventListener('change',()=>{const v=Math.max(Number(num.min),Math.min(Number(num.max),Number(num.value)||0));range.value=v;num.value=v;editorChanged()});range.addEventListener('input',()=>{num.value=range.value});label.appendChild(num);});
 }
-document.addEventListener('keydown',e=>{if(!document.getElementById('editorBackdrop')?.classList.contains('show'))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?editorRedo():editorUndo()}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();editorRedo()}else if(e.key==='Escape'){closeEditor()}});
+document.addEventListener('keydown',e=>{if(!document.getElementById('editorBackdrop')?.classList.contains('show'))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?editorRedo():editorUndo()}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();editorRedo()}else if(e.key.toLowerCase()==='c'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();toggleEditorCompare()}else if(e.key==='Escape'){if(editorCompare)toggleEditorCompare(false);else closeEditor()}});
 function openEditor(id){
  const p=photoRecords.find(x=>x.id===id);if(!p)return;editorPhoto=p;editorRotation=0;
- ['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);editorHistory=[];editorHistoryIndex=-1;editorCompare=false;captureEditorHistory();
+ ['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);editorHistory=[];editorHistoryIndex=-1;editorCompare=false;editorComparePosition=50;toggleEditorCompare(false);captureEditorHistory();
  document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';document.getElementById('editorExportProfile').value='agency';document.getElementById('editorTitle').textContent=p.name;
  document.getElementById('editorSubtitle').textContent=p.jobName+' · Original remains unchanged';document.getElementById('editorStatus').textContent='';
  const img=new Image(),url=URL.createObjectURL(p.blob);
@@ -2405,9 +2427,9 @@ function captureEditorHistory(){const state=currentEditorState(),last=editorHist
 function restoreEditorHistory(i){if(i<0||i>=editorHistory.length)return;editorHistoryIndex=i;const s=editorHistory[i];Object.entries(s.values).forEach(([k,v])=>document.getElementById(k).value=v);editorRotation=s.rotation;document.getElementById('cropRatio').value=s.crop;document.getElementById('editorPreset').value=s.preset;drawEditor()}
 function editorUndo(){clearTimeout(editorHistoryTimer);captureEditorHistory();restoreEditorHistory(editorHistoryIndex-1)}
 function editorRedo(){restoreEditorHistory(editorHistoryIndex+1)}
-function toggleEditorCompare(){editorCompare=!editorCompare;drawEditor()}
+function toggleEditorCompare(force){editorCompare=typeof force==='boolean'?force:!editorCompare;const bar=document.getElementById('editorCompareBar');if(bar)bar.hidden=!editorCompare;const r=document.getElementById('editorCompareRange');if(r)r.value=editorComparePosition;const status=document.getElementById('editorStageStatus');if(status)status.textContent=editorCompare?'Drag the divider to compare original and edited':'Original preserved · Non-destructive editing';drawEditor()}
 
-function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX){
+function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustments=true){
  if(!editorImage||!editorPhoto)return null;
  const sw0=editorImage.naturalWidth,sh0=editorImage.naturalHeight;
  const scale=maxDimension>0?Math.min(1,maxDimension/Math.max(sw0,sh0)):1;
@@ -2422,6 +2444,7 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX){
  const pv=+document.getElementById('perspectiveV').value,ph=+document.getElementById('perspectiveH').value;
  ctx.save();ctx.translate(canvas.width/2,canvas.height/2);ctx.transform(1,ph/100,-pv/100,1,0,0);
  ctx.drawImage(temp,(temp.width-rw)/2-canvas.width/2,(temp.height-rh)/2-canvas.height/2,rw,rh);ctx.restore();
+ if(!applyAdjustments)return {canvas,hist:new Uint32Array(64)};
  const image=ctx.getImageData(0,0,canvas.width,canvas.height),d=image.data;
  const v=Object.fromEntries(EDITOR_KEYS.map(k=>[k,+document.getElementById(k).value]));
  Object.keys(v).forEach(k=>{const el=document.getElementById(k+'Val');if(el)el.textContent=v[k]>0?'+'+v[k]:v[k]});
@@ -2440,8 +2463,14 @@ function drawEditor(){
  const visible=document.getElementById('editorCanvas');if(!visible||!editorImage||!editorPhoto)return;
  const rendered=createEditorRenderCanvas(EDITOR_PREVIEW_MAX);if(!rendered)return;
  visible.width=rendered.canvas.width;visible.height=rendered.canvas.height;
- const ctx=visible.getContext('2d');ctx.clearRect(0,0,visible.width,visible.height);ctx.drawImage(rendered.canvas,0,0);
- if(editorCompare){ctx.save();ctx.globalAlpha=1;ctx.drawImage(editorImage,0,0,visible.width,visible.height);ctx.restore()}
+ const ctx=visible.getContext('2d');ctx.clearRect(0,0,visible.width,visible.height);
+ if(editorCompare){
+  const original=createEditorRenderCanvas(EDITOR_PREVIEW_MAX,false);
+  const split=Math.round(visible.width*editorComparePosition/100);
+  ctx.save();ctx.beginPath();ctx.rect(0,0,split,visible.height);ctx.clip();ctx.drawImage(original.canvas,0,0,visible.width,visible.height);ctx.restore();
+  ctx.save();ctx.beginPath();ctx.rect(split,0,visible.width-split,visible.height);ctx.clip();ctx.drawImage(rendered.canvas,0,0);ctx.restore();
+  ctx.fillStyle='#f7f1df';ctx.fillRect(split-1,0,2,visible.height);ctx.beginPath();ctx.arc(split,visible.height/2,13,0,Math.PI*2);ctx.fillStyle='#899b68';ctx.fill();ctx.strokeStyle='#f7f1df';ctx.lineWidth=2;ctx.stroke();
+ }else ctx.drawImage(rendered.canvas,0,0);
  drawEditorHistogram(rendered.hist);
 }
 async function createFullQualityEditorBlob(mime,quality){

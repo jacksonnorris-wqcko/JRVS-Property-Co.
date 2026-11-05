@@ -1,4 +1,4 @@
-# JRVS Property Co. — V0.7.0
+# JRVS Property Co. — V0.9.0
 
 ## Sequential linked numbering
 
@@ -17,9 +17,9 @@
 3. Keep the same browser profile and existing app URL. Do not clear site data or reset IndexedDB.
 
 ## Release version
-- App version: `0.7.0`
-- `version.json`: `0.7.0`
-- Service-worker cache: `jrvs-property-co-v0.7.0`
+- App version: `0.9.0`
+- `version.json`: `0.9.0`
+- Service-worker cache: `jrvs-property-co-v0.9.0`
 
 ## Migration note
 On first launch, existing jobs, quotes and invoices receive sequential display numbers if they do not already have one. Existing internal IDs and record links are preserved. Migration is stored in the existing `jrvs-data` localStorage record.
@@ -30,3 +30,13 @@ On first launch, existing jobs, quotes and invoices receive sequential display n
 - Added precise numeric entry alongside every adjustment slider.
 - Added zoom controls, compact editing toolbar, keyboard undo/redo shortcuts and persistent full-resolution export workflow.
 - Existing photo records, original blobs, edited copies and local storage keys are retained.
+
+
+## V0.9.0 — Professional Photo Workbench
+- Reworked the editor into a full-height, responsive workbench with a larger image stage and denser control panel.
+- Added a dedicated compare mode with an adjustable before/after split, matching the current crop and rotation.
+- Fixed the previous compare implementation, which painted the original over the edited preview.
+- Added quick workspace shortcuts and keyboard `C` to toggle comparison; Escape exits comparison before closing the editor.
+- Preserved existing photo storage, editing pipeline, presets, history, and export workflow.
+
+Validation: JavaScript syntax and ZIP integrity checked. Browser interaction testing is still required.
