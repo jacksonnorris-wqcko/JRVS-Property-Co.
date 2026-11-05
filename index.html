@@ -1039,6 +1039,12 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
   #page-photos .batch-tools-content select,#page-photos .batch-tools-content button{width:100% !important}
 }
 </style>
+<style id="jrvs-bulk-edit-delete-v062">
+#page-photos .photo-delete-selected-btn{border:1px solid #d9aaa2 !important;color:#93483d !important;background:#fff8f6 !important}
+#page-photos .photo-delete-selected-btn:hover:not(:disabled){background:#fbece8 !important;border-color:#c98b80 !important}
+#page-photos .photo-delete-selected-btn:disabled{opacity:.42 !important;cursor:not-allowed !important}
+@media(max-width:700px){#page-photos .selection-actions .photo-delete-selected-btn{grid-column:1/-1}}
+</style>
 </head>
 <body>
 <div class="shell">
@@ -1486,7 +1492,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.6.1';
+const APP_VERSION='0.6.2';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -1881,7 +1887,7 @@ async function renderPhotos(){
  grid.className='photo-grid';
  const job=data.jobs.find(j=>j.id===f);
  const rows=getProjectPhotos(f).filter(p=>(kind==='all'||p.type===kind)&&(!search||p.name.toLowerCase().includes(search)||String(p.status||'').toLowerCase().includes(search)));
- const back=`<div class="gallery-heading"><div><div class="gallery-kicker">PROJECT GALLERY</div><strong>${esc(job?.name||'Project gallery')}</strong><div class="muted">${rows.length} ${rows.length===1?'photo':'photos'} shown · Original files are kept safe</div></div><button class="secondary gallery-back" onclick="showAllProjects()">← All projects</button></div><section class="photo-selection-bar" aria-label="Photo selection actions"><div class="selection-summary"><strong id="batchSelectionCount">0 photos selected</strong><span>Select photos to prepare a delivery ZIP</span></div><div class="selection-actions"><button class="secondary" type="button" onclick="selectAllVisiblePhotos()">Select all</button><button class="secondary" type="button" onclick="clearPhotoSelection()">Clear</button><button class="primary photo-zip-btn" type="button" onclick="downloadSelectedPhotosZip()">↓ Download selected (.zip)</button></div></section><details class="batch-tools"><summary>Batch editing <span>Apply one preset to selected photos</span></summary><div class="batch-tools-content"><select id="batchPreset"><option value="natural">Natural Listing</option><option value="bright">Bright &amp; Airy</option><option value="window">Window Balanced</option><option value="warm">Warm Lifestyle</option><option value="modern">Crisp Modern</option><option value="soft">Soft Neutral</option><option value="luxury">Luxury Contrast</option><option value="wood">Wood &amp; Stone</option><option value="bathroom">Bathroom Clean</option><option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option></select><button class="primary" type="button" onclick="applyBatchPresetToSelection()">Apply preset to selected</button><div class="batch-progress" id="batchProgress">Original photos are never changed.</div></div></details>`;
+ const back=`<div class="gallery-heading"><div><div class="gallery-kicker">PROJECT GALLERY</div><strong>${esc(job?.name||'Project gallery')}</strong><div class="muted">${rows.length} ${rows.length===1?'photo':'photos'} shown · Original files are kept safe</div></div><button class="secondary gallery-back" onclick="showAllProjects()">← All projects</button></div><section class="photo-selection-bar" aria-label="Photo selection actions"><div class="selection-summary"><strong id="batchSelectionCount">0 photos selected</strong><span>Select photos to prepare a delivery ZIP</span></div><div class="selection-actions"><button class="secondary" type="button" onclick="selectAllVisiblePhotos()">Select all</button><button class="secondary" type="button" onclick="clearPhotoSelection()">Clear</button><button class="danger photo-delete-selected-btn" id="deleteSelectedEditsBtn" type="button" onclick="deleteSelectedEdits()" disabled>⌫ Delete selected edits</button><button class="primary photo-zip-btn" type="button" onclick="downloadSelectedPhotosZip()">↓ Download selected (.zip)</button></div></section><details class="batch-tools"><summary>Batch editing <span>Apply one preset to selected photos</span></summary><div class="batch-tools-content"><select id="batchPreset"><option value="natural">Natural Listing</option><option value="bright">Bright &amp; Airy</option><option value="window">Window Balanced</option><option value="warm">Warm Lifestyle</option><option value="modern">Crisp Modern</option><option value="soft">Soft Neutral</option><option value="luxury">Luxury Contrast</option><option value="wood">Wood &amp; Stone</option><option value="bathroom">Bathroom Clean</option><option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option></select><button class="primary" type="button" onclick="applyBatchPresetToSelection()">Apply preset to selected</button><div class="batch-progress" id="batchProgress">Original photos are never changed.</div></div></details>`;
  if(!rows.length){grid.innerHTML=back+'<div class="empty photo-empty"><b>No matching photos</b>Try a different filename or status.</div>';return}
  grid.innerHTML=back+'<div class="photo-cards-grid">'+rows.map(p=>{
    const u=URL.createObjectURL(p.blob);photoUrls.push(u);
@@ -1957,7 +1963,30 @@ async function downloadSelectedPhotosZip(){
  finally{if(btn){btn.disabled=false;btn.textContent='↓ Download selected (.zip)'}}
 }
 function togglePhotoSelection(id,checked){if(checked)selectedPhotoIds.add(id);else selectedPhotoIds.delete(id);const card=[...document.querySelectorAll('.photo-card')].find(el=>el.querySelector(`input[onchange*="${id}"]`));if(card)card.classList.toggle('is-batch-selected',checked);updateBatchSelectionCount()}
-function updateBatchSelectionCount(){const el=document.getElementById('batchSelectionCount');if(el)el.textContent=selectedPhotoIds.size+' photo'+(selectedPhotoIds.size===1?'':'s')+' selected'}
+function updateBatchSelectionCount(){
+ const el=document.getElementById('batchSelectionCount');if(el)el.textContent=selectedPhotoIds.size+' photo'+(selectedPhotoIds.size===1?'':'s')+' selected';
+ const del=document.getElementById('deleteSelectedEditsBtn');
+ if(del){const chosen=[...selectedPhotoIds].map(id=>photoRecords.find(p=>String(p.id)===String(id))).filter(Boolean);const editable=chosen.length>0&&chosen.every(p=>p.type==='edited');del.disabled=!editable;del.title=editable?'Delete all selected edited copies':'Select edited photos only; originals cannot be bulk deleted'}
+}
+async function deleteSelectedEdits(){
+ const chosen=[...selectedPhotoIds].map(id=>photoRecords.find(p=>String(p.id)===String(id))).filter(Boolean);
+ if(!chosen.length){showToast('Select edited photos to delete.');return}
+ if(chosen.some(p=>p.type!=='edited')){showToast('Bulk delete is only available when all selected photos are edited copies. Original photos are protected.','error');return}
+ const names=chosen.slice(0,4).map(p=>p.name).join(', ')+(chosen.length>4?' and '+(chosen.length-4)+' more':'');
+ if(!await showConfirm('Permanently delete '+chosen.length+' selected edited photo'+(chosen.length===1?'':'s')+'? Original photos will remain untouched. '+names))return;
+ const deleting=new Set(chosen.map(p=>String(p.id)));
+ try{
+  const coverJobs=new Set(chosen.filter(p=>p.isCover).map(p=>String(p.jobId)));
+  for(const p of chosen)await photoRequest('readwrite','delete',p.id);
+  for(const jobId of coverJobs){
+   const replacement=photoRecords.filter(p=>String(p.jobId)===jobId&&!deleting.has(String(p.id))).sort((a,b)=>new Date(a.addedAt||0)-new Date(b.addedAt||0))[0];
+   if(replacement){replacement.isCover=true;await photoRequest('readwrite','put',replacement)}
+  }
+  selectedPhotoIds.clear();
+  await loadPhotos();
+  showToast(chosen.length+' edited photo'+(chosen.length===1?'':'s')+' deleted. Original photos are safe.');
+ }catch(error){console.error('JRVS bulk edited-photo delete failed',error);showToast('Could not delete all selected edits: '+(error?.message||'storage error'),'error');await loadPhotos()}
+}
 function selectAllVisiblePhotos(){document.querySelectorAll('#photoGrid .photo-select-wrap input').forEach(input=>{input.checked=true;const m=input.getAttribute('onchange')?.match(/togglePhotoSelection\('([^']+)'/);if(m)selectedPhotoIds.add(m[1]);input.closest('.photo-card')?.classList.add('is-batch-selected')});updateBatchSelectionCount()}
 function clearPhotoSelection(){selectedPhotoIds.clear();document.querySelectorAll('#photoGrid .photo-select-wrap input').forEach(input=>{input.checked=false;input.closest('.photo-card')?.classList.remove('is-batch-selected')});updateBatchSelectionCount()}
 let batchApplyInProgress=false;
