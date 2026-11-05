@@ -1,25 +1,21 @@
-# JRVS Property Co. — V0.6.0
+# JRVS Property Co. — V0.6.1
 
-## Photo gallery structural redesign
+## Photo workspace styling correction
 
-- Separated the project gallery controls from the photo-card grid in the rendered HTML structure.
-- The gallery heading, selection/export bar and batch editing panel now occupy their own full-width rows.
-- Only photo cards are rendered inside the dedicated responsive photo-card grid.
-- This removes the previous grid auto-placement conflict that caused the selection and batch panels to appear as narrow empty cards beside photos.
-- Kept multi-select ZIP export, batch presets, individual full-size downloads, editing, cover selection and workflow status controls.
-- Preserved existing IndexedDB photo storage and application data.
+- Corrected the previous release's stylesheet placement: the photo workspace CSS is now in the actual document head, not inside a later template string.
+- Selection summary and Select all / Clear / Download selected controls are grouped into one compact horizontal toolbar.
+- Batch editing remains a separate, collapsible full-width row.
+- Only photo cards appear in the photo-card grid, aligned from the left with consistent widths and spacing.
+- Mobile layouts stack the selection controls and photo cards appropriately.
+- Retains original/edited filtering, individual full-resolution downloads, ZIP export, batch presets, cover selection and photo editing.
+- No intentional changes to local business data, IndexedDB photo records or Supabase data.
 
 ## Deploying
-
 1. Extract this ZIP.
-2. Upload all files and folders inside it to the root of the existing GitHub repository.
-3. Replace matching files when prompted.
-4. Do not clear browser/site data or reset IndexedDB.
+2. Upload all files and folders inside it to the root of the existing GitHub repository, replacing matching files.
+3. Do not clear browser/site data or reset IndexedDB.
 
 ## Release version
-
-- App version: `0.6.0`
-- `version.json`: `0.6.0`
-- Service-worker cache: `jrvs-property-co-v0.6.0`
-
-This release changes the gallery DOM structure and presentation only. It does not intentionally migrate, clear, or reset business data, photo records, or Supabase data.
+- App version: `0.6.1`
+- `version.json`: `0.6.1`
+- Service-worker cache: `jrvs-property-co-v0.6.1`
