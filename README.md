@@ -1,4 +1,4 @@
-# JRVS Property Co. — V0.13.0
+# JRVS Property Co. — V0.14.0
 
 ## Retouch engine refinement
 
@@ -18,6 +18,6 @@
 3. Keep the existing browser profile and app URL. Do not clear site data.
 
 ## Release version
-- App version: `0.13.0`
-- `version.json`: `0.13.0`
-- Service-worker cache: `jrvs-property-co-v0.13.0`
+- App version: `0.14.0`
+- `version.json`: `0.14.0`
+- Service-worker cache: `jrvs-property-co-v0.14.0`

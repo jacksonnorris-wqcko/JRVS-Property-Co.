@@ -1145,6 +1145,9 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
 #page-photos .photo-delete-selected-btn:disabled{opacity:.42 !important;cursor:not-allowed !important}
 @media(max-width:700px){#page-photos .selection-actions .photo-delete-selected-btn{grid-column:1/-1}}
 </style>
+<style id="jrvs-reset-data-style">
+.reset-data-card{border-color:#e5c9bd!important}.reset-data-card .settings-icon{background:#f8e9e3;color:#9b4d37}.reset-data-card .danger-action{background:#a84e3b;color:#fff;border:0;border-radius:10px;padding:11px 15px;font-weight:750;cursor:pointer}.reset-data-card .danger-action:hover{background:#8f3f30}.data-reset-confirm{max-width:480px}.data-reset-confirm .app-confirm-actions{margin-top:18px}.data-reset-confirm .danger-action:disabled{opacity:.42;cursor:not-allowed}
+</style>
 </head>
 <body>
 <div class="shell">
@@ -1279,6 +1282,10 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
           <div class="row-card"><div><strong>Data storage</strong><small>Records are stored locally and can sync to your private JRVS cloud account.</small></div><span class="pill">Local + Cloud</span></div>
           <div class="settings-note">Automatic app updates do not replace or delete saved records. Keep your cloud account credentials secure. Avoid clearing browser data, as this can remove local records and photos that have not been synchronised.</div>
         </section>
+        <section class="settings-card reset-data-card"><div class="settings-card-head"><span class="settings-icon">!</span><div><h3>Reset business data</h3><p>Clear test records before starting with real property jobs.</p></div></div>
+          <div class="settings-note">Permanently removes jobs, clients, quotes, invoices, financial records, calendar entries and all stored photos. When signed in, your JRVS cloud workspace is cleared too. Your login, app and settings remain.</div>
+          <div class="row-card"><div><strong>Start fresh</strong><small>This cannot be undone. Make sure you no longer need any existing records.</small></div><button class="danger-action" type="button" onclick="openDataReset()">Reset all data</button></div>
+        </section>
       </div></div>
     </div></section>
     <div class="footer">JRVS Property Co. · <span id="footerVersion">V0.2.0</span> · Built for better business days.</div>
@@ -1289,6 +1296,18 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
 
 
 <div class="modal-backdrop" id="attentionDetailBackdrop" role="dialog" aria-modal="true" aria-labelledby="attentionDetailTitle"><div class="modal"><div class="modal-head"><div><div class="eyebrow">DASHBOARD REMINDER</div><h2 id="attentionDetailTitle">Needs attention</h2><p class="muted" id="attentionDetailType"></p></div><button class="close" onclick="closeAttentionDetail()">×</button></div><div id="attentionDetailBody" style="white-space:pre-line;line-height:1.8;padding:12px 0"></div><div class="job-detail-footer"><button class="secondary" onclick="closeAttentionDetail()">Close</button><button class="primary" onclick="clearAttentionItem()">✓ Mark as handled</button></div></div></div>
+<div class="app-confirm-backdrop" id="dataResetBackdrop" role="presentation" aria-hidden="true">
+ <section class="app-confirm data-reset-confirm" role="dialog" aria-modal="true" aria-labelledby="dataResetTitle" aria-describedby="dataResetMessage">
+  <div class="app-confirm-icon">!</div>
+  <div class="app-confirm-copy"><h2 id="dataResetTitle">Reset all business data?</h2>
+   <p id="dataResetMessage">This permanently deletes all business records and photos on this device. If you are signed in, the same data will also be removed from your JRVS cloud account and other devices.</p>
+   <label for="dataResetPhrase" style="display:block;margin:14px 0 6px;font-size:12px;font-weight:750">Type RESET to confirm</label>
+   <input id="dataResetPhrase" type="text" autocomplete="off" spellcheck="false" placeholder="Type RESET" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit">
+   <small id="dataResetScope" style="display:block;margin-top:9px;color:var(--muted)">Your account login, app installation, branding and settings will be kept.</small>
+  </div>
+  <div class="app-confirm-actions"><button class="secondary" type="button" onclick="closeDataReset()">Cancel</button><button class="primary danger-action" id="dataResetAccept" type="button" onclick="executeDataReset()" disabled>Delete all data</button></div>
+ </section>
+</div>
 <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
 <div class="app-confirm-backdrop" id="appConfirmBackdrop" role="presentation" aria-hidden="true">
  <section class="app-confirm" role="dialog" aria-modal="true" aria-labelledby="appConfirmTitle" aria-describedby="appConfirmMessage">
@@ -1598,6 +1617,94 @@ function showToast(message, type='success', duration=3600){
  const timer=setTimeout(()=>{item.classList.remove('visible');setTimeout(()=>item.remove(),220)},duration);
  close.addEventListener('click',()=>clearTimeout(timer),{once:true});
 }
+
+// V0.14.0 — deliberate, verified full business-data reset.
+function openDataReset(){
+ const back=document.getElementById('dataResetBackdrop'),phrase=document.getElementById('dataResetPhrase'),accept=document.getElementById('dataResetAccept');
+ phrase.value='';accept.disabled=true;
+ const scope=document.getElementById('dataResetScope');
+ scope.textContent=jrvsCloudSession
+  ? 'Cloud account detected: this reset will remove cloud business records and every photo stored in your JRVS cloud workspace, as well as this device’s local records. Your sign-in remains.'
+  : 'No active JRVS cloud session: this will reset this device only. Sign in first if you also want to clear cloud records. Your account, app installation and settings remain.';
+ back.classList.add('show');back.setAttribute('aria-hidden','false');
+ setTimeout(()=>phrase.focus(),50);
+}
+function closeDataReset(){
+ const back=document.getElementById('dataResetBackdrop');
+ back.classList.remove('show');back.setAttribute('aria-hidden','true');
+}
+document.addEventListener('input',e=>{
+ if(e.target&&e.target.id==='dataResetPhrase')document.getElementById('dataResetAccept').disabled=e.target.value.trim()!=='RESET';
+});
+async function jrvsClearCloudWorkspace(){
+ if(!jrvsSupabase||!jrvsCloudSession?.user?.id)throw new Error('Cloud reset requires an active JRVS sign-in. No local data has been deleted.');
+ const userId=jrvsCloudSession.user.id;
+ // Remove only objects inside this authenticated user's folder; never touch another account.
+ let offset=0,removed=0;
+ while(true){
+  const {data,error}=await jrvsSupabase.storage.from('jrvs-photos').list(userId,{limit:100,offset,sortBy:{column:'name',order:'asc'}});
+  if(error)throw new Error('Could not list cloud photos: '+error.message);
+  const entries=Array.isArray(data)?data:[];
+  const names=entries.filter(x=>x&&x.name&&!x.id /* folders are not storage objects */ ? false : !!(x&&x.name)).map(x=>userId+'/'+x.name);
+  if(names.length){
+   const {data:deleted,error:deleteError}=await jrvsSupabase.storage.from('jrvs-photos').remove(names);
+   if(deleteError)throw new Error('Could not remove cloud photos: '+deleteError.message);
+   removed+=Array.isArray(deleted)?deleted.length:names.length;
+  }
+  if(entries.length<100)break;
+  offset+=entries.length;
+ }
+ // Replace the user's workspace payload with an empty snapshot. This uses the
+ // existing per-user UPDATE permission and leaves the auth account untouched.
+ const emptyPayload={business:{jobs:[],clients:[],quotes:[],income:[],expenses:[],attentionCleared:[],packages:[],numberSequences:{job:0,quote:0,invoice:0}},calendar:[],photos:[],schema_version:1};
+ const {data:updated,error:stateError}=await jrvsSupabase.from('jrvs_user_state').update({payload:emptyPayload,updated_at:new Date().toISOString()}).eq('user_id',userId).select('user_id');
+ if(stateError)throw new Error('Cloud photos were removed, but the cloud records could not be reset: '+stateError.message);
+ return removed;
+}
+async function executeDataReset(){
+ const phrase=document.getElementById('dataResetPhrase').value.trim();
+ if(phrase!=='RESET')return;
+ const button=document.getElementById('dataResetAccept');
+ if(button.disabled)return;
+ button.disabled=true;button.textContent='Resetting…';
+ try{
+  if(jrvsCloudSession){
+   jrvsCloudMessage('Clearing your JRVS cloud workspace…');
+   await jrvsClearCloudWorkspace();
+  }
+  // Clear local business data and calendar. Keep Supabase auth, app preferences and installation.
+  localStorage.setItem('jrvs-data',JSON.stringify({jobs:[],clients:[],quotes:[],income:[],expenses:[],attentionCleared:[],packages:[],numberSequences:{job:0,quote:0,invoice:0}}));
+  localStorage.setItem('jrvs-calendar','[]');
+  // Remove app-generated sync diagnostics so this is a genuinely clean workspace.
+  for(let i=localStorage.length-1;i>=0;i--){
+   const key=localStorage.key(i);
+   if(key&&(/^jrvs-(sync-conflicts|photo-sync-review)-/.test(key)))localStorage.removeItem(key);
+  }
+  // Clear photo records without deleting the database/schema itself.
+  await new Promise((resolve,reject)=>{
+   const req=indexedDB.open('jrvs-photo-library',1);
+   req.onerror=()=>reject(req.error||new Error('Could not open the local photo library'));
+   req.onsuccess=()=>{
+    const db=req.result;
+    if(!db.objectStoreNames.contains('photos')){db.close();resolve();return;}
+    const tx=db.transaction('photos','readwrite');
+    tx.objectStore('photos').clear();
+    tx.oncomplete=()=>{db.close();resolve()};
+    tx.onerror=()=>{const err=tx.error||new Error('Could not clear the local photo library');db.close();reject(err)};
+    tx.onabort=()=>{const err=tx.error||new Error('Photo library reset was cancelled');db.close();reject(err)};
+   };
+  });
+  closeDataReset();
+  showToast('All business data has been reset. Your JRVS workspace is ready for real jobs.');
+  setTimeout(()=>location.reload(),700);
+ }catch(error){
+  console.error('JRVS full data reset failed',error);
+  button.disabled=false;button.textContent='Try reset again';
+  jrvsCloudMessage('Reset did not finish: '+(error?.message||'Unknown error'),true);
+  showToast('Reset could not be completed. Check the cloud status before trying again.','error');
+ }
+}
+
 let appConfirmResolver=null;
 function showConfirm(message, options={}){
  const back=document.getElementById('appConfirmBackdrop');
@@ -1609,7 +1716,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.13.0';
+const APP_VERSION='0.14.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
