@@ -1492,12 +1492,42 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.6.3';
+const APP_VERSION='0.7.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
 if(!Array.isArray(data.packages))data.packages=[];if(!Array.isArray(data.quotes))data.quotes=[];if(!Array.isArray(data.income))data.income=[];if(!Array.isArray(data.expenses))data.expenses=[];if(!Array.isArray(data.attentionCleared))data.attentionCleared=[];
 const save=()=>localStorage.setItem('jrvs-data',JSON.stringify(data));
+const JRVS_NUMBER_PREFIX={job:'JOB',quote:'QUO',invoice:'INV'};
+function jrvsNextNumber(kind){
+ if(!data.numberSequences||typeof data.numberSequences!=='object')data.numberSequences={job:0,quote:0,invoice:0};
+ const key=kind,used=(data[kind==='job'?'jobs':kind==='quote'?'quotes':'invoices']||[]).map(x=>Number(String(x.number||'').match(/(\\d{5})$/)?.[1])).filter(Number.isFinite);
+ const current=Math.max(Number(data.numberSequences[key])||0,...used.map(n=>n+1));
+ if(current>99999)throw new Error('The '+kind+' number sequence has reached 99999.');
+ data.numberSequences[key]=current+1;
+ return JRVS_NUMBER_PREFIX[kind]+'-'+String(current).padStart(5,'0');
+}
+function jrvsMigrateNumbers(){
+ data.jobs=data.jobs||[];data.quotes=data.quotes||[];data.invoices=data.invoices||[];
+ const previous={...(data.numberSequences||{})};
+ data.numberSequences={job:Number(previous.job)||0,quote:Number(previous.quote)||0,invoice:Number(previous.invoice)||0};
+ for(const [kind,collection] of [['job',data.jobs],['quote',data.quotes],['invoice',data.invoices]]){
+  const prefix=JRVS_NUMBER_PREFIX[kind];let max=-1;
+  collection.forEach(rec=>{
+   const match=String(rec.number||'').match(/^(?:JOB|QUO|INV)-?(\d{5})$/i);
+   if(match){const n=Number(match[1]);max=Math.max(max,n);rec.number=prefix+'-'+String(n).padStart(5,'0')}
+  });
+  let next=Math.max(data.numberSequences[kind],max+1);
+  const missing=collection.filter(rec=>!new RegExp('^'+prefix+'-\\d{5}$').test(String(rec.number||''))).sort((a,b)=>String(a.createdAt||a.date||'').localeCompare(String(b.createdAt||b.date||'')));
+  missing.forEach(rec=>{if(next>99999)throw new Error('The '+kind+' number sequence has reached 99999.');rec.number=prefix+'-'+String(next++).padStart(5,'0')});
+  data.numberSequences[kind]=Math.max(next,max+1);
+ }
+ data.quotes.forEach(q=>{if(q.jobId){const j=data.jobs.find(x=>String(x.id)===String(q.jobId));if(j){q.jobNumber=j.number;q.jobName=q.jobName||j.name}}});
+ data.invoices.forEach(inv=>{const q=data.quotes.find(x=>String(x.id)===String(inv.quoteId));if(q){inv.quoteNumber=q.number;inv.jobId=inv.jobId||q.jobId||null;inv.jobNumber=inv.jobNumber||q.jobNumber||''}});
+ save();
+}
+jrvsMigrateNumbers();
+
 
 // V0.1.8 Business Calendar — separate event store; business records remain authoritative.
 const CALENDAR_KEY='jrvs-calendar';
@@ -1699,7 +1729,7 @@ function viewJob(id){
  const costs=exp.reduce((s,x)=>s+(Number(x.amount)||0),0);
  const client=data.clients.find(c=>c.name.toLowerCase()===(j.client||'').toLowerCase());
  document.getElementById('jobDetailHeading').textContent=j.name;
- const info=[['Client',j.client||'Not assigned'],['Status',j.status||'Enquiry'],['Scheduled date',j.date||'Not scheduled'],['Property address',j.address||'Not entered'],['Client email',client?.email||'—'],['Client phone',client?.phone||'—']];
+ const info=[['Job number',j.number||'Not assigned'],['Client',j.client||'Not assigned'],['Status',j.status||'Enquiry'],['Scheduled date',j.date||'Not scheduled'],['Property address',j.address||'Not entered'],['Client email',client?.email||'—'],['Client phone',client?.phone||'—']];
  const incomeHtml=inc.length?inc.map(x=>`<div class="job-detail-row"><div><strong>${esc(x.description)}</strong><small>${esc(x.date||'No date')} · ${esc(x.category||'Income')} · ${esc(x.status||'Paid')}</small></div><div style="text-align:right"><strong>${money(x.amount)}</strong><div><button class="tiny-btn" onclick="closeJobDetail();editFinance('${x.id}','income')">Edit</button></div></div></div>`).join(''):'<div class="job-detail-empty">No income has been recorded against this job.</div>';
  const expenseHtml=exp.length?exp.map(x=>`<div class="job-detail-row"><div><strong>${esc(x.description)}</strong><small>${esc(x.date||'No date')} · ${esc(x.category||'Expense')}</small></div><div style="text-align:right"><strong>${money(x.amount)}</strong><div><button class="tiny-btn" onclick="closeJobDetail();editFinance('${x.id}','expense')">Edit</button></div></div></div>`).join(''):'<div class="job-detail-empty">No expenses have been recorded against this job.</div>';
  const quoteHtml=qs.length?qs.map(q=>`<div class="job-detail-row"><div><strong>${esc(q.number)}</strong><small>${esc(q.date||'No date')} · ${esc(q.status||'Draft')}</small></div><div style="text-align:right"><strong>${money(q.total)}</strong><div><button class="tiny-btn" onclick="closeJobDetail();editQuote('${q.id}')">Edit quote</button><button class="tiny-btn" onclick="printBusinessDocument('quote','${q.id}')">PDF</button></div></div></div>`).join(''):'<div class="job-detail-empty">No quotations are linked to this job.</div>';
@@ -1751,7 +1781,7 @@ function closeClientDetail(){document.getElementById('clientDetailBackdrop').cla
 document.getElementById('recordForm').addEventListener('submit',e=>{
  e.preventDefault();const type=e.target.dataset.type,id=e.target.dataset.editId,item=Object.fromEntries(new FormData(e.target));
  if(id){const list=type==='job'?data.jobs:data.clients,i=list.findIndex(x=>x.id===id);if(i>=0)list[i]={...list[i],...item};}
- else{item.id=Date.now().toString();if(type==='job')data.jobs.unshift(item);else data.clients.unshift(item);}
+ else{item.id=Date.now().toString();if(type==='job'){item.number=jrvsNextNumber('job');data.jobs.unshift(item)}else data.clients.unshift(item);}
  save();closeModal();e.target.reset();render();
 });
 
@@ -2219,7 +2249,7 @@ function saveQuoteForm(e){
  if(!items.length){showToast('Add at least one quote item.');return}
  const subtotal=items.reduce((s,x)=>s+x.qty*x.price,0),mode=qGst.value,gst=mode==='exclusive'?subtotal*.1:mode==='inclusive'?subtotal/11:0,total=mode==='exclusive'?subtotal+gst:subtotal;
  const existing=editingQuoteId?data.quotes.find(x=>x.id===editingQuoteId):null;
- const q={id:editingQuoteId||'quote-'+Date.now(),number:existing?.number||'JRVS-'+String(Date.now()).slice(-6),clientId:client.id,clientName:client.name,jobId:job?.id||null,jobName:job?.name||'',date:qDate.value,validUntil:qValid.value,gstMode:mode,status:qStatus.value,items,subtotal,gst,total,notes:qNotes.value.trim(),createdAt:existing?.createdAt||new Date().toISOString()};
+ const q={id:editingQuoteId||'quote-'+Date.now(),number:existing?.number||jrvsNextNumber('quote'),jobNumber:job?.number||'',clientId:client.id,clientName:client.name,jobId:job?.id||null,jobName:job?.name||'',date:qDate.value,validUntil:qValid.value,gstMode:mode,status:qStatus.value,items,subtotal,gst,total,notes:qNotes.value.trim(),createdAt:existing?.createdAt||new Date().toISOString()};
  if(existing){const i=data.quotes.findIndex(x=>x.id===editingQuoteId);data.quotes[i]=q}else data.quotes.push(q);
  save();closeQuoteModal();renderQuotes();renderAttention();
 }
@@ -2257,7 +2287,7 @@ function submitInvoiceCreator(){const id=document.getElementById('invoiceQuoteSe
 function createInvoiceFromQuote(id){
  const q=data.quotes.find(x=>x.id===id);if(!q)return;if(q.status!=='Accepted'){showToast('Only accepted quotations can be converted into invoices.');return}
  const due=new Date();due.setDate(due.getDate()+14);
- const inv={id:'invoice-'+Date.now(),number:'INV-'+String(Date.now()).slice(-6),quoteId:q.id,clientId:q.clientId,clientName:q.clientName,jobId:q.jobId||null,jobName:q.jobName||'',date:new Date().toISOString().slice(0,10),dueDate:due.toISOString().slice(0,10),gstMode:q.gstMode||'exclusive',items:(q.items||[]).map(x=>({...x})),subtotal:Number(q.subtotal)||0,gst:Number(q.gst)||0,total:Number(q.total)||0,notes:q.notes||'',status:'Unpaid',createdAt:new Date().toISOString()};
+ const inv={id:'invoice-'+Date.now(),number:jrvsNextNumber('invoice'),quoteNumber:q.number,jobNumber:q.jobNumber||data.jobs.find(j=>String(j.id)===String(q.jobId))?.number||'',quoteId:q.id,clientId:q.clientId,clientName:q.clientName,jobId:q.jobId||null,jobName:q.jobName||'',date:new Date().toISOString().slice(0,10),dueDate:due.toISOString().slice(0,10),gstMode:q.gstMode||'exclusive',items:(q.items||[]).map(x=>({...x})),subtotal:Number(q.subtotal)||0,gst:Number(q.gst)||0,total:Number(q.total)||0,notes:q.notes||'',status:'Unpaid',createdAt:new Date().toISOString()};
  data.invoices.push(inv);save();renderInvoices();showToast(`Invoice ${inv.number} created. You can now print or save it as a PDF.`);
 }
 function markInvoicePaid(id){const inv=data.invoices.find(x=>x.id===id);if(!inv)return;inv.status='Paid';inv.paidDate=new Date().toISOString().slice(0,10);save();renderInvoices()}
@@ -2310,8 +2340,8 @@ function convertQuoteToJob(id){
  const client=data.clients.find(c=>c.id===q.clientId);
  const linkedJobName=(q.jobName||'').trim();
  const name=linkedJobName||`Photography — ${q.clientName||client?.name||'New job'}`;
- const job={id:'job-'+Date.now(),name,client:client?.name||q.clientName||'',date:'',status:'Booked',address:'',notes:`Created from accepted quotation ${q.number}.\\nQuoted services: ${(q.items||[]).map(x=>`${x.qty} × ${x.name}`).join(', ')}\\nQuoted total: ${money(q.total)}`};
- data.jobs.push(job);q.jobId=job.id;q.jobName=job.name;q.convertedAt=new Date().toISOString();
+ const job={id:'job-'+Date.now(),number:jrvsNextNumber('job'),name,client:client?.name||q.clientName||'',date:'',status:'Booked',address:'',notes:`Created from accepted quotation ${q.number}.\\nQuoted services: ${(q.items||[]).map(x=>`${x.qty} × ${x.name}`).join(', ')}\\nQuoted total: ${money(q.total)}`};
+ data.jobs.push(job);q.jobId=job.id;q.jobNumber=job.number;q.jobName=job.name;q.convertedAt=new Date().toISOString();
  save();render();renderQuotes();
  showPage('jobs');viewJob(job.id);
 }
