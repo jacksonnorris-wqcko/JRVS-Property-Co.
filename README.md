@@ -1,15 +1,14 @@
-# JRVS Property Co. — V0.9.0
+# JRVS Property Co. — V0.10.0
 
-## Sequential linked numbering
+## Photo Studio viewport and workstation upgrade
 
-- Added independent sequential five-digit number sequences for jobs, quotations and invoices: `JOB-00000`, `QUO-00000`, `INV-00000`, continuing in numerical order.
-- New job numbers are assigned on job creation, quote numbers on quote creation, and invoice numbers when an accepted quote is invoiced.
-- Quotes retain their linked job number; invoices retain their quote number and linked job number.
-- Converting an accepted quote into a job creates a job number and links it back to the quote.
-- Existing internal record IDs and business data are retained. Existing display numbers are migrated into sequential display numbers where needed.
-- Counters are saved in `jrvs-data`, never move backwards, and numbers are not reused after deleting records.
-- Number sequences stop safely at `99999`.
-- No Supabase schema changes.
+- Fixed preview sizing with a real fit-to-viewport calculation based on the canvas and visible stage dimensions.
+- Entire photographs now fit inside the available editor stage while preserving aspect ratio.
+- Recalculates image fit when the stage resizes, including window and responsive layout changes.
+- Zoom scales from the fitted image size, with fit-to-image reset and controlled zoom limits.
+- Prevents clipping caused by intrinsic canvas dimensions and unresolved percentage max-height constraints.
+- Refined desktop and mobile editor layout constraints.
+- Existing originals, edited copies, localStorage data, IndexedDB photo records and Supabase schema remain untouched.
 
 ## Deploying
 1. Extract this ZIP.
@@ -17,26 +16,6 @@
 3. Keep the same browser profile and existing app URL. Do not clear site data or reset IndexedDB.
 
 ## Release version
-- App version: `0.9.0`
-- `version.json`: `0.9.0`
-- Service-worker cache: `jrvs-property-co-v0.9.0`
-
-## Migration note
-On first launch, existing jobs, quotes and invoices receive sequential display numbers if they do not already have one. Existing internal IDs and record links are preserved. Migration is stored in the existing `jrvs-data` localStorage record.
-
-
-## V0.8.0 — JRVS Photo Studio
-- Reworked photo editor into focused Light, Colour, Detail, Geometry and Export workspaces.
-- Added precise numeric entry alongside every adjustment slider.
-- Added zoom controls, compact editing toolbar, keyboard undo/redo shortcuts and persistent full-resolution export workflow.
-- Existing photo records, original blobs, edited copies and local storage keys are retained.
-
-
-## V0.9.0 — Professional Photo Workbench
-- Reworked the editor into a full-height, responsive workbench with a larger image stage and denser control panel.
-- Added a dedicated compare mode with an adjustable before/after split, matching the current crop and rotation.
-- Fixed the previous compare implementation, which painted the original over the edited preview.
-- Added quick workspace shortcuts and keyboard `C` to toggle comparison; Escape exits comparison before closing the editor.
-- Preserved existing photo storage, editing pipeline, presets, history, and export workflow.
-
-Validation: JavaScript syntax and ZIP integrity checked. Browser interaction testing is still required.
+- App version: `0.10.0`
+- `version.json`: `0.10.0`
+- Service-worker cache: `jrvs-property-co-v0.10.0`

@@ -887,6 +887,40 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 .editor-history{position:sticky;top:48px;z-index:2;background:#fffefa;padding:6px 0}
 @media(min-width:1200px){.editor-shell{padding:18px 22px!important}.editor-stage{padding:16px!important}.editor-layout{grid-template-columns:minmax(0,1fr) 410px!important}}
 @media(max-width:850px){.editor-backdrop{padding:0!important}.editor-shell{width:100%!important;height:100dvh!important;max-height:none!important;border-radius:0!important;padding:12px!important}.editor-top{flex-wrap:wrap}.editor-workbench-meta{display:none}.editor-layout{display:flex!important;flex-direction:column!important;overflow:auto!important}.editor-stage-wrap{flex:0 0 48dvh!important;min-height:300px!important}.editor-stage{min-height:0!important}.editor-panel{height:auto!important;max-height:none!important;overflow:visible!important}.editor-top-actions{width:auto!important}.editor-top-actions button{flex:0 1 auto!important}.editor-workbench-strip{padding:5px}.editor-tool{min-width:48px}}
+
+/* JRVS V0.10.0 — viewport-fit and workstation refinement */
+#editorBackdrop{position:fixed!important;inset:0!important;overflow:hidden!important;padding:10px!important}
+#editorBackdrop .editor-shell{width:100%!important;max-width:1920px!important;height:calc(100dvh - 20px)!important;max-height:calc(100dvh - 20px)!important;min-height:0!important;padding:clamp(10px,1.15vw,20px)!important;gap:9px!important}
+#editorBackdrop .editor-top{flex-shrink:0!important;margin:0!important;padding-bottom:5px!important}
+#editorBackdrop .editor-workbench-strip{flex-shrink:0!important;min-height:48px!important}
+#editorBackdrop .editor-layout{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(310px,370px)!important;gap:12px!important;flex:1 1 auto!important;min-height:0!important;height:auto!important;overflow:hidden!important;align-items:stretch!important}
+#editorBackdrop .editor-stage-wrap{height:100%!important;min-height:0!important;max-height:none!important;position:relative!important;top:auto!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
+#editorBackdrop .editor-stage{flex:1 1 0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:hidden!important;padding:12px!important;display:flex!important;align-items:center!important;justify-content:center!important}
+#editorBackdrop #editorCanvas{display:block!important;flex:0 1 auto!important;width:auto;height:auto;max-width:none!important;max-height:none!important;object-fit:fill!important;margin:auto!important;transform:none!important}
+#editorBackdrop .editor-panel{height:100%!important;min-height:0!important;max-height:none!important;overflow-y:auto!important;overscroll-behavior:contain!important}
+#editorBackdrop .editor-panel-heading{top:-16px!important}
+#editorBackdrop .editor-stage-toolbar,#editorBackdrop .editor-stage-footer{flex-shrink:0!important}
+#editorBackdrop .editor-stage-footer{min-height:30px!important}
+#editorBackdrop .editor-compare-bar{flex-shrink:0!important}
+@media(max-width:850px){
+ #editorBackdrop{padding:0!important}
+ #editorBackdrop .editor-shell{height:100dvh!important;max-height:100dvh!important;border-radius:0!important;padding:9px!important}
+ #editorBackdrop .editor-top{flex-wrap:wrap!important;gap:8px!important}
+ #editorBackdrop .editor-top-actions{width:100%!important;display:flex!important;flex-wrap:wrap!important}
+ #editorBackdrop .editor-top-actions button{flex:1 1 auto!important}
+ #editorBackdrop .editor-workbench-strip{min-height:42px!important}
+ #editorBackdrop .editor-layout{display:flex!important;flex-direction:column!important;overflow-y:auto!important;overflow-x:hidden!important;gap:9px!important}
+ #editorBackdrop .editor-stage-wrap{flex:0 0 52dvh!important;height:52dvh!important;min-height:250px!important;max-height:60dvh!important}
+ #editorBackdrop .editor-stage{min-height:0!important;max-height:none!important;overflow:hidden!important}
+ #editorBackdrop .editor-panel{height:auto!important;max-height:none!important;overflow:visible!important}
+}
+@media(max-height:700px) and (min-width:851px){
+ #editorBackdrop .editor-top h2{font-size:17px!important}
+ #editorBackdrop .editor-top{padding-bottom:0!important}
+ #editorBackdrop .editor-workbench-strip{min-height:38px!important;padding:4px 8px!important}
+ #editorBackdrop .editor-tool{min-height:34px!important}
+}
+
 </style>
 <style id="jrvs-v040-polish">
 /* JRVS Property Co. V0.4.0 — cohesive visual refinement */
@@ -1535,7 +1569,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.9.0';
+const APP_VERSION='0.10.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -2398,7 +2432,30 @@ const EDITOR_PREVIEW_MAX=1600;
 // JRVS Photo Studio workspace controls (v0.9.0)
 let editorZoomLevel=1, editorActiveTab='basic';
 function setEditorTab(tab){editorActiveTab=tab;document.querySelectorAll('[data-editor-tab]').forEach(b=>b.classList.toggle('active',b.dataset.editorTab===tab));document.querySelectorAll('[data-editor-group]').forEach(el=>{el.hidden=el.dataset.editorGroup!==tab});}
-function editorZoom(delta){if(delta===0)editorZoomLevel=1;else editorZoomLevel=Math.max(.5,Math.min(2.5,editorZoomLevel+delta));const c=document.getElementById('editorCanvas');if(c)c.style.transform=`scale(${editorZoomLevel})`;const l=document.getElementById('editorViewLabel');if(l)l.textContent=editorZoomLevel===1?'FIT · FULL IMAGE':Math.round(editorZoomLevel*100)+'% ZOOM';}
+function fitEditorCanvas(){
+ const stage=document.getElementById('editorStage'),c=document.getElementById('editorCanvas');
+ if(!stage||!c||!c.width||!c.height)return;
+ const cs=getComputedStyle(stage),padX=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight),padY=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);
+ const availableW=Math.max(40,stage.clientWidth-padX-12),availableH=Math.max(40,stage.clientHeight-padY-12);
+ const fit=Math.min(availableW/c.width,availableH/c.height);
+ const scale=fit*Math.max(.1,editorZoomLevel);
+ c.style.width=Math.max(1,Math.round(c.width*scale))+'px';
+ c.style.height=Math.max(1,Math.round(c.height*scale))+'px';
+ c.style.maxWidth='none';c.style.maxHeight='none';c.style.transform='none';
+ const l=document.getElementById('editorViewLabel');
+ if(l)l.textContent=editorZoomLevel===1?'FIT · FULL IMAGE':Math.round(editorZoomLevel*100)+'% ZOOM';
+}
+function editorZoom(delta){
+ if(delta===0)editorZoomLevel=1;
+ else editorZoomLevel=Math.max(.5,Math.min(3,editorZoomLevel+delta));
+ fitEditorCanvas();
+}
+let editorFitObserver=null;
+function observeEditorFit(){
+ const stage=document.getElementById('editorStage');
+ if(editorFitObserver)editorFitObserver.disconnect();
+ if(stage&&window.ResizeObserver){editorFitObserver=new ResizeObserver(()=>{if(editorZoomLevel===1)fitEditorCanvas()});editorFitObserver.observe(stage)}
+}
 function initEditorProControls(){
  const panel=document.querySelector('#editorBackdrop .editor-panel');if(!panel||panel.dataset.proReady)return;panel.dataset.proReady='1';
  document.querySelectorAll('#editorBackdrop input[type=range]').forEach(range=>{const label=range.closest('.editor-control')?.querySelector('label');if(!label)return;const value=label.querySelector('span');if(!value)return;const num=document.createElement('input');num.type='number';num.className='editor-number';num.min=range.min;num.max=range.max;num.step=range.step||'1';num.value=range.value;num.setAttribute('aria-label',label.textContent.trim()+' exact value');num.addEventListener('change',()=>{const v=Math.max(Number(num.min),Math.min(Number(num.max),Number(num.value)||0));range.value=v;num.value=v;editorChanged()});range.addEventListener('input',()=>{num.value=range.value});label.appendChild(num);});
@@ -2410,10 +2467,10 @@ function openEditor(id){
  document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';document.getElementById('editorExportProfile').value='agency';document.getElementById('editorTitle').textContent=p.name;
  document.getElementById('editorSubtitle').textContent=p.jobName+' · Original remains unchanged';document.getElementById('editorStatus').textContent='';
  const img=new Image(),url=URL.createObjectURL(p.blob);
- img.onload=()=>{if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=img;editorImage._url=url;document.getElementById('editorBackdrop').classList.add('show');initEditorProControls();setEditorTab('basic');editorZoom(0);drawEditor()};
+ img.onload=()=>{if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=img;editorImage._url=url;document.getElementById('editorBackdrop').classList.add('show');initEditorProControls();setEditorTab('basic');editorZoomLevel=1;observeEditorFit();drawEditor();requestAnimationFrame(fitEditorCanvas)};
  img.onerror=()=>{URL.revokeObjectURL(url);showToast(p.isRaw?'RAW original stored safely. Browser RAW decoding is not yet built into this release; convert to JPEG to edit.':'This image could not be opened in the editor.')};img.src=url;
 }
-function closeEditor(){document.getElementById('editorBackdrop').classList.remove('show');if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=null;editorPhoto=null}
+function closeEditor(){if(editorFitObserver)editorFitObserver.disconnect();document.getElementById('editorBackdrop').classList.remove('show');if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=null;editorPhoto=null}
 function rotateEditor(deg){editorRotation=(editorRotation+deg+360)%360;drawEditor();captureEditorHistory()}
 function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';editorRotation=0;drawEditor();captureEditorHistory()}
 function editorChanged(){
@@ -2472,6 +2529,7 @@ function drawEditor(){
   ctx.fillStyle='#f7f1df';ctx.fillRect(split-1,0,2,visible.height);ctx.beginPath();ctx.arc(split,visible.height/2,13,0,Math.PI*2);ctx.fillStyle='#899b68';ctx.fill();ctx.strokeStyle='#f7f1df';ctx.lineWidth=2;ctx.stroke();
  }else ctx.drawImage(rendered.canvas,0,0);
  drawEditorHistogram(rendered.hist);
+ fitEditorCanvas();
 }
 async function createFullQualityEditorBlob(mime,quality){
  const rendered=createEditorRenderCanvas(0);if(!rendered)throw Error('No image to export');
