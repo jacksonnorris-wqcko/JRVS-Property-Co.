@@ -2,7 +2,7 @@
   "id": "./",
   "name": "JRVS Property Co.",
   "short_name": "JRVS",
-  "description": "Property photography business workspace for jobs, clients, photos, quotations and invoices.",
+  "description": "Property photography workspace with experimental in-browser camera RAW sensor development.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

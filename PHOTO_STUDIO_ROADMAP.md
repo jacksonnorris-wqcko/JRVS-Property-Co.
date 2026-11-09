@@ -76,3 +76,11 @@ V0.34.1 is primarily a workbench/interface milestone. It does not claim to provi
 - Relaxed highlight compression and moved the shoulder transition higher so bright whites remain bright while retaining a gentle roll-off.
 - Increased restrained midtone detail separation and refined automatic contrast/white recommendations.
 - Preserved existing storage, recipe, import and RAW preview paths.
+
+
+## V0.41.0 — Experimental native RAW development
+- Integrates FlashRaw WebAssembly for real sensor-data decoding and sRGB development of supported CR2/RAW files.
+- Full-resolution RAW decode is performed when opening a RAW source in Photo Studio; import previews use half-size RAW development.
+- Embedded JPEG fallback remains available and is explicitly labelled when used.
+- Requires first-use network access to load the decoder from esm.sh; service worker caches successful CDN responses where supported.
+- Next: validate with the user's EOS 600D CR2, tune demosaic/white balance/highlight handling, then connect RAW-linear processing to the JRVS tonal engine without double-applying camera rendering.

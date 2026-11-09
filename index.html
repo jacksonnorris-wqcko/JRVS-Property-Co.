@@ -1939,7 +1939,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.40.1';
+const APP_VERSION='0.41.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -2329,44 +2329,62 @@ async function loadPhotos(){try{photoRecords=await photoRequest('readonly','all'
  await ensureRawPreviews();populatePhotoJobFilter();renderPhotos();render()}
 function populatePhotoJobFilter(){const el=document.getElementById('photoJobFilter');if(!el)return;const old=el.value;el.innerHTML='<option value="all">All projects</option>'+data.jobs.map(j=>`<option value="${esc(j.id)}">${esc(j.name)}</option>`).join('');if([...el.options].some(o=>o.value===old))el.value=old}
 
-// Local browser RAW development powered by LibRaw compiled to WebAssembly.
-let jrvsRawDecoderModule=null,jrvsRawDecoderPromise=null;
-// Extract the embedded full-resolution JPEG preview from Canon CR2 and compatible RAW containers.
-// This avoids a fragile external WASM worker and keeps the original RAW file unchanged.
+// V0.41 — genuine sensor RAW development via FlashRaw WebAssembly.
+// Decoder loads on first RAW use; first load needs internet unless browser cache has it.
+let jrvsRawDecoderModule=null,jrvsRawDecoderPromise=null,jrvsLastRawDecodeInfo=null;
+async function getJrvsRawDecoder(){
+ if(jrvsRawDecoderModule)return jrvsRawDecoderModule;
+ if(!jrvsRawDecoderPromise){
+  jrvsRawDecoderPromise=(async()=>{
+   const mod=await import('https://esm.sh/flashraw@0.1.0');
+   if(!mod?.FlashRaw)throw new Error('FlashRaw module did not expose its decoder.');
+   jrvsRawDecoderModule=mod.FlashRaw;return jrvsRawDecoderModule;
+  })().catch(err=>{jrvsRawDecoderPromise=null;throw err});
+ }
+ return jrvsRawDecoderPromise;
+}
 async function decodeRawToJpeg(rawBlob,{halfSize=true,quality=.9}={}){
- const bytes=new Uint8Array(await rawBlob.arrayBuffer());
- const candidates=[];
- let offset=0;
+ let raw=null;
+ try{
+  const FlashRaw=await getJrvsRawDecoder();
+  raw=await FlashRaw.open(rawBlob);
+  const meta=raw.metadata||{};
+  const frame=await raw.decode({backend:'auto',output:'rgba8',demosaic:halfSize?'half-size':'bilinear',crop:true,colorSpace:'srgb',corruptionPolicy:'strict',previewFallback:false});
+  if(!frame||frame.source==='preview'||!frame.data||!frame.width||!frame.height)throw new Error('RAW decoder did not return developed sensor pixels.');
+  const canvas=document.createElement('canvas');canvas.width=frame.width;canvas.height=frame.height;
+  const ctx=canvas.getContext('2d');
+  const imageData=typeof frame.toImageData==='function'?frame.toImageData():new ImageData(new Uint8ClampedArray(frame.data),frame.width,frame.height);
+  ctx.putImageData(imageData,0,0);
+  const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Could not encode the developed RAW image.')),'image/jpeg',quality));
+  if(!blob)throw new Error('Could not encode the developed RAW image.');
+  jrvsLastRawDecodeInfo={mode:'sensor-raw',camera:meta.camera?.name||'Camera RAW',width:frame.width,height:frame.height,decodeMs:frame.timings?.totalMs||null,backend:frame.backend?.decode||frame.backend?.kind||'WASM'};
+  raw.close?.();return blob;
+ }catch(err){
+  try{raw?.close?.()}catch(_){}
+  const preview=await extractEmbeddedRawJpeg(rawBlob,{halfSize,quality});
+  jrvsLastRawDecodeInfo={mode:'embedded-preview-fallback',reason:err?.message||String(err)};
+  return preview;
+ }
+}
+async function extractEmbeddedRawJpeg(rawBlob,{halfSize=true,quality=.9}={}){
+ const bytes=new Uint8Array(await rawBlob.arrayBuffer()),candidates=[];let offset=0;
  while(offset<bytes.length-4){
-  let soi=-1;
-  for(let i=offset;i<bytes.length-2;i++){if(bytes[i]===0xff&&bytes[i+1]===0xd8&&bytes[i+2]===0xff){soi=i;break}}
-  if(soi<0)break;
-  let eoi=-1;
-  for(let i=soi+3;i<bytes.length-1;i++){if(bytes[i]===0xff&&bytes[i+1]===0xd9){eoi=i+2;break}}
+  let soi=-1;for(let i=offset;i<bytes.length-2;i++){if(bytes[i]===0xff&&bytes[i+1]===0xd8&&bytes[i+2]===0xff){soi=i;break}}
+  if(soi<0)break;let eoi=-1;for(let i=soi+3;i<bytes.length-1;i++){if(bytes[i]===0xff&&bytes[i+1]===0xd9){eoi=i+2;break}}
   if(eoi<0){offset=soi+3;continue}
   const candidate=new Blob([bytes.slice(soi,eoi)],{type:'image/jpeg'});
-  try{
-   if(typeof createImageBitmap==='function'){
-    const bitmap=await createImageBitmap(candidate);
-    const pixels=bitmap.width*bitmap.height;
-    candidates.push({blob:candidate,pixels,width:bitmap.width,height:bitmap.height});
-    bitmap.close?.();
-   }else{
-    const url=URL.createObjectURL(candidate);
-    try{const dimensions=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve({width:img.naturalWidth,height:img.naturalHeight});img.onerror=()=>reject(new Error('Embedded JPEG preview could not be decoded.'));img.src=url});candidates.push({blob:candidate,pixels:dimensions.width*dimensions.height,...dimensions})}
-    finally{URL.revokeObjectURL(url)}
-   }
-  }catch(_){}
+  try{const bitmap=await createImageBitmap(candidate);candidates.push({blob:candidate,pixels:bitmap.width*bitmap.height});bitmap.close?.()}catch(_){}
   offset=eoi;
  }
- if(!candidates.length)throw new Error('No readable embedded JPEG preview was found in this RAW file.');
- candidates.sort((a,b)=>b.pixels-a.pixels);
- return candidates[0].blob;
+ if(!candidates.length)throw new Error('RAW sensor decode failed and no readable embedded JPEG preview was found.');
+ candidates.sort((a,b)=>b.pixels-a.pixels);let result=candidates[0].blob;
+ if(halfSize){const bitmap=await createImageBitmap(result),scale=Math.min(1,2400/Math.max(bitmap.width,bitmap.height));if(scale<1){const c=document.createElement('canvas');c.width=Math.round(bitmap.width*scale);c.height=Math.round(bitmap.height*scale);c.getContext('2d').drawImage(bitmap,0,0,c.width,c.height);result=await new Promise(resolve=>c.toBlob(resolve,'image/jpeg',quality))}bitmap.close?.()}
+ return result;
 }
 function photoDisplayBlob(photo){return photo?.previewBlob instanceof Blob?photo.previewBlob:photo?.blob}
 async function ensureRawPreviews(){
  for(const photo of photoRecords.filter(p=>p?.isRaw&&p.blob instanceof Blob&&!(p.previewBlob instanceof Blob))){
-  try{photo.previewBlob=await decodeRawToJpeg(photo.blob,{halfSize:true,quality:.88});await photoRequest('readwrite','put',photo)}
+  try{photo.previewBlob=await decodeRawToJpeg(photo.blob,{halfSize:true,quality:.88});photo.rawDecodeInfo=jrvsLastRawDecodeInfo;await photoRequest('readwrite','put',photo)}
   catch(err){console.warn('RAW preview unavailable: '+photo.name,err)}
  }
 }
@@ -3032,7 +3050,7 @@ async function openEditor(id){
  document.getElementById('editorSubtitle').textContent=(editorSourcePhoto.jobName||p.jobName)+(editorSourcePhoto.isRaw?' · RAW source':' · Original source')+(hasRecipe?' · Saved edit recipe restored':' · Original remains unchanged');
  document.getElementById('editorStatus').textContent=hasRecipe?'Restoring your saved non-destructive edit recipe…':'';
  const img=new Image();let editorSourceBlob=editorSourcePhoto.blob;
- if(editorSourcePhoto.isRaw){try{document.getElementById('editorStatus').textContent='Preparing RAW source preview…';editorSourceBlob=editorSourcePhoto.previewBlob instanceof Blob?editorSourcePhoto.previewBlob:await decodeRawToJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98})}catch(err){showToast('Could not prepare RAW source: '+(err?.message||'decoder error'),'error');return}}
+ if(editorSourcePhoto.isRaw){try{document.getElementById('editorStatus').textContent='Developing original CR2 sensor data…';editorSourceBlob=await decodeRawToJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});const info=jrvsLastRawDecodeInfo;document.getElementById('editorStatus').textContent=info?.mode==='sensor-raw'?`RAW sensor developed · ${info.camera} · ${info.width}×${info.height}`:'Embedded JPEG fallback · '+(info?.reason||'RAW decoder unavailable')}catch(err){showToast('Could not prepare RAW source: '+(err?.message||'decoder error'),'error');return}}
  const url=URL.createObjectURL(editorSourceBlob);
  img.onload=()=>{
   if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);
