@@ -1939,7 +1939,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.41.2';
+const APP_VERSION='0.42.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -3184,12 +3184,12 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
     const zoneConfidence=smooth(10,92,deficit);
     // Dark-room recovery is stronger than V0.35, but capped and faded across
     // bright surfaces. Deep blacks remain anchored to avoid grey furniture.
-    const recoveryStrength=0.48+Math.min(.12,fieldStd/500);
-    let localLift=Math.min(52,deficit*recoveryStrength)*roomGate*shadowGate*midtoneGate*blackGuard*highlightGuard*zoneConfidence;
+    const recoveryStrength=0.58+Math.min(.10,fieldStd/520);
+    let localLift=Math.min(62,deficit*recoveryStrength)*roomGate*shadowGate*midtoneGate*blackGuard*highlightGuard*zoneConfidence;
     // V0.40 adds a modest scene-wide midtone lift so the single embedded JPEG
     // does not remain globally muddy after local shadow recovery.
     const globalDim=smooth(95,155,160-percentile(.50));
-    const baseLift=1.65*globalDim*smooth(24,128,128-L)*(1-smooth(190,240,L))*blackGuard;
+    const baseLift=1.25*globalDim*smooth(24,128,128-L)*(1-smooth(184,236,L))*blackGuard;
     // Preserve local texture: avoid flattening a pixel that is already darker than
     // its neighbourhood by a large amount (often furniture edges or natural detail).
     const localTexture=Math.max(0,region-L);
@@ -3201,18 +3201,18 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
     const brightRegion=smooth(174,232,region);
     const pixelHighlight=smooth(166,238,target);
     const highlightConfidence=brightRegion*.72+pixelHighlight*.28;
-    const highlightStrength=.04+.11*highlightConfidence;
-    const shoulderStart=220+8*(1-brightRegion);
+    const highlightStrength=.10+.24*highlightConfidence;
+    const shoulderStart=210+10*(1-brightRegion);
     if(target>shoulderStart){
      const excess=target-shoulderStart;
      const compressed=shoulderStart+excess*(1-highlightStrength);
      // A soft shoulder gradually increases compression towards near-white values.
-     const upper=smooth(238,255,target);
-     target=lerp(compressed,shoulderStart+Math.sqrt(Math.max(0,excess))*Math.sqrt(Math.max(0,255-shoulderStart))*0.62,upper*.12);
+     const upper=smooth(232,253,target);
+     target=lerp(compressed,shoulderStart+Math.sqrt(Math.max(0,excess))*Math.sqrt(Math.max(0,255-shoulderStart))*0.58,upper*.16);
     }
     // Keep the very top end gentle; this reduces harsh white blocks but cannot
     // recreate sensor detail already clipped in the RAW source.
-    if(target>250)target=250+(target-250)*.68;
+    if(target>246)target=246+(target-246)*.58;
     target=Math.max(0,Math.min(255,target));
     const dr=r-L,dg=g-L,db=b-L;
     const maxDelta=Math.max(dr,dg,db),minDelta=Math.min(dr,dg,db);
@@ -3423,19 +3423,20 @@ function autoEnhanceEditor(){
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  // Global correction is deliberately restrained. Spatial shadow lifting is handled
  // by the local luminance field in createEditorRenderCanvas().
- const target=158;
+ const target=154;
  // V0.40: the previous target (137) produced a consistently under-bright
  // single-JPEG result against the approved original-editor benchmark. Lift the
  // midtone target while retaining highlight headroom and a restrained curve.
- let exposure=clamp(Math.log2(target/Math.max(1,p50)),-.08,.28);
- if(p95>242)exposure=Math.min(exposure,.20);
- if(clipRate>.12)exposure=Math.min(exposure,.12);
- let highlights=clamp((p95-225)*-.60,-42,0);
- if(p99>250)highlights=Math.min(highlights,-16);
- if(clipRate>.035)highlights=Math.min(highlights,-24);
- if(clipRate>.12)highlights=Math.min(highlights,-36);
- let shadows=clamp((105-p10)*.24,4,28);
- if(mixed)shadows=Math.min(shadows,24);
+ let exposure=clamp(Math.log2(target/Math.max(1,p50)),-.12,.24);
+ if(p95>232)exposure=Math.min(exposure,.14);
+ if(p99>248)exposure=Math.min(exposure,.08);
+ if(clipRate>.08)exposure=Math.min(exposure,.06);
+ let highlights=clamp((p95-218)*-.78,-52,0);
+ if(p99>246)highlights=Math.min(highlights,-22);
+ if(clipRate>.025)highlights=Math.min(highlights,-28);
+ if(clipRate>.08)highlights=Math.min(highlights,-42);
+ let shadows=clamp((108-p10)*.30,5,34);
+ if(mixed)shadows=Math.min(shadows,30);
  const contrast=clamp((178-(p90-p10))*.045,-2,5);
  const whites=clamp((242-p95)*.10,-4,7);
  const blacks=clamp((p05-18)*-.055,-3,1);
@@ -3457,7 +3458,7 @@ function autoEnhanceEditor(){
  const scene=mixed?'High dynamic range / mixed lighting':p50<90?'Low-light interior':p50>155?'Bright interior':'Balanced interior';
  const status=document.getElementById('editorStatus');
  if(status)status.textContent=`Rental analysis: ${scene} · ${darkZones} dark zones · ${brightZones} bright zones · adaptive local tone + highlight shoulder enabled · WB: ${wb} · ${Math.round(clipRate*100)}% clipped highlights · ${Math.round(performance.now()-started)} ms`;
- showToast('Rental Auto Enhance V0.40 applied: brighter midtones, gentler highlight roll-off and controlled interior shadow recovery.','success');
+ showToast('Rental Auto Enhance V0.42 applied: adaptive room recovery and stronger highlight protection.','success');
 }
 function editorSettings(){return Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value]))}
 async function batchApplyEditor(){
