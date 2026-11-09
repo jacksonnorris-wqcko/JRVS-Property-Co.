@@ -24,3 +24,5 @@ V0.25.0 does NOT implement genuine CR2 sensor-data development. The current CR2 
 - Do not clear localStorage, IndexedDB, Supabase tables or user records.
 - No database schema change is required for the recipe metadata in IndexedDB.
 - Existing flattened edited JPEGs remain usable.
+
+V0.27.0 adds rental-specific global Auto Enhance analysis profiles; it is not yet local masking, semantic window detection or genuine RAW sensor development.

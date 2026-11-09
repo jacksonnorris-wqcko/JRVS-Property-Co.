@@ -1,4 +1,4 @@
-# JRVS Photo Studio — V0.26.0 Workbench step
+# JRVS Photo Studio — V0.27.0 Workbench step
 
 ## Delivered
 - Reworked the editor's right-hand control panel into a tighter, image-first workspace.
@@ -18,4 +18,11 @@ The next engineering milestones should be delivered as separate, testable layers
 5. Retouch: independent clone and healing algorithms; later content-aware reconstruction.
 
 ## Honest capability notes
-V0.26.0 is primarily a workbench/interface milestone. It does not claim to provide genuine RAW sensor development, local adjustment masks, advanced perspective correction, or content-aware object removal. Existing processing behaviour remains in place until those engines are implemented and validated.
+V0.27.0 is primarily a workbench/interface milestone. It does not claim to provide genuine RAW sensor development, local adjustment masks, advanced perspective correction, or content-aware object removal. Existing processing behaviour remains in place until those engines are implemented and validated.
+
+
+## V0.27.0 — Rental Auto Enhance
+- Replaces the simple mean-brightness heuristic with sampled tonal analysis using luminance percentiles, shadow/highlight distribution, clipping estimates and colour statistics.
+- Adds rental-specific profiles: natural interior, bright interior, kitchen/bathroom clean whites, exterior daylight and neutral correction.
+- Uses restrained global corrections designed to preserve natural room colour and avoid heavily stylised HDR.
+- This remains a global analysis-and-adjustment starting point. It does not yet identify windows/rooms with semantic AI or create local masks.
