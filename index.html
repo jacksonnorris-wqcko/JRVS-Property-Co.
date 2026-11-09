@@ -1783,7 +1783,7 @@ function showToast(message, type='success', duration=3600){
  close.addEventListener('click',()=>clearTimeout(timer),{once:true});
 }
 
-// V0.22.0 — deliberate, verified full business-data reset.
+// V0.24.0 — deliberate, verified full business-data reset.
 function openDataReset(){
  const back=document.getElementById('dataResetBackdrop'),phrase=document.getElementById('dataResetPhrase'),accept=document.getElementById('dataResetAccept');
  phrase.value='';accept.disabled=true;
@@ -1881,7 +1881,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.22.0';
+const APP_VERSION='0.24.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -2376,9 +2376,8 @@ async function renderPhotos(){
    const typeLabel=String(p.type||'Original');
    return `<article class="photo-card jrvs-photo-card ${selected?'is-batch-selected':''}" data-photo-id="${esc(String(p.id))}">
     <div class="photo-image-wrap">
-     <button class="jrvs-photo-select ${selected?'selected':''}" type="button" onclick="togglePhotoSelection('${p.id}',${!selected})" aria-label="${selected?'Deselect':'Select'} ${esc(p.name)}">${selected?'✓':''}</button>
+     <button class="jrvs-photo-select ${selected?'selected':''}" type="button" onclick="togglePhotoSelection('${p.id}')" aria-label="${selected?'Deselect':'Select'} ${esc(p.name)}">${selected?'✓':''}</button>
      <img class="photo-thumb" src="${u}" alt="${esc(p.name)}" onclick="previewPhoto('${p.id}')">
-     ${p.isCover?'<span class="photo-cover-badge">★ Cover</span>':''}
     </div>
     <div class="photo-info">
      <div class="jrvs-photo-title"><strong title="${esc(p.name)}">${esc(p.name)}</strong><span class="jrvs-type-pill ${typeLabel.toLowerCase()==='edited'?'edited':'original'}">${esc(typeLabel)}</span></div>
@@ -2457,7 +2456,30 @@ async function downloadSelectedPhotosZip(){
  }catch(e){console.error('JRVS photo ZIP export failed',e);showToast(`ZIP export failed: ${e.message||'Unknown error'}`,'error')}
  finally{if(btn){btn.disabled=false;btn.textContent='↓ Download selected (.zip)'}}
 }
-function togglePhotoSelection(id,checked){if(checked)selectedPhotoIds.add(String(id));else selectedPhotoIds.delete(String(id));const card=document.querySelector(`.jrvs-photo-card[data-photo-id="${CSS.escape(String(id))}"]`);if(card){card.classList.toggle('is-batch-selected',checked);const btn=card.querySelector('.jrvs-photo-select');if(btn){btn.classList.toggle('selected',checked);btn.textContent=checked?'✓':'';btn.setAttribute('aria-label',(checked?'Deselect ':'Select ')+(card.querySelector('.jrvs-photo-title strong')?.textContent||'photo'))}}updateBatchSelectionCount();const actions=document.querySelector('.jrvs-gallery-actions');if(actions){const label=actions.querySelector('.jrvs-selection-label strong');if(label)label.textContent=selectedPhotoIds.size+' selected';actions.querySelectorAll('button[onclick*="deleteSelectedPhotos"],button[onclick*="downloadSelectedPhotosZip"]').forEach(b=>b.disabled=!selectedPhotoIds.size);const coverBtn=actions.querySelector('button[onclick*="setSelectedPhotoAsCover"]');if(coverBtn)coverBtn.disabled=selectedPhotoIds.size!==1}}
+function togglePhotoSelection(id){
+ const key=String(id);
+ const checked=!selectedPhotoIds.has(key);
+ if(checked)selectedPhotoIds.add(key);else selectedPhotoIds.delete(key);
+ const card=document.querySelector(`.jrvs-photo-card[data-photo-id="${CSS.escape(key)}"]`);
+ if(card){
+  card.classList.toggle('is-batch-selected',checked);
+  const btn=card.querySelector('.jrvs-photo-select');
+  if(btn){
+   btn.classList.toggle('selected',checked);
+   btn.textContent=checked?'✓':'';
+   btn.setAttribute('aria-label',(checked?'Deselect ':'Select ')+(card.querySelector('.jrvs-photo-title strong')?.textContent||'photo'));
+  }
+ }
+ updateBatchSelectionCount();
+ const actions=document.querySelector('.jrvs-gallery-actions');
+ if(actions){
+  const label=actions.querySelector('.jrvs-selection-label strong');
+  if(label)label.textContent=selectedPhotoIds.size+' selected';
+  actions.querySelectorAll('button[onclick*="deleteSelectedPhotos"],button[onclick*="downloadSelectedPhotosZip"]').forEach(b=>b.disabled=!selectedPhotoIds.size);
+  const coverBtn=actions.querySelector('button[onclick*="setSelectedPhotoAsCover"]');
+  if(coverBtn)coverBtn.disabled=selectedPhotoIds.size!==1;
+ }
+}
 function updateBatchSelectionCount(){
  const el=document.getElementById('batchSelectionCount');if(el)el.textContent=selectedPhotoIds.size+' photo'+(selectedPhotoIds.size===1?'':'s')+' selected';
  const del=document.getElementById('deleteSelectedEditsBtn');
