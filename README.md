@@ -1,8 +1,8 @@
-# JRVS Property Co. — V0.40.0
+# JRVS Property Co. — V0.40.1
 
 PC-first property photography and business workflow app for JRVS Property Co.
 
-## Current release — V0.40.0
+## Current release — V0.40.1
 **Rental Auto Enhance: natural tonal balance refinement**
 
 ### Photo Studio
@@ -36,6 +36,6 @@ PC-first property photography and business workflow app for JRVS Property Co.
 Do not clear browser/site data to force an update. Do not delete `jrvs-data`, `jrvs-calendar` or the `jrvs-photo-library` IndexedDB database.
 
 ## Release metadata
-- App version: `0.40.0`
-- `version.json`: `0.40.0`
-- Service-worker cache: `jrvs-property-co-v0.40.0`
+- App version: `0.40.1`
+- `version.json`: `0.40.1`
+- Service-worker cache: `jrvs-property-co-v0.40.1`
