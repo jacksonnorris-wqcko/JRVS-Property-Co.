@@ -1,8 +1,8 @@
-# JRVS Property Co. — V0.41.0
+# JRVS Property Co. — V0.41.2
 
 PC-first property photography and business workflow app for JRVS Property Co.
 
-## V0.41.0 — Experimental native RAW development
+## V0.41.2 — Experimental native RAW development
 
 - Adds FlashRaw WebAssembly sensor decoding for supported RAW files, including Canon CR2.
 - RAW photo previews attempt a half-size sensor decode; opening a RAW file in the editor performs a full-resolution sensor decode.
@@ -20,7 +20,7 @@ PC-first property photography and business workflow app for JRVS Property Co.
 ## Test checklist
 
 1. Deploy the full ZIP contents to the GitHub repository root.
-2. Open the app online once and check version `0.41.0`.
+2. Open the app online once and check version `0.41.2`.
 3. Import the same EOS 600D CR2 used for previous comparisons.
 4. Open it in Photo Studio and confirm the status says `RAW sensor developed`.
 5. If it reports `Embedded JPEG fallback`, send the exact reason shown in the editor status.
