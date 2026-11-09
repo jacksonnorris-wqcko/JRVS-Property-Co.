@@ -1783,7 +1783,7 @@ function showToast(message, type='success', duration=3600){
  close.addEventListener('click',()=>clearTimeout(timer),{once:true});
 }
 
-// V0.25.0 — deliberate, verified full business-data reset.
+// V0.25.1 — deliberate, verified full business-data reset.
 function openDataReset(){
  const back=document.getElementById('dataResetBackdrop'),phrase=document.getElementById('dataResetPhrase'),accept=document.getElementById('dataResetAccept');
  phrase.value='';accept.disabled=true;
@@ -1881,7 +1881,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.25.0';
+const APP_VERSION='0.25.1';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -2257,7 +2257,18 @@ async function photoRequest(mode,action,value){
  });
 }
 let photoRecords=[],photoUrls=[],dashboardPhotoUrls=[];
-async function loadPhotos(){try{photoRecords=await photoRequest('readonly','all')||[]}catch(e){photoRecords=[]}await ensureRawPreviews();populatePhotoJobFilter();renderPhotos();render()}
+async function loadPhotos(){try{photoRecords=await photoRequest('readonly','all')||[]}catch(e){photoRecords=[]}
+ // Repair legacy imports made while the library filter was set to "All photos".
+ // These records are original source files unless explicitly marked Edited or linked to a source.
+ for(const p of photoRecords){
+  const t=String(p.type||'').trim().toLowerCase();
+  if(t!=='original'&&t!=='edited'){
+   p.type=(t==='edited'||p.sourcePhotoId)?'Edited':'Original';
+   if(!p.status)p.status=p.type==='Original'?'Imported':'Edited';
+   try{await photoRequest('readwrite','put',p)}catch(err){console.warn('Could not persist photo type repair',p.name,err)}
+  }
+ }
+ await ensureRawPreviews();populatePhotoJobFilter();renderPhotos();render()}
 function populatePhotoJobFilter(){const el=document.getElementById('photoJobFilter');if(!el)return;const old=el.value;el.innerHTML='<option value="all">All projects</option>'+data.jobs.map(j=>`<option value="${esc(j.id)}">${esc(j.name)}</option>`).join('');if([...el.options].some(o=>o.value===old))el.value=old}
 
 // Local browser RAW development powered by LibRaw compiled to WebAssembly.
@@ -2305,7 +2316,7 @@ async function importPhotos(files){
  const jobId=document.getElementById('photoJobFilter').value;
  if(jobId==='all'){showToast('Please choose a specific job before importing photos.');return}
  const job=data.jobs.find(j=>j.id===jobId);if(!job)return;
- const kind=document.getElementById('photoKind').value;let added=0,failed=[];
+ const kind='Original';let added=0,failed=[];
  for(const file of files){
   const ext=(file.name.split('.').pop()||'').toLowerCase(),isRaw=['cr2','cr3','nef','arw','dng','raf','orf','rw2','pef','srw'].includes(ext);
   if(!file.type.startsWith('image/')&&!isRaw)continue;
@@ -2347,7 +2358,7 @@ async function renderPhotos(){
  const f=document.getElementById('photoJobFilter').value;
  const search=(document.getElementById('photoSearch')?.value||'').trim().toLowerCase();
  const kind=document.getElementById('photoKind')?.value||'all';
- const total=photoRecords.length,originals=photoRecords.filter(p=>String(p.type||'').toLowerCase()==='original').length,edits=total-originals;
+ const total=photoRecords.length,originals=photoRecords.filter(p=>String(p.type||'').toLowerCase()!=='edited').length,edits=total-originals;
  document.getElementById('photoCount').textContent=total+' photos';
  if(f==='all'){
    const jobs=data.jobs.filter(j=>{const items=getProjectPhotos(j.id);const text=[j.name,j.client,j.address,...items.map(p=>p.name)].join(' ').toLowerCase();return (!search||text.includes(search))&&items.some(p=>(kind==='all'||p.type===kind))});
