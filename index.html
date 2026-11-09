@@ -3142,24 +3142,25 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
     const zoneConfidence=smooth(10,92,deficit);
     // Dark-room recovery is stronger than V0.35, but capped and faded across
     // bright surfaces. Deep blacks remain anchored to avoid grey furniture.
-    const recoveryStrength=0.43+Math.min(.12,fieldStd/520);
-    let localLift=Math.min(46,deficit*recoveryStrength)*roomGate*shadowGate*midtoneGate*blackGuard*highlightGuard*zoneConfidence;
-    // Add a small scene-wide midtone floor only where the image is genuinely dim.
-    const globalDim=smooth(72,132,112-percentile(.50));
-    const baseLift=0.85*globalDim*smooth(28,124,112-L)*(1-smooth(182,235,L))*blackGuard;
+    const recoveryStrength=0.48+Math.min(.12,fieldStd/500);
+    let localLift=Math.min(52,deficit*recoveryStrength)*roomGate*shadowGate*midtoneGate*blackGuard*highlightGuard*zoneConfidence;
+    // V0.40 adds a modest scene-wide midtone lift so the single embedded JPEG
+    // does not remain globally muddy after local shadow recovery.
+    const globalDim=smooth(95,155,160-percentile(.50));
+    const baseLift=1.65*globalDim*smooth(24,128,128-L)*(1-smooth(190,240,L))*blackGuard;
     // Preserve local texture: avoid flattening a pixel that is already darker than
     // its neighbourhood by a large amount (often furniture edges or natural detail).
     const localTexture=Math.max(0,region-L);
     const textureGuard=1-smooth(38,105,localTexture)*.28;
     let target=L+(localLift+baseLift)*textureGuard;
-    // V0.38: region-aware highlight management. Bright regions receive a
+    // V0.40: gentler region-aware highlight management. Bright regions receive a
     // graduated shoulder, while isolated bright details in a darker room are
     // treated more gently so lamps, reflections and pale objects retain shape.
     const brightRegion=smooth(174,232,region);
     const pixelHighlight=smooth(166,238,target);
     const highlightConfidence=brightRegion*.72+pixelHighlight*.28;
-    const highlightStrength=.08+.16*highlightConfidence;
-    const shoulderStart=204+10*(1-brightRegion);
+    const highlightStrength=.04+.11*highlightConfidence;
+    const shoulderStart=220+8*(1-brightRegion);
     if(target>shoulderStart){
      const excess=target-shoulderStart;
      const compressed=shoulderStart+excess*(1-highlightStrength);
@@ -3169,7 +3170,7 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
     }
     // Keep the very top end gentle; this reduces harsh white blocks but cannot
     // recreate sensor detail already clipped in the RAW source.
-    if(target>246)target=246+(target-246)*.58;
+    if(target>250)target=250+(target-250)*.68;
     target=Math.max(0,Math.min(255,target));
     const dr=r-L,dg=g-L,db=b-L;
     const maxDelta=Math.max(dr,dg,db),minDelta=Math.min(dr,dg,db);
@@ -3380,19 +3381,22 @@ function autoEnhanceEditor(){
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  // Global correction is deliberately restrained. Spatial shadow lifting is handled
  // by the local luminance field in createEditorRenderCanvas().
- const target=137;
- let exposure=clamp(Math.log2(target/Math.max(1,p50)),-.16,.30);
- if(p95>242)exposure=Math.min(exposure,.18);
- if(clipRate>.12)exposure=Math.min(exposure,.10);
- let highlights=clamp((p95-210)*-1.02,-78,0);
- if(p99>246)highlights=Math.min(highlights,-30);
- if(clipRate>.035)highlights=Math.min(highlights,-38);
- if(clipRate>.12)highlights=Math.min(highlights,-54);
- let shadows=clamp((92-p10)*.20,1,18);
- if(mixed)shadows=Math.min(shadows,16);
- const contrast=clamp((168-(p90-p10))*.085,-3,8);
- const whites=clamp((238-p95)*.12,-7,8);
- const blacks=clamp((p05-20)*-.085,-5,2);
+ const target=158;
+ // V0.40: the previous target (137) produced a consistently under-bright
+ // single-JPEG result against the approved original-editor benchmark. Lift the
+ // midtone target while retaining highlight headroom and a restrained curve.
+ let exposure=clamp(Math.log2(target/Math.max(1,p50)),-.08,.28);
+ if(p95>242)exposure=Math.min(exposure,.20);
+ if(clipRate>.12)exposure=Math.min(exposure,.12);
+ let highlights=clamp((p95-225)*-.60,-42,0);
+ if(p99>250)highlights=Math.min(highlights,-16);
+ if(clipRate>.035)highlights=Math.min(highlights,-24);
+ if(clipRate>.12)highlights=Math.min(highlights,-36);
+ let shadows=clamp((105-p10)*.24,4,28);
+ if(mixed)shadows=Math.min(shadows,24);
+ const contrast=clamp((178-(p90-p10))*.045,-2,5);
+ const whites=clamp((242-p95)*.10,-4,7);
+ const blacks=clamp((p05-18)*-.055,-3,1);
  let temperature=0,tint=0,wb='not enough neutral pixels';
  if(neutralN>Math.max(120,n*.035)){
   const r=neutralR/neutralN,g=neutralG/neutralN,b=neutralB/neutralN,avg=(r+g+b)/3;
@@ -3411,7 +3415,7 @@ function autoEnhanceEditor(){
  const scene=mixed?'High dynamic range / mixed lighting':p50<90?'Low-light interior':p50>155?'Bright interior':'Balanced interior';
  const status=document.getElementById('editorStatus');
  if(status)status.textContent=`Rental analysis: ${scene} · ${darkZones} dark zones · ${brightZones} bright zones · adaptive local tone + highlight shoulder enabled · WB: ${wb} · ${Math.round(clipRate*100)}% clipped highlights · ${Math.round(performance.now()-started)} ms`;
- showToast('Rental Auto Enhance V0.39 applied: restrained shadows, brighter whites and natural interior contrast.','success');
+ showToast('Rental Auto Enhance V0.40 applied: brighter midtones, gentler highlight roll-off and controlled interior shadow recovery.','success');
 }
 function editorSettings(){return Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value]))}
 async function batchApplyEditor(){

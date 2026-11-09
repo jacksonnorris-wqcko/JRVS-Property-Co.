@@ -71,7 +71,7 @@ V0.34.1 is primarily a workbench/interface milestone. It does not claim to provi
 - Existing editing controls, RAW import/development, photos, jobs and user data remain unchanged.
 
 
-## V0.39.0 — Natural tonal balance refinement
+## V0.40.0 — Natural tonal balance refinement
 - Reduced adaptive shadow recovery and the global shadow lift floor to retain natural dark-room depth.
 - Relaxed highlight compression and moved the shoulder transition higher so bright whites remain bright while retaining a gentle roll-off.
 - Increased restrained midtone detail separation and refined automatic contrast/white recommendations.
