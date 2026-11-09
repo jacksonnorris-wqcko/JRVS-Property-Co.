@@ -1939,7 +1939,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.34.1';
+const APP_VERSION='0.35.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -3093,7 +3093,7 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
  // separates underexposed interior midtones from bright architectural surfaces.
  // This is deterministic local processing, not semantic window recognition.
  if(editorLocalBalance){
-  const gw=128,gh=Math.max(48,Math.round(gw*height/Math.max(1,width)));
+  const gw=160,gh=Math.max(56,Math.round(gw*height/Math.max(1,width)));
   const map=document.createElement('canvas');map.width=gw;map.height=gh;
   const mx=map.getContext('2d',{willReadFrequently:true});mx.drawImage(canvas,0,0,gw,gh);
   const blur=document.createElement('canvas');blur.width=gw;blur.height=gh;
@@ -3121,13 +3121,16 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
     const midtoneGate=1-smooth(145,218,L);
     const blackGuard=smooth(2,31,L);
     const brightZoneGuard=1-smooth(168,224,region);
-    const localLift=Math.min(43,regionalDeficit*(.52+Math.min(.12,fieldStd/500)))*roomGate*shadowGate*midtoneGate*blackGuard*brightZoneGuard;
-    // A restrained global floor helps uniformly dim rooms; deeper blacks stay anchored.
-    const baseLift=4.1*smooth(28,128,126-L)*(1-smooth(180,238,L))*blackGuard;
+    // V0.35: stronger adaptive recovery for genuinely underexposed room zones.
+    // The lift is spatially weighted and fades before it reaches bright surfaces.
+    const zoneDarkness=smooth(8,82,regionalDeficit);
+    const localLift=Math.min(58,regionalDeficit*(.66+Math.min(.16,fieldStd/420)))*roomGate*shadowGate*midtoneGate*blackGuard*brightZoneGuard*zoneDarkness;
+    // Keep the global floor restrained so bright kitchens do not become washed out.
+    const baseLift=3.2*smooth(30,132,126-L)*(1-smooth(174,232,L))*blackGuard;
     let target=L+localLift+baseLift;
-    // Multi-stage highlight shoulder preserves gradation in bright walls and windows.
-    if(target>205){const excess=target-205;target=205+34*(1-Math.exp(-excess/34));}
-    if(target>238)target=238+(target-238)*.38;
+    // Earlier, gentler highlight shoulder retains separation in pale cabinetry and walls.
+    if(target>196){const excess=target-196;target=196+31*(1-Math.exp(-excess/31));}
+    if(target>232)target=232+(target-232)*.30;
     target=Math.max(0,Math.min(255,target));
     const dr=r-L,dg=g-L,db=b-L;
     const maxDelta=Math.max(dr,dg,db),minDelta=Math.min(dr,dg,db);
@@ -3326,7 +3329,7 @@ function autoEnhanceEditor(){
  const scene=mixed?'High dynamic range / mixed lighting':p50<90?'Low-light interior':p50>155?'Bright interior':'Balanced interior';
  const status=document.getElementById('editorStatus');
  if(status)status.textContent=`Rental analysis: ${scene} · ${darkZones} dark zones · ${brightZones} bright zones · adaptive local tone + highlight shoulder enabled · WB: ${wb} · ${Math.round(clipRate*100)}% clipped highlights · ${Math.round(performance.now()-started)} ms`;
- showToast('Rental Auto Enhance V0.34.1 applied: multi-zone interior balancing and highlight protection.','success');
+ showToast('Rental Auto Enhance V0.35 applied: adaptive room recovery, highlight protection and tonal separation.','success');
 }
 function editorSettings(){return Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value]))}
 async function batchApplyEditor(){
