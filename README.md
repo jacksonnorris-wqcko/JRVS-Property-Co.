@@ -1,12 +1,12 @@
-# JRVS Property Co. — V0.34.0
+# JRVS Property Co. — V0.34.1
 
 A browser-based property photography and business workflow app built for JRVS Property Co.
 
 ## Current release
 
-**V0.34.0 — Editor Stability Recovery**
+**V0.34.1 — Adaptive Rental Tone Engine**
 
-This release restores the complete V0.33 editor implementation and advances only release metadata. The V0.33 rental tone engine is retained unchanged while the editor startup issue is isolated and corrected.
+This release advances the rental-specific automatic correction workflow following the V0.25 non-destructive edit-recipe foundation.
 
 ### Photo Studio
 - Image-first editing workspace with a large central preview and a scrollable control panel.
@@ -45,7 +45,7 @@ This release restores the complete V0.33 editor implementation and advances only
 
 ## Known limitations and next development steps
 
-V0.34.0 is a foundation and workbench milestone, not yet a Lightroom/Photoshop replacement.
+V0.34.1 is a foundation and workbench milestone, not yet a Lightroom/Photoshop replacement.
 
 The following are planned but are **not complete features**:
 - Genuine professional RAW development with validated camera profiles and full sensor-level adjustment workflow.
@@ -78,16 +78,16 @@ Do not clear site data to force an update; that risks removing locally stored ap
 
 ## Release metadata
 
-- App version: `0.34.0`
-- `version.json`: `0.34.0`
-- Service-worker cache: `jrvs-property-co-v0.34.0`
+- App version: `0.34.1`
+- `version.json`: `0.34.1`
+- Service-worker cache: `jrvs-property-co-v0.34.1`
 
 ## Project direction
 
 JRVS Photo Studio is being developed towards a PC-first property photography editor. The intended direction is a visual, image-led workflow with professional development, selective local adjustments, architectural correction, retouching and reliable high-resolution delivery.
 
 
-### V0.34.0 — Adaptive Rental Tone Engine
+### V0.34.1 — Adaptive Rental Tone Engine
 - Reworked local exposure balancing with a higher-resolution, softly blurred spatial luminance field.
 - Added stronger adaptive shadow/midtone recovery with region-aware lift and per-pixel highlight protection.
 - Added a gentle global rental midtone lift and a soft highlight shoulder to reduce abrupt clipping.
@@ -95,14 +95,14 @@ JRVS Photo Studio is being developed towards a PC-first property photography edi
 - No AI service or external image upload; processing remains in-browser.
 
 
-### V0.34.0 — Colour Integrity & Luminance-Based Exposure
+### V0.34.1 — Colour Integrity & Luminance-Based Exposure
 - Local exposure lift and highlight roll-off now adjust luminance rather than independently multiplying RGB channels.
 - Gamut-aware chroma compression reduces colour clipping and hue shifts in saturated objects during shadow recovery.
 - Preserves the V0.30 adaptive local rental exposure workflow.
 - ZIP packaging now includes only the current release's release-notes file.
 
 
-### V0.34.0 — JRVS Photography Package Catalogue
+### V0.34.1 — JRVS Photography Package Catalogue
 - Seeds JRVS Essential, Standard, Plus and Complete introductory photography packages, with full package inclusions.
 - Adds five optional extras and service-area/delivery notes.
 - Default JRVS package descriptions are retained as a standard catalogue; only their catalogue prices are editable.
@@ -110,7 +110,7 @@ JRVS Photo Studio is being developed towards a PC-first property photography edi
 - Packages are available as reusable line items in quote creation.
 
 
-### V0.34.0 — Rental-aware tonal engine
+### V0.34.1 — Rental-aware tonal engine
 - Refined single-click Rental Auto Enhance with adaptive room-level exposure balancing.
 - Increased spatial luminance analysis resolution and softened the regional luminance field.
 - Added stronger highlight shoulder and protection for bright cabinetry/windows.

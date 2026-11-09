@@ -1939,7 +1939,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.34.0';
+const APP_VERSION='0.34.1';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -3088,23 +3088,25 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
   let rr=grey+(r-grey)*sat,gg=grey+(g-grey)*sat,bb=grey+(b-grey)*sat;const pixel=i/4,edge=Math.max(0,Math.min(1,Math.hypot((pixel%width)/width-.5,Math.floor(pixel/width)/height-.5)*1.6));const vig=1-v.vignette/100*edge*.65;const detail=1+v.clarity/160+v.sharpening/500;rr=(rr-128)*detail+128;gg=(gg-128)*detail+128;bb=(bb-128)*detail+128;d[i]=Math.max(0,Math.min(255,rr*vig));d[i+1]=Math.max(0,Math.min(255,gg*vig));d[i+2]=Math.max(0,Math.min(255,bb*vig));const l=Math.max(0,Math.min(255,.2126*d[i]+.7152*d[i+1]+.0722*d[i+2]));hist[Math.min(63,Math.floor(l/4))]++;
  }
  ctx.putImageData(image,0,0);
- // V0.33 rental-aware local tone engine.
- // Work from a downsampled, blurred luminance field so room-level exposure can be
- // corrected without lifting every dark pixel or flattening the entire photograph.
+ // V0.34 multi-zone rental development stage.
+ // A coarse spatial map estimates room illumination; the per-pixel pass then
+ // separates underexposed interior midtones from bright architectural surfaces.
+ // This is deterministic local processing, not semantic window recognition.
  if(editorLocalBalance){
-  const gw=96,gh=Math.max(40,Math.round(gw*height/Math.max(1,width)));
+  const gw=128,gh=Math.max(48,Math.round(gw*height/Math.max(1,width)));
   const map=document.createElement('canvas');map.width=gw;map.height=gh;
   const mx=map.getContext('2d',{willReadFrequently:true});mx.drawImage(canvas,0,0,gw,gh);
   const blur=document.createElement('canvas');blur.width=gw;blur.height=gh;
   const bx=blur.getContext('2d',{willReadFrequently:true});
-  bx.filter='blur(5px)';bx.drawImage(map,0,0);bx.filter='none';
+  bx.filter='blur(7px)';bx.drawImage(map,0,0);bx.filter='none';
   const bd=bx.getImageData(0,0,gw,gh).data,field=new Float32Array(gw*gh);
-  let fieldSum=0;
-  for(let q=0;q<field.length;q++){const k=q*4,L=.2126*bd[k]+.7152*bd[k+1]+.0722*bd[k+2];field[q]=L;fieldSum+=L}
+  let fieldSum=0,fieldSq=0;
+  for(let q=0;q<field.length;q++){const k=q*4,L=.2126*bd[k]+.7152*bd[k+1]+.0722*bd[k+2];field[q]=L;fieldSum+=L;fieldSq+=L*L}
   const fieldMean=fieldSum/Math.max(1,field.length);
+  const fieldStd=Math.sqrt(Math.max(0,fieldSq/Math.max(1,field.length)-fieldMean*fieldMean));
   const smooth=(a,b,v)=>{const t=Math.max(0,Math.min(1,(v-a)/(b-a)));return t*t*(3-2*t)};
-  // Protect the deepest blacks and brightest whites; target only underexposed
-  // room regions and midtone transitions.
+  // Region means act as a soft illumination map. Bright zones are treated as
+  // likely window / sunlit surfaces, but no object-level window mask is claimed.
   for(let py=0;py<height;py++){
    const gy=py/Math.max(1,height-1)*(gh-1),y0=Math.floor(gy),y1=Math.min(gh-1,y0+1),fy=gy-y0;
    for(let px=0;px<width;px++){
@@ -3114,16 +3116,18 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
     const region=top*(1-fy)+bot*fy,i=(py*width+px)*4;
     const r=d[i],g=d[i+1],b=d[i+2],L=.2126*r+.7152*g+.0722*b;
     const regionalDeficit=Math.max(0,fieldMean-region);
-    const roomGate=smooth(7,105,regionalDeficit);
-    const pixelShadow=smooth(24,142,122-L);
-    const midtoneGate=1-smooth(154,224,L);
-    const blackProtection=smooth(3,34,L);
-    const brightRegionProtection=1-smooth(174,232,region);
-    const localLift=Math.min(37,regionalDeficit*.58)*roomGate*pixelShadow*midtoneGate*blackProtection*brightRegionProtection;
-    const gentleLift=5.2*smooth(32,138,136-L)*(1-smooth(188,242,L))*blackProtection;
-    let target=L+localLift+gentleLift;
-    // Soft shoulder: compress only the upper range, preserving colour ratios.
-    if(target>218)target=218+37*(1-Math.exp(-(target-218)/37));
+    const roomGate=smooth(5,96,regionalDeficit);
+    const shadowGate=smooth(18,126,116-L);
+    const midtoneGate=1-smooth(145,218,L);
+    const blackGuard=smooth(2,31,L);
+    const brightZoneGuard=1-smooth(168,224,region);
+    const localLift=Math.min(43,regionalDeficit*(.52+Math.min(.12,fieldStd/500)))*roomGate*shadowGate*midtoneGate*blackGuard*brightZoneGuard;
+    // A restrained global floor helps uniformly dim rooms; deeper blacks stay anchored.
+    const baseLift=4.1*smooth(28,128,126-L)*(1-smooth(180,238,L))*blackGuard;
+    let target=L+localLift+baseLift;
+    // Multi-stage highlight shoulder preserves gradation in bright walls and windows.
+    if(target>205){const excess=target-205;target=205+34*(1-Math.exp(-excess/34));}
+    if(target>238)target=238+(target-238)*.38;
     target=Math.max(0,Math.min(255,target));
     const dr=r-L,dg=g-L,db=b-L;
     const maxDelta=Math.max(dr,dg,db),minDelta=Math.min(dr,dg,db);
@@ -3322,7 +3326,7 @@ function autoEnhanceEditor(){
  const scene=mixed?'High dynamic range / mixed lighting':p50<90?'Low-light interior':p50>155?'Bright interior':'Balanced interior';
  const status=document.getElementById('editorStatus');
  if(status)status.textContent=`Rental analysis: ${scene} · ${darkZones} dark zones · ${brightZones} bright zones · adaptive local tone + highlight shoulder enabled · WB: ${wb} · ${Math.round(clipRate*100)}% clipped highlights · ${Math.round(performance.now()-started)} ms`;
- showToast('Rental Auto Enhance V0.33 applied: room-aware shadows, highlight protection and colour-safe tonal balancing.','success');
+ showToast('Rental Auto Enhance V0.34.1 applied: multi-zone interior balancing and highlight protection.','success');
 }
 function editorSettings(){return Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value]))}
 async function batchApplyEditor(){
