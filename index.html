@@ -1152,7 +1152,60 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
 .quote-new-client-panel{background:var(--surface-2,#f4f5ef);border:1px solid var(--line);border-radius:12px;padding:13px}.quote-inline-heading{font-size:13px;font-weight:800;margin-bottom:10px}.quote-new-client-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.quote-new-client-grid .field{margin:0}
 @media(max-width:650px){.quote-new-client-grid{grid-template-columns:1fr}}
 </style>
-<style id="jrvs-raw-support">.raw-photo-badge{display:inline-flex;border-radius:6px;padding:3px 7px;background:#eee9d9;color:#66552c;font-size:10px;font-weight:800;letter-spacing:.04em}</style></head>
+<style id="jrvs-raw-support">.raw-photo-badge{display:inline-flex;border-radius:6px;padding:3px 7px;background:#eee9d9;color:#66552c;font-size:10px;font-weight:800;letter-spacing:.04em}</style>
+<style id="jrvs-photo-library-v019">
+#page-photos .media-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) minmax(180px,.65fr) minmax(160px,.5fr) auto;gap:12px;align-items:end;padding:15px;border-radius:16px;background:#fffefa;border:1px solid var(--line)}
+#page-photos .media-guidance{margin:12px 2px 18px}
+#page-photos .jrvs-gallery-head{background:#fffefa;border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+#page-photos .jrvs-gallery-title{display:flex;align-items:center;justify-content:space-between;gap:16px}
+#page-photos .jrvs-gallery-title h3{margin:4px 0;font-size:21px;color:var(--ink)}
+#page-photos .jrvs-gallery-title p{margin:0;color:var(--muted);font-size:12px}
+#page-photos .jrvs-gallery-stats{display:flex;gap:8px;margin-top:16px}
+#page-photos .jrvs-gallery-stats button{display:flex;align-items:center;gap:9px;background:#f7f7f0;border:1px solid var(--line);border-radius:10px;padding:9px 13px;color:var(--ink);cursor:pointer}
+#page-photos .jrvs-gallery-stats button.active{border-color:var(--sage);background:#eef1e7;box-shadow:inset 0 0 0 1px var(--sage)}
+#page-photos .jrvs-gallery-stats strong{font-size:17px}
+#page-photos .jrvs-gallery-stats span{font-size:11px;color:var(--muted)}
+#page-photos .jrvs-gallery-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+#page-photos .jrvs-selection-label{display:grid;gap:3px}
+#page-photos .jrvs-selection-label strong{font-size:13px}
+#page-photos .jrvs-selection-label span{font-size:11px;color:var(--muted)}
+#page-photos .jrvs-action-buttons{display:flex;gap:7px;flex-wrap:wrap}
+#page-photos .jrvs-action-buttons button:disabled{opacity:.4;cursor:not-allowed}
+#page-photos .jrvs-photo-cards{grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:16px}
+#page-photos .jrvs-photo-card{box-shadow:0 2px 10px #303b2410;transition:border-color .15s,box-shadow .15s}
+#page-photos .jrvs-photo-card.is-batch-selected{border:2px solid var(--sage);box-shadow:0 0 0 3px #899b6820}
+#page-photos .jrvs-photo-card .photo-image-wrap{position:relative;background:#eef0e8}
+#page-photos .jrvs-photo-card .photo-thumb{height:175px;object-fit:cover}
+#page-photos .jrvs-photo-select{position:absolute;z-index:2;top:10px;left:10px;width:29px;height:29px;border-radius:8px;border:1px solid #d7ddcb;background:#fffef7;color:#fff;font-size:16px;font-weight:900;display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 7px #0002}
+#page-photos .jrvs-photo-select.selected{background:var(--sage);border-color:var(--sage)}
+#page-photos .jrvs-photo-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+#page-photos .jrvs-photo-title strong{font-size:12px;line-height:1.4;overflow-wrap:anywhere;min-width:0}
+#page-photos .jrvs-type-pill{flex:none;padding:4px 7px;border-radius:20px;font-size:9px;font-weight:800;background:#eef0e7;color:#626d53}
+#page-photos .jrvs-type-pill.edited{background:#e8efe8;color:#42664a}
+#page-photos .jrvs-photo-card .photo-meta{margin:6px 0 11px}
+#page-photos .jrvs-photo-card-actions{display:flex;gap:6px;align-items:center}
+#page-photos .jrvs-photo-card-actions .photo-edit-btn{flex:1;min-width:0;padding:9px 8px}
+#page-photos .jrvs-photo-card-actions .tiny-btn{min-width:34px;height:34px;padding:5px 8px}
+#page-photos .batch-tools{margin:0 0 14px;border-radius:12px}
+#page-photos .photo-empty{margin-top:12px}
+@media(max-width:850px){
+ #page-photos .media-toolbar{grid-template-columns:1fr 1fr}
+ #page-photos .media-toolbar-actions{grid-column:1/-1;justify-content:space-between}
+ #page-photos .jrvs-gallery-actions{align-items:flex-start;flex-direction:column}
+}
+@media(max-width:560px){
+ #page-photos .media-toolbar{grid-template-columns:1fr}
+ #page-photos .media-toolbar-actions{grid-column:auto}
+ #page-photos .jrvs-gallery-stats{display:grid;grid-template-columns:repeat(3,1fr)}
+ #page-photos .jrvs-gallery-stats button{justify-content:center;flex-direction:column;gap:2px;padding:8px 4px}
+ #page-photos .jrvs-action-buttons{width:100%}
+ #page-photos .jrvs-action-buttons button{flex:1}
+ #page-photos .jrvs-photo-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ #page-photos .jrvs-photo-card .photo-thumb{height:125px}
+ #page-photos .jrvs-photo-card .photo-info{padding:8px}
+}
+</style>
+</head>
 <body>
 <div class="shell">
   <aside>
@@ -1228,7 +1281,7 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
     <section class="page" id="page-jobs"><div class="toolbar"><div><h2 style="margin:0">Jobs</h2><div class="muted">Manage property photography work.</div></div><div class="row-actions"><input id="jobSearch" type="search" placeholder="Search jobs…" oninput="render()"><button class="primary" onclick="openModal('job')">＋ New job</button></div></div><div id="jobsList" class="list"></div><div class="list-limit-note" id="jobsLimitNote"></div></section>
     <section class="page" id="page-clients"><div class="toolbar"><div><h2 style="margin:0">Clients</h2><div class="muted">Keep client contact details together.</div></div><div class="row-actions"><input id="clientSearch" type="search" placeholder="Search clients…" oninput="render()"><button class="primary" onclick="openModal('client')">＋ Add client</button></div></div><div id="clientsList" class="list"></div><div class="list-limit-note" id="clientsLimitNote"></div></section>
     <section class="page" id="page-photos"><div class="media-workspace">
-      <div class="media-toolbar"><div class="media-filters"><label class="media-field"><span>SEARCH PHOTOS & PROJECTS</span><input id="photoSearch" type="search" placeholder="Search project or filename…" aria-label="Search photos and projects" oninput="renderPhotos()"></label><label class="media-field"><span>PROJECT</span><select id="photoJobFilter" aria-label="Filter photos by job"><option value="all">All projects</option></select></label><label class="media-field"><span>LIBRARY</span><select id="photoKind" aria-label="Photo type"><option value="Original">Original photos</option><option value="Edited">Edited photos</option></select></label></div><div class="media-toolbar-actions"><span class="media-count" id="photoCount">0 photos</span><button class="primary media-import" onclick="document.getElementById('photoFiles').click()">＋ Import photos</button><input id="photoFiles" type="file" accept="image/*,.cr2,.cr3,.nef,.arw,.dng,.raf,.orf,.rw2,.pef,.srw" multiple hidden></div></div>
+      <div class="media-toolbar"><div class="media-filters"><label class="media-field"><span>SEARCH PHOTOS & PROJECTS</span><input id="photoSearch" type="search" placeholder="Search project or filename…" aria-label="Search photos and projects" oninput="renderPhotos()"></label><label class="media-field"><span>PROJECT</span><select id="photoJobFilter" aria-label="Filter photos by job"><option value="all">All projects</option></select></label><label class="media-field"><span>LIBRARY</span><select id="photoKind" aria-label="Photo type"><option value="all" selected>All photos</option><option value="Original">Originals</option><option value="Edited">Edited photos</option></select></label></div><div class="media-toolbar-actions"><span class="media-count" id="photoCount">0 photos</span><button class="primary media-import" onclick="document.getElementById('photoFiles').click()">＋ Import photos</button><input id="photoFiles" type="file" accept="image/*,.cr2,.cr3,.nef,.arw,.dng,.raf,.orf,.rw2,.pef,.srw" multiple hidden></div></div>
       <div class="media-guidance"><span class="media-guidance-icon">▧</span><span>Manage your property galleries, choose hero images and edit photos without leaving the workspace.</span></div>
       <div id="photoGrid" class="project-grid"><div class="empty" style="grid-column:1/-1"><b>No photos imported yet</b>Select a job and import your first property photos.</div></div>
     </div></section>
@@ -1624,7 +1677,7 @@ function showToast(message, type='success', duration=3600){
  close.addEventListener('click',()=>clearTimeout(timer),{once:true});
 }
 
-// V0.18.0 — deliberate, verified full business-data reset.
+// V0.19.0 — deliberate, verified full business-data reset.
 function openDataReset(){
  const back=document.getElementById('dataResetBackdrop'),phrase=document.getElementById('dataResetPhrase'),accept=document.getElementById('dataResetAccept');
  phrase.value='';accept.disabled=true;
@@ -1722,7 +1775,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.18.0';
+const APP_VERSION='0.19.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -2188,9 +2241,10 @@ async function renderPhotos(){
  const f=document.getElementById('photoJobFilter').value;
  const search=(document.getElementById('photoSearch')?.value||'').trim().toLowerCase();
  const kind=document.getElementById('photoKind')?.value||'all';
- document.getElementById('photoCount').textContent=photoRecords.length+' photos';
+ const total=photoRecords.length,originals=photoRecords.filter(p=>String(p.type||'').toLowerCase()==='original').length,edits=total-originals;
+ document.getElementById('photoCount').textContent=total+' photos';
  if(f==='all'){
-   const jobs=data.jobs.filter(j=>{const items=getProjectPhotos(j.id);const text=[j.name,j.client,j.address,...items.map(p=>p.name)].join(' ').toLowerCase();return (!search||text.includes(search))&&items.some(p=>kind==='all'||p.type===kind)});
+   const jobs=data.jobs.filter(j=>{const items=getProjectPhotos(j.id);const text=[j.name,j.client,j.address,...items.map(p=>p.name)].join(' ').toLowerCase();return (!search||text.includes(search))&&items.some(p=>(kind==='all'||p.type===kind))});
    if(!jobs.length){grid.className='project-grid';grid.innerHTML='<div class="empty" style="grid-column:1/-1"><b>No matching projects</b>Try another project name or photo filename.</div>';return}
    grid.className='project-grid';
    grid.innerHTML=jobs.map(j=>{
@@ -2204,13 +2258,31 @@ async function renderPhotos(){
  grid.className='photo-grid';
  const job=data.jobs.find(j=>j.id===f);
  const rows=getProjectPhotos(f).filter(p=>(kind==='all'||p.type===kind)&&(!search||p.name.toLowerCase().includes(search)||String(p.status||'').toLowerCase().includes(search)));
- const back=`<div class="gallery-heading"><div><div class="gallery-kicker">PROJECT GALLERY</div><strong>${esc(job?.name||'Project gallery')}</strong><div class="muted">${rows.length} ${rows.length===1?'photo':'photos'} shown · Original files are kept safe</div></div><button class="secondary gallery-back" onclick="showAllProjects()">← All projects</button></div><section class="photo-selection-bar" aria-label="Photo selection actions"><div class="selection-summary"><strong id="batchSelectionCount">0 photos selected</strong><span>Select photos to prepare a delivery ZIP</span></div><div class="selection-actions"><button class="secondary" type="button" onclick="selectAllVisiblePhotos()">Select all</button><button class="secondary" type="button" onclick="clearPhotoSelection()">Clear</button><button class="danger photo-delete-selected-btn" id="deleteSelectedEditsBtn" type="button" onclick="deleteSelectedEdits()" disabled>⌫ Delete selected edits</button><button class="primary photo-zip-btn" type="button" onclick="downloadSelectedPhotosZip()">↓ Download selected (.zip)</button></div></section><details class="batch-tools"><summary>Batch editing <span>Apply one preset to selected photos</span></summary><div class="batch-tools-content"><select id="batchPreset"><option value="natural">Natural Listing</option><option value="bright">Bright &amp; Airy</option><option value="window">Window Balanced</option><option value="warm">Warm Lifestyle</option><option value="modern">Crisp Modern</option><option value="soft">Soft Neutral</option><option value="luxury">Luxury Contrast</option><option value="wood">Wood &amp; Stone</option><option value="bathroom">Bathroom Clean</option><option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option></select><button class="primary" type="button" onclick="applyBatchPresetToSelection()">Apply preset to selected</button><div class="batch-progress" id="batchProgress">Original photos are never changed.</div></div></details>`;
- if(!rows.length){grid.innerHTML=back+'<div class="empty photo-empty"><b>No matching photos</b>Try a different filename or status.</div>';return}
- grid.innerHTML=back+'<div class="photo-cards-grid">'+rows.map(p=>{
+ const selectedVisible=rows.filter(p=>selectedPhotoIds.has(String(p.id))).length;
+ const back=`<div class="jrvs-gallery-head"><div class="jrvs-gallery-title"><div><div class="gallery-kicker">PROPERTY WORKSPACE</div><h3>${esc(job?.name||'Project gallery')}</h3><p>${rows.length} photos · ${rows.filter(p=>p.type==='Original').length} originals · ${rows.filter(p=>p.type==='Edited').length} edited</p></div><button class="secondary gallery-back" onclick="showAllProjects()">← All projects</button></div>
+ <div class="jrvs-gallery-stats"><button type="button" class="${kind==='all'?'active':''}" onclick="setPhotoLibraryFilter('all')"><strong>${getProjectPhotos(f).length}</strong><span>All photos</span></button><button type="button" class="${kind==='Original'?'active':''}" onclick="setPhotoLibraryFilter('Original')"><strong>${getProjectPhotos(f).filter(p=>p.type==='Original').length}</strong><span>Originals</span></button><button type="button" class="${kind==='Edited'?'active':''}" onclick="setPhotoLibraryFilter('Edited')"><strong>${getProjectPhotos(f).filter(p=>p.type==='Edited').length}</strong><span>Edited</span></button></div>
+ <div class="jrvs-gallery-actions"><div class="jrvs-selection-label"><strong>${selectedVisible} selected</strong><span>Select photos to download, set as cover or delete.</span></div><div class="jrvs-action-buttons"><button class="secondary" type="button" onclick="selectAllVisiblePhotos()">Select all</button><button class="secondary" type="button" onclick="clearPhotoSelection()">Clear</button><button class="danger" type="button" onclick="deleteSelectedPhotos()" ${selectedPhotoIds.size?'':'disabled'}>Delete selected</button><button class="primary" type="button" onclick="downloadSelectedPhotosZip()" ${selectedPhotoIds.size?'':'disabled'}>↓ Download ZIP</button></div></div></div>
+ <details class="batch-tools"><summary>Batch editing <span>Apply a preset to selected original photos</span></summary><div class="batch-tools-content"><select id="batchPreset"><option value="natural">Natural Listing</option><option value="bright">Bright &amp; Airy</option><option value="window">Window Balanced</option><option value="warm">Warm Lifestyle</option><option value="modern">Crisp Modern</option><option value="soft">Soft Neutral</option><option value="luxury">Luxury Contrast</option><option value="wood">Wood &amp; Stone</option><option value="bathroom">Bathroom Clean</option><option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option></select><button class="primary" type="button" onclick="applyBatchPresetToSelection()">Apply preset</button><div class="batch-progress" id="batchProgress">New edited copies are created; originals remain unchanged.</div></div></details>`;
+ if(!rows.length){grid.innerHTML=back+'<div class="empty photo-empty"><b>No matching photos</b>Try another filter or import photos into this property.</div>';return}
+ grid.innerHTML=back+'<div class="photo-cards-grid jrvs-photo-cards">'+rows.map(p=>{
    const u=URL.createObjectURL(photoDisplayBlob(p));photoUrls.push(u);
-   return `<article class="photo-card ${selectedPhotoIds.has(p.id)?'is-batch-selected':''}"><div class="photo-image-wrap"><label class="photo-select-wrap"><input type="checkbox" ${selectedPhotoIds.has(p.id)?'checked':''} onchange="togglePhotoSelection('${p.id}',this.checked)">Select</label><img class="photo-thumb" src="${u}" alt="${esc(p.name)}" onclick="previewPhoto('${p.id}')"><button class="photo-preview-action" onclick="previewPhoto('${p.id}')" aria-label="Preview photo">↗</button>${p.isCover?'<span class="photo-cover-badge">★ Cover image</span>':''}</div><div class="photo-info"><div class="photo-title-row"><strong title="${esc(p.name)}">${esc(p.name)}</strong><span class="photo-file-type">${esc(p.type)}</span></div><div class="photo-meta">${bytes(p.size)} <span>·</span> ${new Date(p.addedAt||Date.now()).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div><label class="photo-status-field"><span>WORKFLOW STATUS</span><select aria-label="Photo status" onchange="updatePhotoStatus('${p.id}',this.value)">${['Imported','Selected','Editing','Edited','Delivered'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}</select></label><div class="photo-actions"><button class="primary photo-edit-btn" onclick="openEditor('${p.id}')">✎ Edit photo</button><button class="tiny-btn photo-cover-btn" onclick="setProjectCover('${p.id}')" ${p.isCover?'disabled':''}>${p.isCover?'✓ Cover':'Set cover'}</button><button class="tiny-btn" onclick="downloadPhoto('${p.id}')" title="Download original file">↓ Download</button><button class="tiny-btn danger photo-delete-btn" onclick="deletePhoto('${p.id}')" aria-label="Delete photo" title="Delete photo">⌫</button></div></div></article>`;
+   const selected=selectedPhotoIds.has(String(p.id));
+   const typeLabel=String(p.type||'Original');
+   return `<article class="photo-card jrvs-photo-card ${selected?'is-batch-selected':''}" data-photo-id="${esc(String(p.id))}">
+    <div class="photo-image-wrap">
+     <button class="jrvs-photo-select ${selected?'selected':''}" type="button" onclick="togglePhotoSelection('${p.id}',${!selected})" aria-label="${selected?'Deselect':'Select'} ${esc(p.name)}">${selected?'✓':''}</button>
+     <img class="photo-thumb" src="${u}" alt="${esc(p.name)}" onclick="previewPhoto('${p.id}')">
+     ${p.isCover?'<span class="photo-cover-badge">★ Cover</span>':''}
+    </div>
+    <div class="photo-info">
+     <div class="jrvs-photo-title"><strong title="${esc(p.name)}">${esc(p.name)}</strong><span class="jrvs-type-pill ${typeLabel.toLowerCase()==='edited'?'edited':'original'}">${esc(typeLabel)}</span></div>
+     <div class="photo-meta">${bytes(p.size)} · ${new Date(p.addedAt||Date.now()).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div>
+     <div class="jrvs-photo-card-actions"><button class="primary photo-edit-btn" onclick="openEditor('${p.id}')">Edit photo</button><button class="tiny-btn" onclick="setProjectCover('${p.id}')" ${p.isCover?'disabled':''} title="Set cover">☆</button><button class="tiny-btn" onclick="downloadPhoto('${p.id}')" title="Download original">↓</button><button class="tiny-btn danger" onclick="deletePhoto('${p.id}')" title="Delete this photo">⌫</button></div>
+    </div></article>`;
  }).join('')+'</div>';
 }
+function setPhotoLibraryFilter(value){const el=document.getElementById('photoKind');if(el){el.value=value;renderPhotos()}}
+
 const selectedPhotoIds=new Set();
 
 // Export the stored photo blobs directly: no resizing, recompression or thumbnail export.
@@ -2279,18 +2351,20 @@ async function downloadSelectedPhotosZip(){
  }catch(e){console.error('JRVS photo ZIP export failed',e);showToast(`ZIP export failed: ${e.message||'Unknown error'}`,'error')}
  finally{if(btn){btn.disabled=false;btn.textContent='↓ Download selected (.zip)'}}
 }
-function togglePhotoSelection(id,checked){if(checked)selectedPhotoIds.add(id);else selectedPhotoIds.delete(id);const card=[...document.querySelectorAll('.photo-card')].find(el=>el.querySelector(`input[onchange*="${id}"]`));if(card)card.classList.toggle('is-batch-selected',checked);updateBatchSelectionCount()}
+function togglePhotoSelection(id,checked){if(checked)selectedPhotoIds.add(String(id));else selectedPhotoIds.delete(String(id));const card=document.querySelector(`.jrvs-photo-card[data-photo-id="${CSS.escape(String(id))}"]`);if(card){card.classList.toggle('is-batch-selected',checked);const btn=card.querySelector('.jrvs-photo-select');if(btn){btn.classList.toggle('selected',checked);btn.textContent=checked?'✓':'';btn.setAttribute('aria-label',(checked?'Deselect ':'Select ')+(card.querySelector('.jrvs-photo-title strong')?.textContent||'photo'))}}updateBatchSelectionCount();const actions=document.querySelector('.jrvs-gallery-actions');if(actions){const label=actions.querySelector('.jrvs-selection-label strong');if(label)label.textContent=selectedPhotoIds.size+' selected';actions.querySelectorAll('button[onclick*="deleteSelectedPhotos"],button[onclick*="downloadSelectedPhotosZip"]').forEach(b=>b.disabled=!selectedPhotoIds.size)}}
 function updateBatchSelectionCount(){
  const el=document.getElementById('batchSelectionCount');if(el)el.textContent=selectedPhotoIds.size+' photo'+(selectedPhotoIds.size===1?'':'s')+' selected';
  const del=document.getElementById('deleteSelectedEditsBtn');
- if(del){const chosen=[...selectedPhotoIds].map(id=>photoRecords.find(p=>String(p.id)===String(id))).filter(Boolean);const editable=chosen.length>0&&chosen.every(p=>String(p.type||'').toLowerCase()==='edited');del.disabled=!editable;del.title=editable?'Delete all selected edited copies':'Select edited photos only; originals cannot be bulk deleted'}
+ if(del){const chosen=[...selectedPhotoIds].map(id=>photoRecords.find(p=>String(p.id)===String(id))).filter(Boolean);del.disabled=!chosen.length;del.title='Delete selected originals and edited copies'}
 }
-async function deleteSelectedEdits(){
+async function deleteSelectedPhotos(){
  const chosen=[...selectedPhotoIds].map(id=>photoRecords.find(p=>String(p.id)===String(id))).filter(Boolean);
- if(!chosen.length){showToast('Select edited photos to delete.');return}
- if(chosen.some(p=>String(p.type||'').toLowerCase()!=='edited')){showToast('Bulk delete is only available when all selected photos are edited copies. Original photos are protected.','error');return}
- const names=chosen.slice(0,4).map(p=>p.name).join(', ')+(chosen.length>4?' and '+(chosen.length-4)+' more':'');
- if(!await showConfirm('Permanently delete '+chosen.length+' selected edited photo'+(chosen.length===1?'':'s')+'? Original photos will remain untouched. '+names))return;
+ if(!chosen.length){showToast('Select photos to delete.');return}
+ const originals=chosen.filter(p=>String(p.type||'').toLowerCase()==='original').length;
+ const edits=chosen.length-originals;
+ const names=chosen.slice(0,5).map(p=>p.name).join(', ')+(chosen.length>5?' and '+(chosen.length-5)+' more':'');
+ const message=`Permanently delete ${chosen.length} selected photo${chosen.length===1?'':'s'}? This includes ${originals} original${originals===1?'':'s'} and ${edits} edited copy/copies from the JRVS library. Separate files on your computer are not affected. ${names}`;
+ if(!await showConfirm(message,{title:'Delete selected photos?',confirmText:'Delete photos',danger:true}))return;
  const deleting=new Set(chosen.map(p=>String(p.id)));
  try{
   const coverJobs=new Set(chosen.filter(p=>p.isCover).map(p=>String(p.jobId)));
@@ -2301,11 +2375,18 @@ async function deleteSelectedEdits(){
   }
   selectedPhotoIds.clear();
   await loadPhotos();
-  showToast(chosen.length+' edited photo'+(chosen.length===1?'':'s')+' deleted. Original photos are safe.');
- }catch(error){console.error('JRVS bulk edited-photo delete failed',error);showToast('Could not delete all selected edits: '+(error?.message||'storage error'),'error');await loadPhotos()}
+  showToast(chosen.length+' photo'+(chosen.length===1?'':'s')+' deleted from JRVS library.');
+ }catch(error){console.error('JRVS bulk photo delete failed',error);showToast('Could not delete all selected photos: '+(error?.message||'storage error'),'error');await loadPhotos()}
 }
-function selectAllVisiblePhotos(){document.querySelectorAll('#photoGrid .photo-select-wrap input').forEach(input=>{input.checked=true;const m=input.getAttribute('onchange')?.match(/togglePhotoSelection\('([^']+)'/);if(m)selectedPhotoIds.add(m[1]);input.closest('.photo-card')?.classList.add('is-batch-selected')});updateBatchSelectionCount()}
-function clearPhotoSelection(){selectedPhotoIds.clear();document.querySelectorAll('#photoGrid .photo-select-wrap input').forEach(input=>{input.checked=false;input.closest('.photo-card')?.classList.remove('is-batch-selected')});updateBatchSelectionCount()}
+function deleteSelectedEdits(){return deleteSelectedPhotos()}
+function selectAllVisiblePhotos(){
+ document.querySelectorAll('#photoGrid .jrvs-photo-card').forEach(card=>{const id=card.dataset.photoId;selectedPhotoIds.add(String(id));card.classList.add('is-batch-selected');const btn=card.querySelector('.jrvs-photo-select');if(btn){btn.classList.add('selected');btn.textContent='✓'}});
+ updateBatchSelectionCount();const actions=document.querySelector('.jrvs-gallery-actions');if(actions){const label=actions.querySelector('.jrvs-selection-label strong');if(label)label.textContent=selectedPhotoIds.size+' selected';actions.querySelectorAll('button[onclick*="deleteSelectedPhotos"],button[onclick*="downloadSelectedPhotosZip"]').forEach(b=>b.disabled=!selectedPhotoIds.size)}
+}
+function clearPhotoSelection(){
+ selectedPhotoIds.clear();document.querySelectorAll('#photoGrid .jrvs-photo-card').forEach(card=>{card.classList.remove('is-batch-selected');const btn=card.querySelector('.jrvs-photo-select');if(btn){btn.classList.remove('selected');btn.textContent=''}});
+ updateBatchSelectionCount();const actions=document.querySelector('.jrvs-gallery-actions');if(actions){const label=actions.querySelector('.jrvs-selection-label strong');if(label)label.textContent='0 selected';actions.querySelectorAll('button[onclick*="deleteSelectedPhotos"],button[onclick*="downloadSelectedPhotosZip"]').forEach(b=>b.disabled=true)}
+}
 let batchApplyInProgress=false;
 async function applyBatchPresetToSelection(){
  if(batchApplyInProgress)return;
