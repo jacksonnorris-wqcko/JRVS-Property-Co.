@@ -1311,6 +1311,37 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
  #page-photos .media-toolbar-actions{justify-content:space-between!important}
 }
 </style>
+
+<style id="jrvs-v026-studio-workbench">
+#editorBackdrop .editor-shell{width:min(1900px,99vw)!important}
+#editorBackdrop .editor-layout{grid-template-columns:minmax(0,1fr) 360px!important;gap:14px!important}
+#editorBackdrop .editor-panel{padding:14px!important;gap:11px!important;max-height:calc(100dvh - 150px)!important;overflow-y:auto!important;overscroll-behavior:contain}
+#editorBackdrop .editor-panel-heading{position:sticky;top:-14px;z-index:5;background:#fffdf7;padding:8px 0 10px;border-bottom:1px solid #e8e8dc}
+#editorBackdrop .editor-tabs{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important}
+#editorBackdrop .editor-tabs button{min-height:35px;font-size:11px!important;letter-spacing:.01em}
+#editorBackdrop .editor-control{gap:5px!important;margin-bottom:8px!important}
+#editorBackdrop .editor-control label{font-size:11px!important}
+#editorBackdrop .editor-control input[type=range]{margin:3px 0 6px}
+#editorBackdrop .editor-section{border:1px solid #e5e7dc!important;border-radius:10px!important;padding:9px 11px!important;background:#fffefa}
+#editorBackdrop .editor-section summary{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px!important;list-style-position:inside}
+#editorBackdrop .jrvs-section-hint{font-size:9px;color:#7a806f;font-weight:500}
+#editorBackdrop .editor-histogram{height:58px!important}
+#editorBackdrop .editor-panel-heading strong{font-size:14px}
+#editorBackdrop .editor-help{font-size:10px!important;line-height:1.45}
+#editorBackdrop .editor-stage{min-height:calc(100dvh - 230px)!important}
+#editorBackdrop .editor-stage-wrap{min-height:0}
+#editorBackdrop .editor-top{align-items:center}
+#editorBackdrop .editor-top-actions{gap:6px;flex-wrap:wrap}
+#editorBackdrop .editor-top-actions button{font-size:11px;padding:8px 10px}
+@media(max-width:1050px){
+ #editorBackdrop .editor-layout{grid-template-columns:minmax(0,1fr) 320px!important}
+}
+@media(max-width:850px){
+ #editorBackdrop .editor-layout{grid-template-columns:1fr!important}
+ #editorBackdrop .editor-panel{max-height:none!important;overflow:visible!important}
+ #editorBackdrop .editor-stage{min-height:40vh!important}
+}
+</style>
 </head>
 <body>
 <div class="shell">
@@ -1541,7 +1572,7 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
 <div class="editor-backdrop" id="editorBackdrop"><div class="editor-shell">
 <div class="editor-top"><div><div class="eyebrow">JRVS PHOTO STUDIO</div><h2 id="editorTitle">Edit photograph</h2><div class="muted" id="editorSubtitle">Non-destructive edit · Original preserved</div></div><div class="editor-top-actions"><button class="secondary" type="button" onclick="editorUndo()" title="Undo (Ctrl+Z)">↶ Undo</button><button class="secondary" type="button" onclick="editorRedo()" title="Redo (Ctrl+Shift+Z)">↷ Redo</button><button class="secondary" type="button" onclick="toggleEditorCompare()">◐ Compare view</button><button class="primary" type="button" onclick="saveEditedPhoto()">Save copy</button><button class="secondary" onclick="closeEditor()">← Gallery</button></div></div>
 <div class="editor-layout"><div class="editor-stage-wrap"><div class="editor-stage-toolbar"><span id="editorViewLabel">FIT · FULL IMAGE</span><div><button type="button" class="secondary" onclick="editorZoom(-.15)">−</button><button type="button" class="secondary" onclick="editorZoom(0)">Fit</button><button type="button" class="secondary" onclick="editorZoom(.15)">+</button></div></div><div class="editor-stage" id="editorStage"><div id="retouchCursor" class="jrvs-retouch-cursor"></div><canvas id="editorCanvas" onpointerdown="editorRetouchPointerDown(event)" onpointermove="editorRetouchPointerMove(event)" onpointerup="editorRetouchPointerUp(event)" onpointercancel="editorRetouchPointerUp(event)"></canvas></div><div class="editor-compare-bar" id="editorCompareBar" hidden><span>ORIGINAL</span><input id="editorCompareRange" type="range" min="5" max="95" value="50" aria-label="Before and after split" oninput="editorComparePosition=Number(this.value);drawEditor()"><span>EDITED</span><button type="button" class="secondary" onclick="toggleEditorCompare(false)">Done</button></div><div class="editor-stage-footer"><span id="editorStageStatus">Original preserved · Non-destructive editing</span><span>Full-resolution export</span></div></div><aside class="editor-panel">
-<div class="editor-panel-heading"><div><strong>Develop controls</strong><div class="editor-help">Precise adjustments · Original always preserved</div></div><span class="editor-live-dot">● LIVE</span></div><nav class="editor-tabs" aria-label="Editing workspace"><button type="button" class="active" data-editor-tab="basic" onclick="setEditorTab('basic')">Light</button><button type="button" data-editor-tab="colour" onclick="setEditorTab('colour')">Colour</button><button type="button" data-editor-tab="detail" onclick="setEditorTab('detail')">Detail</button><button type="button" data-editor-tab="geometry" onclick="setEditorTab('geometry')">Geometry</button><button type="button" data-editor-tab="export" onclick="setEditorTab('export')">Export</button><button type="button" data-editor-tab="retouch" onclick="setEditorTab('retouch')">Retouch</button></nav>
+<div class="editor-panel-heading"><div><strong>Photo development</strong><div class="editor-help">Build the look first, refine details when needed.</div></div><span class="editor-live-dot">● LIVE</span></div><nav class="editor-tabs" aria-label="Editing workspace"><button type="button" class="active" data-editor-tab="basic" onclick="setEditorTab('basic')">Develop</button><button type="button" data-editor-tab="colour" onclick="setEditorTab('colour')">Colour</button><button type="button" data-editor-tab="detail" onclick="setEditorTab('detail')">Finish</button><button type="button" data-editor-tab="geometry" onclick="setEditorTab('geometry')">Geometry</button><button type="button" data-editor-tab="export" onclick="setEditorTab('export')">Export</button><button type="button" data-editor-tab="retouch" onclick="setEditorTab('retouch')">Retouch</button></nav>
 <div class="editor-control"><label>Property presets</label><select id="editorPreset" onchange="applyEditorPreset(this.value)">
 <option value="none">No preset — original</option>
 <optgroup label="Interior · Professional">
@@ -1549,16 +1580,24 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
 </optgroup><optgroup label="Exterior · Professional">
 <option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option><option value="twilight">Twilight Mood</option>
 </optgroup></select><div class="editor-tools"><button class="secondary" type="button" onclick="autoEnhanceEditor()">✨ Auto enhance</button></div></div>
-<div class="editor-control" data-editor-group="basic"><label>Brightness <span id="brightnessVal">0</span></label><input id="brightness" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
-<div class="editor-control" data-editor-group="basic"><label>Contrast <span id="contrastVal">0</span></label><input id="contrast" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
-<div class="editor-control" data-editor-group="colour"><label>Saturation <span id="saturationVal">0</span></label><input id="saturation" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
-<div class="editor-control" data-editor-group="colour"><label>Warmth <span id="warmthVal">0</span></label><input id="warmth" type="range" min="-50" max="50" value="0" oninput="editorChanged()"></div>
-<div class="editor-control" data-editor-group="basic"><label>Highlights <span id="highlightsVal">0</span></label><input id="highlights" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
-<div class="editor-control" data-editor-group="basic"><label>Shadows <span id="shadowsVal">0</span></label><input id="shadows" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
+<details class="editor-section jrvs-quick-controls" open data-editor-group="basic">
+<summary>Quick light adjustments <span class="jrvs-section-hint">Exposure · contrast · tonal balance</span></summary>
+<div class="editor-control"><label>Exposure <span id="exposureVal">0</span></label><input id="exposure" type="range" min="-2" max="2" step="0.05" value="0" oninput="editorChanged()"></div>
+<div class="editor-control"><label>Highlights <span id="highlightsVal">0</span></label><input id="highlights" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
+<div class="editor-control"><label>Shadows <span id="shadowsVal">0</span></label><input id="shadows" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
+<div class="editor-control"><label>Contrast <span id="contrastVal">0</span></label><input id="contrast" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
+<div class="editor-control"><label>Brightness <span id="brightnessVal">0</span></label><input id="brightness" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
+</details>
+<details class="editor-section jrvs-quick-colour" data-editor-group="colour">
+<summary>Quick colour adjustments</summary>
+<div class="editor-control"><label>Temperature <span id="temperatureVal">0</span></label><input id="temperature" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
+<div class="editor-control"><label>Saturation <span id="saturationVal">0</span></label><input id="saturation" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
+<div class="editor-control"><label>Warmth <span id="warmthVal">0</span></label><input id="warmth" type="range" min="-50" max="50" value="0" oninput="editorChanged()"></div>
+</details>
 <div class="editor-history"><button class="secondary" type="button" onclick="editorUndo()">↶ Undo</button><button class="secondary" type="button" onclick="editorRedo()">↷ Redo</button><button class="secondary" type="button" onclick="toggleEditorCompare()">Before / after</button></div>
 <div><label class="muted">Live histogram</label><canvas id="editorHistogram" class="editor-histogram" width="300" height="76"></canvas></div>
 <details class="editor-section" open data-editor-group="basic"><summary>Light & tonal range</summary>
-<div class="editor-control" data-editor-group="basic"><label>Exposure <span id="exposureVal">0</span></label><input id="exposure" type="range" min="-2" max="2" step="0.05" value="0" oninput="editorChanged()"></div>
+
 <div class="editor-control" data-editor-group="basic"><label>Whites <span id="whitesVal">0</span></label><input id="whites" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
 <div class="editor-control" data-editor-group="basic"><label>Blacks <span id="blacksVal">0</span></label><input id="blacks" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
 </details>
@@ -1783,7 +1822,7 @@ function showToast(message, type='success', duration=3600){
  close.addEventListener('click',()=>clearTimeout(timer),{once:true});
 }
 
-// V0.25.1 — deliberate, verified full business-data reset.
+// V0.26.0 — deliberate, verified full business-data reset.
 function openDataReset(){
  const back=document.getElementById('dataResetBackdrop'),phrase=document.getElementById('dataResetPhrase'),accept=document.getElementById('dataResetAccept');
  phrase.value='';accept.disabled=true;
@@ -1881,7 +1920,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.25.1';
+const APP_VERSION='0.26.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
