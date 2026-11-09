@@ -1,4 +1,4 @@
-# JRVS Photo Studio — V0.34.0 Multi-zone Development
+# JRVS Photo Studio — V0.34.0 Stability Recovery
 
 ## Delivered
 - Reworked the editor's right-hand control panel into a tighter, image-first workspace.
@@ -71,9 +71,7 @@ V0.33.0 is primarily a workbench/interface milestone. It does not claim to provi
 - Existing editing controls, RAW import/development, photos, jobs and user data remain unchanged.
 
 
-## V0.34.0 — Multi-zone Rental Development
-- Increased the spatial illumination map to 128 samples wide, aspect-scaled, with smoother interpolation.
-- Added adaptive regional interior midtone recovery, deeper-black protection and bright-region guarding.
-- Added a staged highlight shoulder to retain more natural gradation in bright walls, cabinetry and window areas.
-- Kept luminance remapping and gamut-aware chroma compression to reduce colour shifts.
-- Limitation: bright-region guarding is based on luminance, not semantic window recognition. This release does not create independent window masks or recover clipped sensor data.
+## V0.34.0 — Editor Stability Recovery
+- Restored the complete V0.33 editor rendering, retouch, drawing, preset and export functions unchanged.
+- Retained the V0.33 rental-aware tone engine; no new image-processing algorithm is introduced in this recovery build.
+- Updated app, version.json and service-worker cache metadata consistently.

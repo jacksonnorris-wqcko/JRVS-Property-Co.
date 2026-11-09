@@ -1,25 +1,8 @@
-# JRVS V0.34.0 — Multi-zone Rental Development
+# V0.34.0 — Editor Stability Recovery
 
-## Photo Studio
-- Increased spatial illumination analysis resolution from 96 to 128 samples wide, aspect-scaled.
-- Added adaptive regional interior midtone recovery with deeper-black protection.
-- Improved bright-region guarding and introduced a staged highlight shoulder for smoother tonal transitions.
-- Retained luminance remapping and gamut-aware chroma compression to reduce colour shifts.
-- Kept one-click Rental Auto Enhance; the app analyses each photo and applies restrained corrections automatically.
+- Restored the complete V0.33 editor implementation after a regression removed editor functions in the previous V0.34 package.
+- Retained the proven V0.33 rental-aware tone engine unchanged.
+- Updated app version, version.json and service-worker cache consistently.
+- No user-data schema, localStorage, IndexedDB, photo, job or Supabase changes.
 
-## Limitations
-- Bright-region protection is luminance-based, not semantic window detection or an independent window mask.
-- This cannot reconstruct detail already clipped in the source or replace genuine sensor-level RAW development.
-- Review each result before delivery, especially mixed-light rooms and bright windows.
-
-## Preservation
-- Built directly from V0.33.0; V0.24.0 remains the designated rollback baseline.
-- No changes to photo records, jobs, clients, quotes, invoices, localStorage keys, IndexedDB stores or Supabase schema.
-- Original photo blobs remain untouched; existing editing recipes remain compatible.
-- RAW import/development path is unchanged.
-- APP_VERSION, version.json and service-worker cache updated to 0.34.0.
-- This ZIP contains only V0.34.0 release notes.
-
-## Validation
-- JavaScript syntax, version consistency and ZIP integrity checks performed.
-- Not live-tested in a browser against the user's complete CR2 workflow.
+This is a recovery release. Further image-engine enhancements will be developed only after the editor entry, rendering, retouch and export workflows are confirmed working.
