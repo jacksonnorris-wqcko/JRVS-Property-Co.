@@ -1,21 +1,24 @@
-# JRVS Property Co. — V0.27.0
+# JRVS Property Co. — V0.28.0
 
 A browser-based property photography and business workflow app built for JRVS Property Co.
 
 ## Current release
 
-**V0.27.0 — Rental Auto Enhance**
+**V0.28.0 — Automatic Rental Auto Enhance**
 
-This release is the first visible workbench tidy-up following the V0.25 non-destructive edit-recipe foundation.
+This release advances the rental-specific automatic correction workflow following the V0.25 non-destructive edit-recipe foundation.
 
 ### Photo Studio
 - Image-first editing workspace with a large central preview and a scrollable control panel.
 - Develop, Colour, Finish, Geometry, Export and Retouch workspaces.
 - Collapsible quick light and quick colour adjustment groups.
 - Property editing presets and a new rental-photography Auto Enhance analysis workflow.
-- Auto Enhance profiles for rental interiors, bright interiors, kitchens/bathrooms, exteriors and neutral correction.
+- One-click Rental Auto Enhance automatically analyses each photo; users no longer select an editing style.
+- Samples image luminance percentiles, spatial brightness distribution, clipping, saturation and likely neutral surfaces.
+- Estimates whether a photo is a bright interior, low-light interior, bright neutral room, exterior or mixed-light scene, then applies restrained global corrections.
+- Displays a brief analysis summary including scene estimate, mixed-lighting indication and estimated white-balance confidence.
 - Image sampling estimates tonal percentiles, shadow/highlight distribution, clipping, saturation and likely neutral-surface colour cast before applying restrained starting adjustments.
-- Auto Enhance is a global starting correction, not AI scene segmentation or local window masking; review results and refine manually.
+- Auto Enhance is deterministic local image analysis, not AI scene segmentation or local window masking; review results and refine manually.
 - Live histogram, zoom-to-fit controls and before/after comparison.
 - Undo/redo, crop and rotation controls.
 - Existing manual clone/soft sampled-patch retouch tools.
@@ -39,7 +42,7 @@ This release is the first visible workbench tidy-up following the V0.25 non-dest
 
 ## Known limitations and next development steps
 
-V0.27.0 is a foundation and workbench milestone, not yet a Lightroom/Photoshop replacement.
+V0.28.0 is a foundation and workbench milestone, not yet a Lightroom/Photoshop replacement.
 
 The following are planned but are **not complete features**:
 - Genuine professional RAW development with validated camera profiles and full sensor-level adjustment workflow.
@@ -72,9 +75,9 @@ Do not clear site data to force an update; that risks removing locally stored ap
 
 ## Release metadata
 
-- App version: `0.27.0`
-- `version.json`: `0.27.0`
-- Service-worker cache: `jrvs-property-co-v0.27.0`
+- App version: `0.28.0`
+- `version.json`: `0.28.0`
+- Service-worker cache: `jrvs-property-co-v0.28.0`
 
 ## Project direction
 

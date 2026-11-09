@@ -1349,7 +1349,14 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
 #editorBackdrop .jrvs-auto-profile select{width:100%;min-height:36px;border:1px solid #dedfce;border-radius:9px;background:#fffefa;color:#253026;padding:7px 9px;font-size:11px}
 #editorBackdrop .editor-tools button{width:100%;min-height:38px;font-weight:800}
 </style>
-</head>
+<style id="jrvs-v028-auto-enhance">
+#editorBackdrop .jrvs-auto-enhance-card{display:grid;gap:8px;margin:9px 0 12px;padding:12px;border:1px solid #dfe3d4;border-radius:12px;background:linear-gradient(135deg,#f5f7ee,#fffdf7)}
+#editorBackdrop .jrvs-auto-enhance-copy{display:grid;gap:3px}
+#editorBackdrop .jrvs-auto-enhance-copy strong{font-size:12px;color:#303a2c}
+#editorBackdrop .jrvs-auto-enhance-copy span{font-size:10px;line-height:1.45;color:#68705f}
+#editorBackdrop .jrvs-auto-enhance-button{width:100%;min-height:42px;font-weight:800;letter-spacing:.01em}
+#editorBackdrop .jrvs-auto-enhance-note{font-size:9px;color:#818675;text-align:center}
+</style></head>
 <body>
 <div class="shell">
   <aside>
@@ -1586,7 +1593,7 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
 <option value="natural">Natural Listing</option><option value="bright">Bright &amp; Airy</option><option value="window">Window Balanced</option><option value="warm">Warm Lifestyle</option><option value="modern">Crisp Modern</option><option value="soft">Soft Neutral</option><option value="luxury">Luxury Contrast</option><option value="wood">Wood &amp; Stone</option><option value="bathroom">Bathroom Clean</option>
 </optgroup><optgroup label="Exterior · Professional">
 <option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option><option value="twilight">Twilight Mood</option>
-</optgroup></select><div class="jrvs-auto-profile"><label for="jrvsAutoProfile">Auto enhance profile</label><select id="jrvsAutoProfile"><option value="rental-interior">Rental interior · natural & balanced</option><option value="rental-bright">Rental interior · bright & airy</option><option value="rental-bathroom">Kitchen & bathroom · clean whites</option><option value="rental-exterior">Rental exterior · natural daylight</option><option value="rental-neutral">Neutral correction · minimal look</option></select></div><div class="editor-tools"><button class="secondary" type="button" onclick="autoEnhanceEditor()">✨ Analyse &amp; auto enhance</button></div></div>
+</optgroup></select><div class="jrvs-auto-enhance-card"><div class="jrvs-auto-enhance-copy"><strong>Rental Auto Enhance</strong><span>Analyses this photo and automatically balances light, colour and tonal range.</span></div><button class="secondary jrvs-auto-enhance-button" type="button" onclick="autoEnhanceEditor()">✦ Analyse &amp; enhance photo</button><div class="jrvs-auto-enhance-note">One click · Every photo analysed individually · Original always preserved</div></div></div>
 <details class="editor-section jrvs-quick-controls" open data-editor-group="basic">
 <summary>Quick light adjustments <span class="jrvs-section-hint">Exposure · contrast · tonal balance</span></summary>
 <div class="editor-control"><label>Exposure <span id="exposureVal">0</span></label><input id="exposure" type="range" min="-2" max="2" step="0.05" value="0" oninput="editorChanged()"></div>
@@ -1829,7 +1836,7 @@ function showToast(message, type='success', duration=3600){
  close.addEventListener('click',()=>clearTimeout(timer),{once:true});
 }
 
-// V0.27.0 — deliberate, verified full business-data reset.
+// V0.28.0 — deliberate, verified full business-data reset.
 function openDataReset(){
  const back=document.getElementById('dataResetBackdrop'),phrase=document.getElementById('dataResetPhrase'),accept=document.getElementById('dataResetAccept');
  phrase.value='';accept.disabled=true;
@@ -1927,7 +1934,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.27.0';
+const APP_VERSION='0.28.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -3173,65 +3180,71 @@ function applyEditorPreset(name){
  drawEditor();captureEditorHistory();
 }
 function autoEnhanceEditor(){
- if(!editorImage)return;
- const profile=document.getElementById('jrvsAutoProfile')?.value||'rental-interior';
- const max=420,scale=Math.min(1,max/Math.max(editorImage.naturalWidth,editorImage.naturalHeight));
+ if(!editorImage){showToast('Open a photo before running Auto Enhance.','error');return}
+ const started=performance.now(),max=640,scale=Math.min(1,max/Math.max(editorImage.naturalWidth,editorImage.naturalHeight));
  const c=document.createElement('canvas');c.width=Math.max(1,Math.round(editorImage.naturalWidth*scale));c.height=Math.max(1,Math.round(editorImage.naturalHeight*scale));
  const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(editorImage,0,0,c.width,c.height);
- const data=x.getImageData(0,0,c.width,c.height).data, lum=[],neutral=[],satSamples=[];
- let sumR=0,sumG=0,sumB=0,valid=0,clipHi=0,clipLo=0,shadowCount=0,highlightCount=0;
- for(let i=0;i<data.length;i+=16){
-  const r=data[i],g=data[i+1],b=data[i+2],l=.2126*r+.7152*g+.0722*b;
-  if(!Number.isFinite(l))continue;
-  lum.push(l);sumR+=r;sumG+=g;sumB+=b;valid++;
-  if(l>=248)clipHi++;if(l<=7)clipLo++;if(l<58)shadowCount++;if(l>220)highlightCount++;
-  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),chroma=mx-mn;
-  satSamples.push(chroma/Math.max(1,mx));
-  // Neutral wall/ceiling candidates: restrained chroma and mid-to-high luminance.
-  if(l>75&&l<235&&chroma<Math.max(12,mx*.105)){neutral.push([r,g,b])}
+ const w=c.width,hg=c.height,data=x.getImageData(0,0,w,hg).data,lum=[],neutral=[],sat=[];
+ const zones=Array.from({length:16},()=>({n:0,lum:0,bright:0,dark:0}));
+ let n=0,clipHi=0;
+ const step=Math.max(1,Math.floor(Math.sqrt(w*hg/24000)));
+ for(let yy=0;yy<hg;yy+=step)for(let xx=0;xx<w;xx+=step){
+  const i=(yy*w+xx)*4,r=data[i],g=data[i+1],b=data[i+2],L=.2126*r+.7152*g+.0722*b;
+  lum.push(L);n++;if(L>=248)clipHi++;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),ch=mx-mn;sat.push(ch/Math.max(1,mx));
+  if(L>65&&L<238&&ch<Math.max(14,mx*.12))neutral.push([r,g,b,L]);
+  const zx=Math.min(3,Math.floor(xx/Math.max(1,w)*4)),zy=Math.min(3,Math.floor(yy/Math.max(1,hg)*4)),z=zones[zy*4+zx];
+  z.n++;z.lum+=L;if(L>218)z.bright++;if(L<62)z.dark++;
  }
- if(!valid){showToast('Could not analyse this image.','error');return}
+ if(!n){showToast('Could not analyse this image.','error');return}
  lum.sort((a,b)=>a-b);
  const pct=p=>lum[Math.min(lum.length-1,Math.max(0,Math.round((lum.length-1)*p)))];
- const p05=pct(.05),p10=pct(.10),p25=pct(.25),p50=pct(.50),p75=pct(.75),p90=pct(.90),p95=pct(.95),p98=pct(.98);
- const meanR=sumR/valid,meanG=sumG/valid,meanB=sumB/valid;
- const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
- // Rental imagery target: readable shadow detail, controlled bright windows and clean but believable whites.
- const targetMedian=profile==='rental-bright'?139:profile==='rental-exterior'?132:profile==='rental-neutral'?126:profile==='rental-bathroom'?134:130;
- let exposure=clamp(Math.log2(targetMedian/Math.max(1,p50)),-.85,.75);
- if(p95>246)exposure=Math.min(exposure,.18);
- let highlights=clamp((p95-218)*-0.48,-48,0);
- if(p98>250)highlights=Math.min(highlights,-18);
- let shadows=clamp((76-p10)*.34,0,38);
- if(p10<24)shadows=Math.max(shadows,18);
- let contrast=clamp((165-(p90-p10))*.20,-7,13);
- let whites=clamp((238-p95)*.20,-8,12);
- let blacks=clamp((p05-18)*-.22,-12,5);
- const avgSat=satSamples.reduce((a,b)=>a+b,0)/Math.max(1,satSamples.length);
- let vibrance=clamp((.19-avgSat)*32,-2,8),saturation=profile==='rental-neutral'?-1:0;
- let temperature=0,tint=0;
- // Only use a broad set of likely neutral surfaces; make small corrections to avoid colour-cast overcorrection.
- if(neutral.length>80){
-  let nr=0,ng=0,nb=0;neutral.forEach(v=>{nr+=v[0];ng+=v[1];nb+=v[2]});
-  nr/=neutral.length;ng/=neutral.length;nb/=neutral.length;
-  const warmBias=(nr-nb)/Math.max(1,(nr+ng+nb)/3);
-  const greenBias=(ng-(nr+nb)/2)/Math.max(1,(nr+ng+nb)/3);
-  temperature=clamp(-warmBias*95,-10,10);
-  tint=clamp(-greenBias*85,-7,7);
+ const p02=pct(.02),p05=pct(.05),p10=pct(.10),p50=pct(.50),p90=pct(.90),p95=pct(.95),p98=pct(.98);
+ const avgSat=sat.reduce((a,b)=>a+b,0)/sat.length,clipRate=clipHi/n;
+ const means=zones.filter(z=>z.n).map(z=>z.lum/z.n);
+ const zoneSpread=Math.max(...means)-Math.min(...means);
+ const brightZones=zones.filter(z=>z.n&&z.lum/z.n>205).length,darkZones=zones.filter(z=>z.n&&z.lum/z.n<75).length;
+ const mixedLighting=brightZones>=1&&darkZones>=1&&zoneSpread>90;
+ const darkRate=zones.reduce((a,z)=>a+z.dark,0)/n,brightRate=zones.reduce((a,z)=>a+z.bright,0)/n;
+ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+ const likelyExterior=avgSat>.20&&p90-p10>145&&brightRate>.16&&darkRate<.18;
+ const likelyBrightRoom=p50>145&&p95>238;
+ const likelyWhiteRoom=neutral.length>n*.12&&p90>185;
+ const likelyLowLight=p50<92||darkRate>.30;
+ const targetMedian=likelyExterior?132:likelyBrightRoom?137:likelyWhiteRoom?134:128;
+ let exposure=clamp(Math.log2(targetMedian/Math.max(1,p50)),-.8,.72);
+ if(p95>245)exposure=Math.min(exposure,.12);
+ if(clipRate>.10)exposure=Math.min(exposure,0);
+ let highlights=clamp((p95-218)*-.52,-52,5);
+ if(p98>250)highlights=Math.min(highlights,-22);
+ if(clipRate>.18)highlights=Math.min(highlights,-38);
+ let shadows=clamp((78-p10)*.38,0,42);
+ if(likelyLowLight)shadows=Math.max(shadows,Math.min(38,18+(92-p50)*.22));
+ let blacks=clamp((p05-20)*-.20,-13,4);
+ let contrast=clamp((160-(p90-p10))*.17,-8,12);
+ if(mixedLighting)contrast=clamp(contrast-3,-11,10);
+ let whites=clamp((238-p95)*.22,-12,12);
+ let vibrance=clamp((.20-avgSat)*34,-3,9),saturation=0,temperature=0,tint=0,wbConfidence='low';
+ if(neutral.length>Math.max(50,n*.025)){
+  const vals=neutral.filter(v=>v[3]>95&&v[3]<220);
+  if(vals.length>35){
+   const meansRGB=[0,1,2].map(k=>vals.reduce((a,v)=>a+v[k],0)/vals.length),avg=meansRGB.reduce((a,b)=>a+b,0)/3;
+   temperature=clamp(-((meansRGB[0]-meansRGB[2])/Math.max(1,avg))*78,-8,8);
+   tint=clamp(-((meansRGB[1]-(meansRGB[0]+meansRGB[2])/2)/Math.max(1,avg))*62,-5,5);wbConfidence='moderate';
+  }
  }
- // Profile tuning: rental work should look clean, bright and natural, not heavily stylised.
- if(profile==='rental-bright'){exposure=clamp(exposure+.12,-.75,.85);shadows=clamp(shadows+5,0,42);contrast=clamp(contrast-2,-9,12)}
- if(profile==='rental-bathroom'){highlights=clamp(highlights-8,-55,0);whites=clamp(whites+4,-8,14);saturation=Math.min(saturation,-2);temperature=clamp(temperature-2,-12,10)}
- if(profile==='rental-exterior'){exposure=clamp(exposure-.04,-.85,.7);highlights=clamp(highlights-4,-52,0);vibrance=clamp(vibrance+2,-2,10);contrast=clamp(contrast+2,-7,15)}
- if(profile==='rental-neutral'){exposure=clamp(exposure*.78,-.65,.6);highlights*=.82;shadows*=.78;contrast*=.75;vibrance=Math.min(vibrance,3)}
- const values={exposure,brightness:0,contrast,highlights,shadows,whites,blacks,temperature,tint,saturation,warmth:0,vibrance,clarity:profile==='rental-exterior'?5:3,sharpening:8,vignette:0};
+ if(likelyWhiteRoom){saturation=-1;vibrance=Math.min(vibrance,5);whites=Math.min(whites,7)}
+ if(likelyExterior){vibrance=clamp(vibrance+1,-2,10);contrast=clamp(contrast+1,-8,13)}
+ if(likelyBrightRoom){exposure=Math.min(exposure,.18);highlights=Math.min(highlights,-8)}
+ if(mixedLighting){shadows=clamp(shadows+5,0,46);highlights=clamp(highlights-5,-58,5)}
+ const values={exposure,brightness:0,contrast,highlights,shadows,whites,blacks,temperature,tint,saturation,warmth:0,vibrance,clarity:2,sharpening:7,vignette:0};
  Object.entries(values).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=String(Math.round(v*100)/100)});
  const preset=document.getElementById('editorPreset');if(preset)preset.value='none';
  drawEditor();captureEditorHistory();
- const clipped=Math.round(clipHi/valid*100);
+ const scene=likelyExterior?'Exterior / high daylight':likelyWhiteRoom?'Bright neutral interior':likelyBrightRoom?'Bright interior':likelyLowLight?'Low-light interior':'General interior';
  const status=document.getElementById('editorStatus');
- if(status)status.textContent=`Rental analysis applied · median ${Math.round(p50)} · highlights clipped ${clipped}% · ${neutral.length?'neutral-surface WB checked':'WB left unchanged'}`;
- showToast(`Rental auto enhance applied · ${profile.replace('rental-','').replace('-',' ')} profile`,'success');
+ if(status)status.textContent=`Auto analysis: ${scene} · ${mixedLighting?'mixed lighting detected':'balanced lighting'} · WB confidence ${wbConfidence} · ${Math.round(clipRate*100)}% clipped highlights · ${Math.round(performance.now()-started)} ms`;
+ showToast('Rental Auto Enhance analysed and corrected this photo. Review the result before saving.','success');
 }
 function editorSettings(){return Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value]))}
 async function batchApplyEditor(){
