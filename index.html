@@ -1252,6 +1252,65 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
  #page-photos .jrvs-photo-card .photo-thumb{height:125px}
 }
 </style>
+
+<style id="jrvs-v021-photo-polish">
+/* Keep the three filters together; keep import/count in their own lane. */
+#page-photos .media-toolbar{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) auto!important;
+ align-items:end!important;
+ gap:16px!important;
+ padding:13px 14px!important;
+}
+#page-photos .media-filters{
+ display:grid!important;
+ grid-template-columns:minmax(190px,1.25fr) minmax(170px,.9fr) minmax(160px,.85fr)!important;
+ gap:12px!important;
+ min-width:0!important;
+}
+#page-photos .media-field{min-width:0!important}
+#page-photos .media-field input,#page-photos .media-field select{width:100%!important;min-width:0!important}
+#page-photos .media-toolbar-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:10px!important;white-space:nowrap!important}
+#page-photos .media-count{white-space:nowrap}
+#page-photos .jrvs-photo-card .photo-image-wrap{
+ height:auto!important;
+ aspect-ratio:4/3!important;
+ overflow:hidden!important;
+ background:#f4f3eb!important;
+ line-height:0!important;
+}
+#page-photos .jrvs-photo-card .photo-thumb{
+ display:block!important;
+ width:100%!important;
+ height:100%!important;
+ min-height:0!important;
+ object-fit:cover!important;
+}
+#page-photos .jrvs-photo-select{
+ width:28px!important;height:28px!important;
+ border-radius:50%!important;
+ border:2px solid #fff!important;
+ background:#fffefa!important;
+ color:#fff!important;
+ font-size:14px!important;
+ font-weight:900!important;
+ box-shadow:0 1px 5px #0003!important;
+}
+#page-photos .jrvs-photo-select.selected{background:var(--sage)!important;border-color:#fff!important;color:#fff!important}
+#page-photos .jrvs-photo-card-actions{display:flex!important;gap:7px!important}
+#page-photos .jrvs-photo-card-actions .photo-edit-btn{flex:1!important}
+#page-photos .jrvs-photo-card-actions .tiny-btn{min-width:36px!important;width:36px!important;height:36px!important}
+#page-photos .jrvs-gallery-actions .jrvs-action-buttons button:disabled{opacity:.38!important}
+@media(max-width:950px){
+ #page-photos .media-toolbar{grid-template-columns:1fr!important}
+ #page-photos .media-toolbar-actions{justify-content:flex-end!important}
+}
+@media(max-width:650px){
+ #page-photos .media-filters{grid-template-columns:1fr 1fr!important}
+ #page-photos .media-field:first-child{grid-column:1/-1}
+ #page-photos .media-toolbar-actions{justify-content:space-between!important}
+}
+</style>
 </head>
 <body>
 <div class="shell">
@@ -1724,7 +1783,7 @@ function showToast(message, type='success', duration=3600){
  close.addEventListener('click',()=>clearTimeout(timer),{once:true});
 }
 
-// V0.20.0 — deliberate, verified full business-data reset.
+// V0.22.0 — deliberate, verified full business-data reset.
 function openDataReset(){
  const back=document.getElementById('dataResetBackdrop'),phrase=document.getElementById('dataResetPhrase'),accept=document.getElementById('dataResetAccept');
  phrase.value='';accept.disabled=true;
@@ -1822,7 +1881,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.20.0';
+const APP_VERSION='0.22.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -2308,7 +2367,7 @@ async function renderPhotos(){
  const selectedVisible=rows.filter(p=>selectedPhotoIds.has(String(p.id))).length;
  const back=`<div class="jrvs-gallery-head"><div class="jrvs-gallery-title"><div><div class="gallery-kicker">PROPERTY WORKSPACE</div><h3>${esc(job?.name||'Project gallery')}</h3><p>${rows.length} photos · ${rows.filter(p=>p.type==='Original').length} originals · ${rows.filter(p=>p.type==='Edited').length} edited</p></div><button class="secondary gallery-back" onclick="showAllProjects()">← All projects</button></div>
  <div class="jrvs-gallery-stats"><button type="button" class="${kind==='all'?'active':''}" onclick="setPhotoLibraryFilter('all')"><strong>${getProjectPhotos(f).length}</strong><span>All photos</span></button><button type="button" class="${kind==='Original'?'active':''}" onclick="setPhotoLibraryFilter('Original')"><strong>${getProjectPhotos(f).filter(p=>p.type==='Original').length}</strong><span>Originals</span></button><button type="button" class="${kind==='Edited'?'active':''}" onclick="setPhotoLibraryFilter('Edited')"><strong>${getProjectPhotos(f).filter(p=>p.type==='Edited').length}</strong><span>Edited</span></button></div>
- <div class="jrvs-gallery-actions"><div class="jrvs-selection-label"><strong>${selectedVisible} selected</strong><span>Select photos to download, set as cover or delete.</span></div><div class="jrvs-action-buttons"><button class="secondary" type="button" onclick="selectAllVisiblePhotos()">Select all</button><button class="secondary" type="button" onclick="clearPhotoSelection()">Clear</button><button class="danger" type="button" onclick="deleteSelectedPhotos()" ${selectedPhotoIds.size?'':'disabled'}>Delete selected</button><button class="primary" type="button" onclick="downloadSelectedPhotosZip()" ${selectedPhotoIds.size?'':'disabled'}>↓ Download ZIP</button></div></div></div>
+ <div class="jrvs-gallery-actions"><div class="jrvs-selection-label"><strong>${selectedVisible} selected</strong><span>Select photos to download, set as cover or delete.</span></div><div class="jrvs-action-buttons"><button class="secondary" type="button" onclick="selectAllVisiblePhotos()">Select all</button><button class="secondary" type="button" onclick="clearPhotoSelection()">Clear</button><button class="secondary" type="button" onclick="setSelectedPhotoAsCover()" ${selectedPhotoIds.size===1?'':'disabled'}>Set cover</button><button class="danger" type="button" onclick="deleteSelectedPhotos()" ${selectedPhotoIds.size?'':'disabled'}>Delete selected</button><button class="primary" type="button" onclick="downloadSelectedPhotosZip()" ${selectedPhotoIds.size?'':'disabled'}>↓ Download ZIP</button></div></div></div>
  <details class="batch-tools"><summary>Batch editing <span>Apply a preset to selected original photos</span></summary><div class="batch-tools-content"><select id="batchPreset"><option value="natural">Natural Listing</option><option value="bright">Bright &amp; Airy</option><option value="window">Window Balanced</option><option value="warm">Warm Lifestyle</option><option value="modern">Crisp Modern</option><option value="soft">Soft Neutral</option><option value="luxury">Luxury Contrast</option><option value="wood">Wood &amp; Stone</option><option value="bathroom">Bathroom Clean</option><option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option></select><button class="primary" type="button" onclick="applyBatchPresetToSelection()">Apply preset</button><div class="batch-progress" id="batchProgress">New edited copies are created; originals remain unchanged.</div></div></details>`;
  if(!rows.length){grid.innerHTML=back+'<div class="empty photo-empty"><b>No matching photos</b>Try another filter or import photos into this property.</div>';return}
  grid.innerHTML=back+'<div class="photo-cards-grid jrvs-photo-cards">'+rows.map(p=>{
@@ -2317,14 +2376,14 @@ async function renderPhotos(){
    const typeLabel=String(p.type||'Original');
    return `<article class="photo-card jrvs-photo-card ${selected?'is-batch-selected':''}" data-photo-id="${esc(String(p.id))}">
     <div class="photo-image-wrap">
-     <button class="jrvs-photo-select ${selected?'selected':''}" type="button" onclick="togglePhotoSelection('${p.id}',${!selected})" aria-label="${selected?'Deselect':'Select'} ${esc(p.name)}">${selected?'✓':'□'}</button>
+     <button class="jrvs-photo-select ${selected?'selected':''}" type="button" onclick="togglePhotoSelection('${p.id}',${!selected})" aria-label="${selected?'Deselect':'Select'} ${esc(p.name)}">${selected?'✓':''}</button>
      <img class="photo-thumb" src="${u}" alt="${esc(p.name)}" onclick="previewPhoto('${p.id}')">
      ${p.isCover?'<span class="photo-cover-badge">★ Cover</span>':''}
     </div>
     <div class="photo-info">
      <div class="jrvs-photo-title"><strong title="${esc(p.name)}">${esc(p.name)}</strong><span class="jrvs-type-pill ${typeLabel.toLowerCase()==='edited'?'edited':'original'}">${esc(typeLabel)}</span></div>
      <div class="photo-meta">${bytes(p.size)} · ${new Date(p.addedAt||Date.now()).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div>
-     <div class="jrvs-photo-card-actions"><button class="primary photo-edit-btn" onclick="openEditor('${p.id}')">Edit photo</button><button class="tiny-btn" onclick="setProjectCover('${p.id}')" ${p.isCover?'disabled':''} title="Set cover">☆</button><button class="tiny-btn" onclick="downloadPhoto('${p.id}')" title="Download original">↓</button><button class="tiny-btn danger" onclick="deletePhoto('${p.id}')" title="Delete this photo">⌫</button></div>
+     <div class="jrvs-photo-card-actions"><button class="primary photo-edit-btn" onclick="openEditor('${p.id}')">Edit photo</button><button class="tiny-btn" onclick="downloadPhoto('${p.id}')" title="Download photo">↓</button></div>
     </div></article>`;
  }).join('')+'</div>';
 }
@@ -2398,11 +2457,16 @@ async function downloadSelectedPhotosZip(){
  }catch(e){console.error('JRVS photo ZIP export failed',e);showToast(`ZIP export failed: ${e.message||'Unknown error'}`,'error')}
  finally{if(btn){btn.disabled=false;btn.textContent='↓ Download selected (.zip)'}}
 }
-function togglePhotoSelection(id,checked){if(checked)selectedPhotoIds.add(String(id));else selectedPhotoIds.delete(String(id));const card=document.querySelector(`.jrvs-photo-card[data-photo-id="${CSS.escape(String(id))}"]`);if(card){card.classList.toggle('is-batch-selected',checked);const btn=card.querySelector('.jrvs-photo-select');if(btn){btn.classList.toggle('selected',checked);btn.textContent=checked?'✓':'';btn.setAttribute('aria-label',(checked?'Deselect ':'Select ')+(card.querySelector('.jrvs-photo-title strong')?.textContent||'photo'))}}updateBatchSelectionCount();const actions=document.querySelector('.jrvs-gallery-actions');if(actions){const label=actions.querySelector('.jrvs-selection-label strong');if(label)label.textContent=selectedPhotoIds.size+' selected';actions.querySelectorAll('button[onclick*="deleteSelectedPhotos"],button[onclick*="downloadSelectedPhotosZip"]').forEach(b=>b.disabled=!selectedPhotoIds.size)}}
+function togglePhotoSelection(id,checked){if(checked)selectedPhotoIds.add(String(id));else selectedPhotoIds.delete(String(id));const card=document.querySelector(`.jrvs-photo-card[data-photo-id="${CSS.escape(String(id))}"]`);if(card){card.classList.toggle('is-batch-selected',checked);const btn=card.querySelector('.jrvs-photo-select');if(btn){btn.classList.toggle('selected',checked);btn.textContent=checked?'✓':'';btn.setAttribute('aria-label',(checked?'Deselect ':'Select ')+(card.querySelector('.jrvs-photo-title strong')?.textContent||'photo'))}}updateBatchSelectionCount();const actions=document.querySelector('.jrvs-gallery-actions');if(actions){const label=actions.querySelector('.jrvs-selection-label strong');if(label)label.textContent=selectedPhotoIds.size+' selected';actions.querySelectorAll('button[onclick*="deleteSelectedPhotos"],button[onclick*="downloadSelectedPhotosZip"]').forEach(b=>b.disabled=!selectedPhotoIds.size);const coverBtn=actions.querySelector('button[onclick*="setSelectedPhotoAsCover"]');if(coverBtn)coverBtn.disabled=selectedPhotoIds.size!==1}}
 function updateBatchSelectionCount(){
  const el=document.getElementById('batchSelectionCount');if(el)el.textContent=selectedPhotoIds.size+' photo'+(selectedPhotoIds.size===1?'':'s')+' selected';
  const del=document.getElementById('deleteSelectedEditsBtn');
  if(del){const chosen=[...selectedPhotoIds].map(id=>photoRecords.find(p=>String(p.id)===String(id))).filter(Boolean);del.disabled=!chosen.length;del.title='Delete selected originals and edited copies'}
+}
+async function setSelectedPhotoAsCover(){
+ const ids=[...selectedPhotoIds];
+ if(ids.length!==1){showToast('Select exactly one photo to set as the cover.','info');return}
+ await setProjectCover(ids[0]);
 }
 async function deleteSelectedPhotos(){
  const chosen=[...selectedPhotoIds].map(id=>photoRecords.find(p=>String(p.id)===String(id))).filter(Boolean);
@@ -2428,7 +2492,7 @@ async function deleteSelectedPhotos(){
 function deleteSelectedEdits(){return deleteSelectedPhotos()}
 function selectAllVisiblePhotos(){
  document.querySelectorAll('#photoGrid .jrvs-photo-card').forEach(card=>{const id=card.dataset.photoId;selectedPhotoIds.add(String(id));card.classList.add('is-batch-selected');const btn=card.querySelector('.jrvs-photo-select');if(btn){btn.classList.add('selected');btn.textContent='✓'}});
- updateBatchSelectionCount();const actions=document.querySelector('.jrvs-gallery-actions');if(actions){const label=actions.querySelector('.jrvs-selection-label strong');if(label)label.textContent=selectedPhotoIds.size+' selected';actions.querySelectorAll('button[onclick*="deleteSelectedPhotos"],button[onclick*="downloadSelectedPhotosZip"]').forEach(b=>b.disabled=!selectedPhotoIds.size)}
+ updateBatchSelectionCount();const actions=document.querySelector('.jrvs-gallery-actions');if(actions){const label=actions.querySelector('.jrvs-selection-label strong');if(label)label.textContent=selectedPhotoIds.size+' selected';actions.querySelectorAll('button[onclick*="deleteSelectedPhotos"],button[onclick*="downloadSelectedPhotosZip"]').forEach(b=>b.disabled=!selectedPhotoIds.size);const coverBtn=actions.querySelector('button[onclick*="setSelectedPhotoAsCover"]');if(coverBtn)coverBtn.disabled=selectedPhotoIds.size!==1}
 }
 function clearPhotoSelection(){
  selectedPhotoIds.clear();document.querySelectorAll('#photoGrid .jrvs-photo-card').forEach(card=>{card.classList.remove('is-batch-selected');const btn=card.querySelector('.jrvs-photo-select');if(btn){btn.classList.remove('selected');btn.textContent=''}});
@@ -3115,19 +3179,13 @@ function compareVersions(a,b){const aa=String(a).split('.').map(Number),bb=Strin
 let updateCheckRunning=false;
 async function refreshApp(){
  const button=document.querySelector('.jrvs-refresh-button');
- if(button){button.disabled=true;button.classList.add('is-refreshing');}
+ if(button){button.disabled=true;button.classList.add('is-refreshing')}
  try{
   showToast('Refreshing JRVS and checking for updates…','info',2200);
-  if('serviceWorker'in navigator){
-   try{const reg=await navigator.serviceWorker.getRegistration();if(reg)await reg.update()}catch(e){console.warn('Service worker update check unavailable',e)}
-  }
-  try{
-   const response=await fetch('./version.json?refresh='+Date.now(),{cache:'no-store'});
-   if(response.ok){const remote=await response.json();if(remote.version&&compareVersions(remote.version,APP_VERSION)>0){
-    showToast('New JRVS version '+remote.version+' found. Reloading…','success',1800);
-    setTimeout(()=>location.reload(),700);return;
-   }}
-  }catch(e){console.warn('Version check unavailable during refresh',e)}
+  await checkForUpdates(true);
+  // checkForUpdates schedules a reload if a new service worker activates.
+  const status=document.getElementById('updateStatus');
+  if(status&&/Installing the new app files|Update installed|Reloading JRVS/.test(status.textContent))return;
   showToast('JRVS refreshed. Loading your latest saved data.','success',1800);
   setTimeout(()=>location.reload(),450);
  }catch(error){
@@ -3135,6 +3193,27 @@ async function refreshApp(){
   if(button){button.disabled=false;button.classList.remove('is-refreshing')}
   showToast('Refresh failed. Please try again.','error');
  }
+}
+async function waitForWorkerActivation(reg,timeoutMs=15000){
+ return new Promise(resolve=>{
+  let finished=false;
+  const finish=value=>{if(finished)return;finished=true;navigator.serviceWorker?.removeEventListener('controllerchange',onController);resolve(value)};
+  const onController=()=>finish(true);
+  navigator.serviceWorker?.addEventListener('controllerchange',onController);
+  const timer=setTimeout(()=>finish(false),timeoutMs);
+  if(reg?.active?.state==='activated'&&!reg.installing&&!reg.waiting){
+    // An active worker already exists; allow update() time to complete before deciding.
+    setTimeout(()=>{if(!reg.installing&&!reg.waiting)finish(true)},900);
+  }
+  if(reg?.installing){
+    const worker=reg.installing;
+    worker.addEventListener('statechange',()=>{
+      if(worker.state==='activated')finish(true);
+      if(worker.state==='redundant')finish(false);
+    });
+  }
+  if(reg?.waiting){try{reg.waiting.postMessage({type:'SKIP_WAITING'})}catch(_){}}
+ });
 }
 async function checkForUpdates(manual=false){
  if(updateCheckRunning)return;updateCheckRunning=true;
@@ -3144,17 +3223,37 @@ async function checkForUpdates(manual=false){
   const remote=await r.json(),rv=remote.version;
   if(rv&&compareVersions(rv,APP_VERSION)>0){
    const guard='jrvs-update-attempt-'+rv;
-   if(localStorage.getItem(guard)==='1'){if(status)status.textContent='Update '+rv+' was detected but has not completed. Current version '+APP_VERSION+' is being kept open to prevent a refresh loop.';return}
-   localStorage.setItem(guard,'1');
-   if(status)status.textContent='A newer version ('+rv+') is available. Refreshing once…';
-   if('serviceWorker'in navigator){const reg=await navigator.serviceWorker.getRegistration();if(reg)await reg.update()}
-   setTimeout(()=>location.reload(),900);
+   // A manual check is an explicit retry and must clear any guard left by a failed earlier update.
+   if(manual)localStorage.removeItem(guard);
+   if(localStorage.getItem(guard)==='1'){
+    if(status)status.textContent='Update '+rv+' is available, but the previous automatic attempt did not finish. Press Check now to retry.';
+    return;
+   }
+   if(status)status.textContent='Update '+rv+' found. Installing the new app files…';
+   let activated=false;
+   if('serviceWorker'in navigator){
+    const reg=await navigator.serviceWorker.getRegistration();
+    if(reg){
+     await reg.update();
+     activated=await waitForWorkerActivation(reg,15000);
+    }
+   }
+   // Set the loop guard only after the update attempt has completed successfully.
+   if(activated){
+    localStorage.setItem(guard,'1');
+    if(status)status.textContent='Update installed. Reloading JRVS…';
+    setTimeout(()=>location.reload(),500);
+   }else{
+    if(status)status.textContent='Update '+rv+' is available, but the browser has not activated it yet. Press Check now to retry, or close and reopen JRVS.';
+   }
   }else{
    Object.keys(localStorage).filter(k=>k.startsWith('jrvs-update-attempt-')).forEach(k=>localStorage.removeItem(k));
    if(status)status.textContent='You are up to date · Version '+APP_VERSION;
   }
- }catch(e){if(status)status.textContent='Update check unavailable right now. Your current version is still usable.'}
- finally{updateCheckRunning=false}
+ }catch(e){
+  console.error('JRVS update check failed',e);
+  if(status)status.textContent='Update check failed. Your current version is still usable. Press Check now to retry.';
+ }finally{updateCheckRunning=false}
 }
 
 let deferredInstallPrompt=null;
