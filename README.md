@@ -1,16 +1,18 @@
-# JRVS Property Co. — V0.14.0
+# JRVS Property Co. — V0.16.0
 
-## Retouch engine refinement
+## Canon CR2 and camera RAW support
 
-- Rebuilt brush coordinate mapping using the displayed canvas bounds, so brush placement remains aligned at fit and zoom sizes.
-- Added interpolated brush dabs with spacing based on brush radius to reduce gaps during faster strokes.
-- Changed pointer movement to collect brush dabs and schedule preview renders with requestAnimationFrame rather than synchronously rendering for every pointer event.
-- Retouch undo now removes one complete stroke at a time.
-- Clone sampling keeps a fixed source offset for a continuous stroke.
-- Sample patches outside the image boundary are safely skipped.
-- Retouching remains non-destructive relative to the original photo; saving creates a separate edited photo record with rendered pixels.
-- The Heal control is explicitly described as soft sampled patch repair, not content-aware AI reconstruction.
-- Existing photo records, localStorage, IndexedDB structure and Supabase schema are unchanged.
+- Added in-browser RAW decoding using LibRaw-Wasm (WebAssembly).
+- CR2 and the other RAW extensions already accepted by the import picker can now be decoded to gallery previews and project cover thumbnails.
+- RAW files are retained unchanged as the original photo record; the JPEG preview is stored separately in the local photo library.
+- Opening a RAW original in Photo Studio develops a full-resolution JPEG working image from the RAW file. Saving creates a separate edited JPEG; the original RAW file remains untouched and can still be downloaded or included in delivery ZIPs.
+- RAW decoding runs locally in the browser. The decoder module is loaded from jsDelivr on first use, so an internet connection is required when the decoder is first needed. The original photo file is not uploaded to the decoder service.
+- RAW preview JPEGs are local derived data and are deliberately excluded from Supabase photo metadata; a device can regenerate them from the synced original RAW file.
+- Existing jobs, clients, quotes, invoices, localStorage keys, IndexedDB database/store and Supabase schema are unchanged.
+
+## Important notes
+- Full-resolution RAW development can use substantial memory and take longer than JPEG opening, depending on camera resolution and available RAM.
+- This is RAW decoding and raster editing, not a full parametric RAW workflow. White balance and demosaicing are applied during development; editor changes are made to the developed working image.
 
 ## Deploying
 1. Extract this ZIP.
@@ -18,6 +20,6 @@
 3. Keep the existing browser profile and app URL. Do not clear site data.
 
 ## Release version
-- App version: `0.14.0`
-- `version.json`: `0.14.0`
-- Service-worker cache: `jrvs-property-co-v0.14.0`
+- App version: `0.16.0`
+- `version.json`: `0.16.0`
+- Service-worker cache: `jrvs-property-co-v0.16.0`
