@@ -1,4 +1,4 @@
-# JRVS Photo Studio — V0.33.0 Workbench step
+# JRVS Photo Studio — V0.34.0 Multi-zone Development
 
 ## Delivered
 - Reworked the editor's right-hand control panel into a tighter, image-first workspace.
@@ -69,3 +69,11 @@ V0.33.0 is primarily a workbench/interface milestone. It does not claim to provi
 - Reduced broad shadow lifting and added deeper-black protection to avoid a grey/flat result.
 - Tonal adjustments preserve RGB relationships to reduce colour shifts and channel clipping.
 - Existing editing controls, RAW import/development, photos, jobs and user data remain unchanged.
+
+
+## V0.34.0 — Multi-zone Rental Development
+- Increased the spatial illumination map to 128 samples wide, aspect-scaled, with smoother interpolation.
+- Added adaptive regional interior midtone recovery, deeper-black protection and bright-region guarding.
+- Added a staged highlight shoulder to retain more natural gradation in bright walls, cabinetry and window areas.
+- Kept luminance remapping and gamut-aware chroma compression to reduce colour shifts.
+- Limitation: bright-region guarding is based on luminance, not semantic window recognition. This release does not create independent window masks or recover clipped sensor data.

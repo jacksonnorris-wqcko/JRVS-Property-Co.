@@ -1,10 +1,17 @@
-# JRVS Property Co. — V0.33.0
+# JRVS Property Co. — V0.34.0
 
 A browser-based property photography and business workflow app built for JRVS Property Co.
 
 ## Current release
 
-**V0.33.0 — Adaptive Rental Tone Engine**
+**V0.34.0 — Multi-zone Rental Development**
+
+- Higher-resolution spatial illumination analysis (128-sample-wide field, aspect-scaled).
+- Adaptive regional interior midtone recovery with deeper-black and bright-region protection.
+- Multi-stage highlight shoulder to retain smoother tonal transitions in bright surfaces.
+- Luminance remapping with gamut-aware chroma compression to reduce hue shifts.
+- One-click workflow remains automatic; no style/profile choice is required.
+- This is a luminance-based spatial treatment, not semantic window detection or true per-object masking.
 
 This release advances the rental-specific automatic correction workflow following the V0.25 non-destructive edit-recipe foundation.
 
@@ -45,7 +52,7 @@ This release advances the rental-specific automatic correction workflow followin
 
 ## Known limitations and next development steps
 
-V0.33.0 is a foundation and workbench milestone, not yet a Lightroom/Photoshop replacement.
+V0.34.0 advances the deterministic rental-photo tonal engine, but is not yet a Lightroom/Photoshop replacement.
 
 The following are planned but are **not complete features**:
 - Genuine professional RAW development with validated camera profiles and full sensor-level adjustment workflow.
@@ -78,9 +85,9 @@ Do not clear site data to force an update; that risks removing locally stored ap
 
 ## Release metadata
 
-- App version: `0.33.0`
-- `version.json`: `0.33.0`
-- Service-worker cache: `jrvs-property-co-v0.33.0`
+- App version: `0.34.0`
+- `version.json`: `0.34.0`
+- Service-worker cache: `jrvs-property-co-v0.34.0`
 
 ## Project direction
 
