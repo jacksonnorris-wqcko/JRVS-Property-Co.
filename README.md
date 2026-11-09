@@ -1,10 +1,10 @@
-# JRVS Property Co. — V0.29.0
+# JRVS Property Co. — V0.30.0
 
 A browser-based property photography and business workflow app built for JRVS Property Co.
 
 ## Current release
 
-**V0.29.0 — Local Exposure Balancing**
+**V0.30.0 — Adaptive Rental Tone Engine**
 
 This release advances the rental-specific automatic correction workflow following the V0.25 non-destructive edit-recipe foundation.
 
@@ -45,7 +45,7 @@ This release advances the rental-specific automatic correction workflow followin
 
 ## Known limitations and next development steps
 
-V0.29.0 is a foundation and workbench milestone, not yet a Lightroom/Photoshop replacement.
+V0.30.0 is a foundation and workbench milestone, not yet a Lightroom/Photoshop replacement.
 
 The following are planned but are **not complete features**:
 - Genuine professional RAW development with validated camera profiles and full sensor-level adjustment workflow.
@@ -78,10 +78,18 @@ Do not clear site data to force an update; that risks removing locally stored ap
 
 ## Release metadata
 
-- App version: `0.29.0`
-- `version.json`: `0.29.0`
-- Service-worker cache: `jrvs-property-co-v0.29.0`
+- App version: `0.30.0`
+- `version.json`: `0.30.0`
+- Service-worker cache: `jrvs-property-co-v0.30.0`
 
 ## Project direction
 
 JRVS Photo Studio is being developed towards a PC-first property photography editor. The intended direction is a visual, image-led workflow with professional development, selective local adjustments, architectural correction, retouching and reliable high-resolution delivery.
+
+
+### V0.30.0 — Adaptive Rental Tone Engine
+- Reworked local exposure balancing with a higher-resolution, softly blurred spatial luminance field.
+- Added stronger adaptive shadow/midtone recovery with region-aware lift and per-pixel highlight protection.
+- Added a gentle global rental midtone lift and a soft highlight shoulder to reduce abrupt clipping.
+- Increased automatic analysis target brightness while retaining highlight-aware exposure limits.
+- No AI service or external image upload; processing remains in-browser.

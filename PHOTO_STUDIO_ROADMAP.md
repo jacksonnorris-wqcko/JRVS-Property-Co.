@@ -1,4 +1,4 @@
-# JRVS Photo Studio — V0.29.0 Workbench step
+# JRVS Photo Studio — V0.30.0 Workbench step
 
 ## Delivered
 - Reworked the editor's right-hand control panel into a tighter, image-first workspace.
@@ -18,26 +18,33 @@ The next engineering milestones should be delivered as separate, testable layers
 5. Retouch: independent clone and healing algorithms; later content-aware reconstruction.
 
 ## Honest capability notes
-V0.29.0 is primarily a workbench/interface milestone. It does not claim to provide genuine RAW sensor development, local adjustment masks, advanced perspective correction, or content-aware object removal. Existing processing behaviour remains in place until those engines are implemented and validated.
+V0.30.0 is primarily a workbench/interface milestone. It does not claim to provide genuine RAW sensor development, local adjustment masks, advanced perspective correction, or content-aware object removal. Existing processing behaviour remains in place until those engines are implemented and validated.
 
 
-## V0.29.0 — Rental Auto Enhance
+## V0.30.0 — Rental Auto Enhance
 - Replaces the simple mean-brightness heuristic with sampled tonal analysis using luminance percentiles, shadow/highlight distribution, clipping estimates and colour statistics.
 - Adds rental-specific profiles: natural interior, bright interior, kitchen/bathroom clean whites, exterior daylight and neutral correction.
 - Uses restrained global corrections designed to preserve natural room colour and avoid heavily stylised HDR.
 - This remains a global analysis-and-adjustment starting point. It does not yet identify windows/rooms with semantic AI or create local masks.
 
 
-## V0.29.0 — Automatic Rental Auto Enhance
+## V0.30.0 — Automatic Rental Auto Enhance
 - Removed manual profile selection.
 - Added per-image deterministic analysis of luminance percentiles, clipping, spatial brightness zones, saturation and likely neutral surfaces.
 - Automatically chooses conservative global correction values and reports estimated scene/mixed-light conditions.
 - This is not semantic AI and does not create window or object masks. A future local-mask engine is required for true selective window balancing.
 
 
-## V0.29.0 — Local Exposure Balancing
+## V0.30.0 — Local Exposure Balancing
 - Added a low-resolution spatial luminance field with blur and interpolation to create smooth regional shadow lifts.
 - Bright pixel protection prevents local shadow lift from significantly raising already bright window and cabinetry pixels.
 - Auto Enhance uses more restrained global adjustments and enables local balance automatically.
 - Recipe schema v2 stores the local-balance state; schema v1 remains supported.
 - This is luminance-based masking, not semantic object/window detection.
+
+
+## V0.30.0 — Adaptive Rental Tone Engine
+- Increased local luminance field resolution and added stronger adaptive shadow/midtone recovery.
+- Added restrained global midtone lift and soft highlight shoulder.
+- Raised automatic target median with highlight-aware exposure limits.
+- Still luminance-based; semantic window/object masks remain future work.

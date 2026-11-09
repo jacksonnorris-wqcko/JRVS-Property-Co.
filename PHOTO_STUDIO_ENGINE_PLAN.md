@@ -25,8 +25,10 @@ V0.25.0 does NOT implement genuine CR2 sensor-data development. The current CR2 
 - No database schema change is required for the recipe metadata in IndexedDB.
 - Existing flattened edited JPEGs remain usable.
 
-V0.29.0 adds rental-specific global Auto Enhance analysis profiles; it is not yet local masking, semantic window detection or genuine RAW sensor development.
+V0.30.0 adds rental-specific global Auto Enhance analysis profiles; it is not yet local masking, semantic window detection or genuine RAW sensor development.
 
-V0.29.0 adds deterministic local rental image analysis and automatic global correction; no AI service, external upload or per-image cloud fee is used.
+V0.30.0 adds deterministic local rental image analysis and automatic global correction; no AI service, external upload or per-image cloud fee is used.
 
-V0.29.0 adds a deterministic local luminance-field correction stage after global tone adjustments and before retouch rendering. The field is spatially blurred and interpolated; bright pixels are protected. Recipe schema v2 persists the enable flag while maintaining schema v1 compatibility.
+V0.30.0 adds a deterministic local luminance-field correction stage after global tone adjustments and before retouch rendering. The field is spatially blurred and interpolated; bright pixels are protected. Recipe schema v2 persists the enable flag while maintaining schema v1 compatibility.
+
+V0.30.0: adaptive rental tone stage uses a blurred 72-column luminance field, regional deficit weighting, pixel shadow/highlight guards, restrained midtone lift and soft highlight shoulder. Deterministic in-browser processing; no AI service.

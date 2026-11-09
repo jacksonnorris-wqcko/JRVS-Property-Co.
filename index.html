@@ -1836,7 +1836,7 @@ function showToast(message, type='success', duration=3600){
  close.addEventListener('click',()=>clearTimeout(timer),{once:true});
 }
 
-// V0.29.0 — deliberate, verified full business-data reset.
+// V0.30.0 — deliberate, verified full business-data reset.
 function openDataReset(){
  const back=document.getElementById('dataResetBackdrop'),phrase=document.getElementById('dataResetPhrase'),accept=document.getElementById('dataResetAccept');
  phrase.value='';accept.disabled=true;
@@ -1934,7 +1934,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.29.0';
+const APP_VERSION='0.30.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -3059,41 +3059,44 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
  // JRVS local exposure balancing: build a softly blurred low-resolution luminance field.
  // Dark room regions receive a restrained lift while bright windows/white cabinetry are protected.
  if(editorLocalBalance){
-  const gw=56,gh=Math.max(24,Math.round(gw*height/Math.max(1,width)));
+  // V0.30 adaptive local tone engine. Analyse a blurred luminance map, then apply
+  // a soft shadow/midtone lift with a separate highlight roll-off.
+  const gw=72,gh=Math.max(32,Math.round(gw*height/Math.max(1,width)));
   const map=document.createElement('canvas');map.width=gw;map.height=gh;
-  const mx=map.getContext('2d',{willReadFrequently:true});
-  mx.drawImage(canvas,0,0,gw,gh);
-  const md=mx.getImageData(0,0,gw,gh),mp=md.data;
-  // Blur the downsampled field so regional transitions are gradual rather than visible blocks.
+  const mx=map.getContext('2d',{willReadFrequently:true});mx.drawImage(canvas,0,0,gw,gh);
   const blur=document.createElement('canvas');blur.width=gw;blur.height=gh;
-  const bx=blur.getContext('2d',{willReadFrequently:true});
-  bx.filter='blur(3px)';bx.drawImage(map,0,0);bx.filter='none';
-  const bd=bx.getImageData(0,0,gw,gh).data;
-  const localL=new Float32Array(gw*gh);let fieldTotal=0,fieldN=0;
-  for(let q=0;q<localL.length;q++){const k=q*4,L=.2126*bd[k]+.7152*bd[k+1]+.0722*bd[k+2];localL[q]=L;fieldTotal+=L;fieldN++}
-  const fieldMean=fieldTotal/Math.max(1,fieldN);
-  // Estimate whether the scene has a meaningful dark region alongside brighter areas.
-  const fieldMin=Math.min(...localL),fieldMax=Math.max(...localL);
-  const sceneRange=fieldMax-fieldMin;
-  if(sceneRange>24){
-   const smooth=(a,b,v)=>{const t=Math.max(0,Math.min(1,(v-a)/(b-a)));return t*t*(3-2*t)};
-   for(let py=0;py<height;py++){
-    const gy=(py/Math.max(1,height-1))*(gh-1),y0=Math.floor(gy),y1=Math.min(gh-1,y0+1),fy=gy-y0;
-    for(let px=0;px<width;px++){
-     const gx=(px/Math.max(1,width-1))*(gw-1),x0=Math.floor(gx),x1=Math.min(gw-1,x0+1),fx=gx-x0;
-     const a=localL[y0*gw+x0]*(1-fx)+localL[y0*gw+x1]*fx;
-     const b=localL[y1*gw+x0]*(1-fx)+localL[y1*gw+x1]*fx;
-     const region=a*(1-fy)+b*fy;
-     const i=(py*width+px)*4,L=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];
-     // Correct only regions below the scene's midtone field; protect bright pixels.
-     const deficit=smooth(18,105,fieldMean-region);
-     const pixelProtect=1-smooth(150,238,L);
-     const lift=Math.min(.34,Math.max(0,(fieldMean-region)/210)) * deficit * pixelProtect;
-     if(lift>.002){const gain=1+lift;d[i]=Math.min(255,d[i]*gain);d[i+1]=Math.min(255,d[i+1]*gain);d[i+2]=Math.min(255,d[i+2]*gain)}
+  const bx=blur.getContext('2d',{willReadFrequently:true});bx.filter='blur(4px)';bx.drawImage(map,0,0);bx.filter='none';
+  const bd=bx.getImageData(0,0,gw,gh).data,localL=new Float32Array(gw*gh);
+  let sum=0,count=0;
+  for(let q=0;q<localL.length;q++){const k=q*4,L=.2126*bd[k]+.7152*bd[k+1]+.0722*bd[k+2];localL[q]=L;sum+=L;count++}
+  const fieldMean=sum/Math.max(1,count);
+  const smooth=(a,b,v)=>{const t=Math.max(0,Math.min(1,(v-a)/(b-a)));return t*t*(3-2*t)};
+  for(let py=0;py<height;py++){
+   const gy=(py/Math.max(1,height-1))*(gh-1),y0=Math.floor(gy),y1=Math.min(gh-1,y0+1),fy=gy-y0;
+   for(let px=0;px<width;px++){
+    const gx=(px/Math.max(1,width-1))*(gw-1),x0=Math.floor(gx),x1=Math.min(gw-1,x0+1),fx=gx-x0;
+    const a=localL[y0*gw+x0]*(1-fx)+localL[y0*gw+x1]*fx;
+    const b=localL[y1*gw+x0]*(1-fx)+localL[y1*gw+x1]*fx;
+    const region=a*(1-fy)+b*fy,i=(py*width+px)*4;
+    const L=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];
+    // Region deficit lifts shadowed rooms; pixel gate protects bright objects/windows.
+    const regional=smooth(8,118,fieldMean-region);
+    const shadow=smooth(18,145,118-L);
+    const highlightGuard=1-smooth(168,242,L);
+    const midtoneGuard=.72+.28*smooth(12,90,118-L);
+    const lift=Math.min(48,Math.max(0,(fieldMean-region)*.68))*regional*shadow*highlightGuard*midtoneGuard;
+    // A gentle global rental lift brings midtones closer to the brighter benchmark.
+    const globalLift=7.5*smooth(28,150,150-L)*(1-smooth(205,250,L));
+    const add=lift+globalLift;
+    if(add>.15){
+     const gain=(L+add)/Math.max(1,L);
+     d[i]=Math.min(255,d[i]*gain);d[i+1]=Math.min(255,d[i+1]*gain);d[i+2]=Math.min(255,d[i+2]*gain);
     }
+    // Soft shoulder keeps near-white details from abruptly clipping after lift.
+    for(let ch=0;ch<3;ch++){const v=d[i+ch];if(v>224)d[i+ch]=224+(31*(1-Math.exp(-(v-224)/31)));}
    }
-   ctx.putImageData(image,0,0);
   }
+  ctx.putImageData(image,0,0);
  }
  if(editorLocalBalance){hist.fill(0);for(let i=0;i<d.length;i+=4){const l=Math.max(0,Math.min(255,.2126*d[i]+.7152*d[i+1]+.0722*d[i+2]));hist[Math.min(63,Math.floor(l/4))]++}}
  if(editorRetouchStrokes.length){
@@ -3250,16 +3253,16 @@ function autoEnhanceEditor(){
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  // Global correction is deliberately restrained. Spatial shadow lifting is handled
  // by the local luminance field in createEditorRenderCanvas().
- const target=132;
- let exposure=clamp(Math.log2(target/Math.max(1,p50)),-.22,.28);
- if(p95>242)exposure=Math.min(exposure,.08);
- if(clipRate>.12)exposure=Math.min(exposure,0);
- let highlights=clamp((p95-220)*-.55,-48,0);
+ const target=145;
+ let exposure=clamp(Math.log2(target/Math.max(1,p50)),-.12,.42);
+ if(p95>242)exposure=Math.min(exposure,.18);
+ if(clipRate>.12)exposure=Math.min(exposure,.10);
+ let highlights=clamp((p95-220)*-.72,-58,0);
  if(p99>250)highlights=Math.min(highlights,-24);
- let shadows=clamp((72-p10)*.18,0,16);
- if(mixed)shadows=Math.min(shadows,10);
- const contrast=clamp((158-(p90-p10))*.10,-5,6);
- const whites=clamp((238-p95)*.12,-6,6);
+ let shadows=clamp((88-p10)*.24,2,22);
+ if(mixed)shadows=Math.min(shadows,16);
+ const contrast=clamp((168-(p90-p10))*.07,-4,5);
+ const whites=clamp((236-p95)*.08,-5,5);
  const blacks=clamp((p05-18)*-.10,-6,2);
  let temperature=0,tint=0,wb='not enough neutral pixels';
  if(neutralN>Math.max(120,n*.035)){
@@ -3275,7 +3278,7 @@ function autoEnhanceEditor(){
  drawEditor();captureEditorHistory();
  const scene=mixed?'High dynamic range / mixed lighting':p50<90?'Low-light interior':p50>155?'Bright interior':'Balanced interior';
  const status=document.getElementById('editorStatus');
- if(status)status.textContent=`Rental analysis: ${scene} · ${darkZones} dark zones · ${brightZones} bright zones · local shadow balancing enabled · WB: ${wb} · ${Math.round(clipRate*100)}% clipped highlights · ${Math.round(performance.now()-started)} ms`;
+ if(status)status.textContent=`Rental analysis: ${scene} · ${darkZones} dark zones · ${brightZones} bright zones · adaptive local tone + highlight shoulder enabled · WB: ${wb} · ${Math.round(clipRate*100)}% clipped highlights · ${Math.round(performance.now()-started)} ms`;
  showToast('Rental Auto Enhance applied with local exposure balancing. Review before saving.','success');
 }
 function editorSettings(){return Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value]))}
