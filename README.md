@@ -1,18 +1,17 @@
-# JRVS Property Co. — V0.37.0
+# JRVS Property Co. — V0.38.0
 
 PC-first property photography and business workflow app for JRVS Property Co.
 
-## Current release — V0.37.0
-**Adaptive Bright-Region Management**
+## Current release — V0.38.0
+**Rental Interior Detail & Colour Refinement**
 
 ### Photo Studio
-- One-click Rental Auto Enhance analyses each image and applies an image-specific starting correction.
-- Builds on V0.36 multi-scale interior exposure balancing.
-- Adds region-aware highlight compression: bright areas in already bright regions receive a stronger, gradual tonal shoulder, while isolated bright details in darker rooms are treated more gently.
-- Strengthens global highlight recovery estimates for high-dynamic-range interiors and images with a higher proportion of near-clipped pixels.
-- Retains shadow colour protection, deep-black protection and local texture safeguards.
-- Existing Develop, Colour, Finish, Geometry, Export, Retouch, histogram, zoom, compare, undo/redo and save-copy workflows remain.
-- Runs locally in the browser; no AI service or photo upload is involved.
+- Extends V0.37 adaptive interior development and region-aware highlight compression.
+- Adds a restrained multi-scale local-contrast pass to improve separation and definition in interior midtones.
+- Protects deep shadows and near-white surfaces from excessive local-contrast amplification.
+- Refines the conservative neutral-colour sample used by one-click Rental Auto Enhance, with a tighter neutral-pixel selection and confidence-scaled, capped temperature/tint correction.
+- Retains image-specific exposure analysis, regional shadow recovery, highlight shoulder, shadow colour protection and original-preserving save-copy workflow.
+- No AI service or external photo upload is used.
 
 ### RAW and data preservation
 - Existing CR2/RAW import and preview-decoding path is unchanged.
@@ -22,13 +21,14 @@ PC-first property photography and business workflow app for JRVS Property Co.
 - No data reset or migration is performed.
 
 ## Known limitations
-- Highlight management is luminance- and region-based, not semantic window detection or masking.
-- The engine cannot reconstruct detail genuinely clipped in all RAW colour channels.
-- It is not a new sensor-level RAW developer, AI window replacement or HDR bracket merger.
-- Review full-resolution exports, particularly windows, reflective benchtops and white cabinetry.
+- Local contrast is luminance-based, not semantic object recognition.
+- Neutral colour estimation is conservative and may be less reliable in rooms dominated by coloured surfaces or mixed lighting.
+- Highlight compression cannot recreate detail clipped in all RAW channels.
+- This is not AI window replacement, a bracketed HDR merge or a new sensor-level RAW developer.
+- Review full-resolution exports before client delivery.
 
 ## Deploying to GitHub Pages
-1. Keep the previous release ZIP as a rollback.
+1. Keep V0.37.0 as a rollback copy.
 2. Extract this ZIP.
 3. Upload the **contents** of the extracted folder into the root of the existing GitHub repository, replacing matching files.
 4. Commit and allow GitHub Pages to publish.
@@ -37,6 +37,6 @@ PC-first property photography and business workflow app for JRVS Property Co.
 Do not clear browser/site data to force an update. Do not delete `jrvs-data`, `jrvs-calendar` or the `jrvs-photo-library` IndexedDB database.
 
 ## Release metadata
-- App version: `0.37.0`
-- `version.json`: `0.37.0`
-- Service-worker cache: `jrvs-property-co-v0.37.0`
+- App version: `0.38.0`
+- `version.json`: `0.38.0`
+- Service-worker cache: `jrvs-property-co-v0.38.0`

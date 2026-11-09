@@ -1939,7 +1939,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.37.0';
+const APP_VERSION='0.38.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -3093,7 +3093,7 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
  // separates underexposed interior midtones from bright architectural surfaces.
  // This is deterministic local processing, not semantic window recognition.
  if(editorLocalBalance){
-  // V0.37 adaptive interior development:
+  // V0.38 adaptive interior development:
   // 1) Build a multi-scale illumination field from the globally corrected preview.
   // 2) Use a robust upper-mid percentile as the room reference (less sensitive to
   //    large dark furniture than a simple whole-frame mean).
@@ -3152,7 +3152,7 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
     const localTexture=Math.max(0,region-L);
     const textureGuard=1-smooth(38,105,localTexture)*.28;
     let target=L+(localLift+baseLift)*textureGuard;
-    // V0.37: region-aware highlight management. Bright regions receive a
+    // V0.38: region-aware highlight management. Bright regions receive a
     // graduated shoulder, while isolated bright details in a darker room are
     // treated more gently so lamps, reflections and pale objects retain shape.
     const brightRegion=smooth(174,232,region);
@@ -3185,6 +3185,42 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
    }
   }
   ctx.putImageData(image,0,0);
+
+  // V0.38 adaptive local contrast: a low-resolution illumination base separates
+  // room-scale brightness from fine architectural detail. Midtones receive a
+  // restrained detail lift; deep shadows and near-white surfaces are protected.
+  const detailW=192,detailH=Math.max(64,Math.round(detailW*height/Math.max(1,width)));
+  const detailMap=document.createElement('canvas');detailMap.width=detailW;detailMap.height=detailH;
+  const dctx=detailMap.getContext('2d',{willReadFrequently:true});
+  dctx.drawImage(canvas,0,0,detailW,detailH);
+  const blur=document.createElement('canvas');blur.width=detailW;blur.height=detailH;
+  const bctx=blur.getContext('2d',{willReadFrequently:true});
+  bctx.filter='blur(4px)';bctx.drawImage(detailMap,0,0);bctx.filter='none';
+  const baseData=bctx.getImageData(0,0,detailW,detailH).data;
+  const detailImage=ctx.getImageData(0,0,width,height),dd=detailImage.data;
+  const sample=(x,y)=>{
+   const xx=Math.max(0,Math.min(detailW-1,x)),yy=Math.max(0,Math.min(detailH-1,y)),k=(yy*detailW+xx)*4;
+   return .2126*baseData[k]+.7152*baseData[k+1]+.0722*baseData[k+2];
+  };
+  for(let py=0;py<height;py++){
+   const my=py/Math.max(1,height-1)*(detailH-1);
+   for(let px=0;px<width;px++){
+    const mx=px/Math.max(1,width-1)*(detailW-1),i=(py*width+px)*4;
+    const L=.2126*dd[i]+.7152*dd[i+1]+.0722*dd[i+2];
+    const x0=Math.floor(mx),y0=Math.floor(my),fx=mx-x0,fy=my-y0;
+    const a=sample(x0,y0),b=sample(x0+1,y0),c0=sample(x0,y0+1),e0=sample(x0+1,y0+1);
+    const localBase=(a*(1-fx)+b*fx)*(1-fy)+(c0*(1-fx)+e0*fx)*fy;
+    const midtone=smooth(24,76,L)*(1-smooth(190,242,L));
+    const detailStrength=.115*midtone;
+    const delta=Math.max(-18,Math.min(18,L-localBase));
+    const adjusted=L+delta*detailStrength;
+    const scale=adjusted/Math.max(1,L);
+    dd[i]=Math.max(0,Math.min(255,dd[i]*scale));
+    dd[i+1]=Math.max(0,Math.min(255,dd[i+1]*scale));
+    dd[i+2]=Math.max(0,Math.min(255,dd[i+2]*scale));
+   }
+  }
+  ctx.putImageData(detailImage,0,0);
  }
  if(editorLocalBalance){
   hist.fill(0);
@@ -3329,7 +3365,7 @@ function autoEnhanceEditor(){
   const i=(yy*w+xx)*4,r=data[i],g=data[i+1],b=data[i+2],L=.2126*r+.7152*g+.0722*b;
   lum.push(L);n++;if(L>248)clipped++;
   const mx=Math.max(r,g,b),mn=Math.min(r,g,b),ch=mx-mn;sat.push(ch/Math.max(1,mx));
-  if(L>100&&L<220&&ch<Math.max(10,mx*.09)){neutralR+=r;neutralG+=g;neutralB+=b;neutralN++}
+  if(L>112&&L<218&&ch<Math.max(8,mx*.065)&&mx-mn<22){neutralR+=r;neutralG+=g;neutralB+=b;neutralN++}
   const zx=Math.min(cols-1,Math.floor(xx/w*cols)),zy=Math.min(rows-1,Math.floor(yy/hg*rows)),z=zones[zy*cols+zx];
   z.n++;z.sum+=L;if(L>218)z.bright++;if(L<65)z.dark++;
  }
@@ -3360,8 +3396,11 @@ function autoEnhanceEditor(){
  let temperature=0,tint=0,wb='not enough neutral pixels';
  if(neutralN>Math.max(120,n*.035)){
   const r=neutralR/neutralN,g=neutralG/neutralN,b=neutralB/neutralN,avg=(r+g+b)/3;
-  temperature=clamp(-((r-b)/Math.max(1,avg))*48,-5,5);
-  tint=clamp(-((g-(r+b)/2)/Math.max(1,avg))*38,-3,3);wb='conservative neutral estimate';
+  // Slightly stronger, still tightly capped neutral balancing. A minimum
+  // sample count prevents a coloured room from driving a large white-balance shift.
+  const confidence=clamp((neutralN/Math.max(1,n*.10)),.25,1);
+  temperature=clamp(-((r-b)/Math.max(1,avg))*62*confidence,-7,7);
+  tint=clamp(-((g-(r+b)/2)/Math.max(1,avg))*46*confidence,-4,4);wb='sampled neutral estimate';
  }
  const vibrance=clamp((.19-avgSat)*22,-2,5);
  const values={exposure,brightness:0,contrast,highlights,shadows,whites,blacks,temperature,tint,saturation:0,warmth:0,vibrance,clarity:1.5,sharpening:5,vignette:0};
@@ -3372,7 +3411,7 @@ function autoEnhanceEditor(){
  const scene=mixed?'High dynamic range / mixed lighting':p50<90?'Low-light interior':p50>155?'Bright interior':'Balanced interior';
  const status=document.getElementById('editorStatus');
  if(status)status.textContent=`Rental analysis: ${scene} · ${darkZones} dark zones · ${brightZones} bright zones · adaptive local tone + highlight shoulder enabled · WB: ${wb} · ${Math.round(clipRate*100)}% clipped highlights · ${Math.round(performance.now()-started)} ms`;
- showToast('Rental Auto Enhance V0.37 applied: adaptive bright-region compression, highlight shoulder and interior shadow balance.','success');
+ showToast('Rental Auto Enhance V0.38 applied: interior tone balance, neutral colour estimate and protected local detail.','success');
 }
 function editorSettings(){return Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value]))}
 async function batchApplyEditor(){
