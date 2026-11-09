@@ -1624,7 +1624,7 @@ function showToast(message, type='success', duration=3600){
  close.addEventListener('click',()=>clearTimeout(timer),{once:true});
 }
 
-// V0.16.0 — deliberate, verified full business-data reset.
+// V0.17.0 — deliberate, verified full business-data reset.
 function openDataReset(){
  const back=document.getElementById('dataResetBackdrop'),phrase=document.getElementById('dataResetPhrase'),accept=document.getElementById('dataResetAccept');
  phrase.value='';accept.disabled=true;
@@ -1722,7 +1722,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.16.0';
+const APP_VERSION='0.17.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -2105,7 +2105,7 @@ function populatePhotoJobFilter(){const el=document.getElementById('photoJobFilt
 let jrvsRawDecoderModule=null,jrvsRawDecoderPromise=null;
 async function getJrvsRawDecoder(){
  if(jrvsRawDecoderModule)return jrvsRawDecoderModule;
- if(!jrvsRawDecoderPromise)jrvsRawDecoderPromise=import('https://cdn.jsdelivr.net/npm/libraw-wasm@1.6.0/+esm').then(mod=>{
+ if(!jrvsRawDecoderPromise)jrvsRawDecoderPromise=import('https://cdn.jsdelivr.net/npm/libraw-wasm@1.6.0/index.js').then(mod=>{
   const Ctor=mod.default||mod.LibRaw||mod;
   if(typeof Ctor!=='function')throw new Error('RAW decoder module did not load.');
   jrvsRawDecoderModule=Ctor;return Ctor;
@@ -2115,8 +2115,9 @@ async function getJrvsRawDecoder(){
 async function decodeRawToJpeg(rawBlob,{halfSize=true,quality=.9}={}){
  const LibRaw=await getJrvsRawDecoder(),decoder=new LibRaw();
  try{
-  await decoder.open(new Uint8Array(await rawBlob.arrayBuffer()),{halfSize,useCameraWb:true,useAutoWb:false,outputColor:1,outputBps:8,userQual:3});
-  const decoded=await decoder.imageData();
+  const withTimeout=(promise,label)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' timed out. Check your internet connection and retry.')),90000))]);
+  await withTimeout(decoder.open(new Uint8Array(await rawBlob.arrayBuffer()),{halfSize,useCameraWb:true,useAutoWb:false,outputColor:1,outputBps:8,userQual:3}),'RAW decoder startup');
+  const decoded=await withTimeout(decoder.imageData(),'RAW image development');
   if(!decoded?.width||!decoded?.height||!decoded?.data)throw new Error('Decoder returned an empty image.');
   const canvas=document.createElement('canvas');canvas.width=decoded.width;canvas.height=decoded.height;
   const ctx=canvas.getContext('2d',{alpha:false});
