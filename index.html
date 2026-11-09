@@ -1783,7 +1783,7 @@ function showToast(message, type='success', duration=3600){
  close.addEventListener('click',()=>clearTimeout(timer),{once:true});
 }
 
-// V0.24.0 — deliberate, verified full business-data reset.
+// V0.25.0 — deliberate, verified full business-data reset.
 function openDataReset(){
  const back=document.getElementById('dataResetBackdrop'),phrase=document.getElementById('dataResetPhrase'),accept=document.getElementById('dataResetAccept');
  phrase.value='';accept.disabled=true;
@@ -1881,7 +1881,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.24.0';
+const APP_VERSION='0.25.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -2865,7 +2865,7 @@ function editQuote(id){openQuoteForm(id)}
 function changeQuoteStatus(id){const q=data.quotes.find(x=>x.id===id);if(!q)return;const states=['Draft','Sent','Accepted','Declined'];q.status=states[(states.indexOf(q.status)+1)%states.length];if(q.status==='Accepted'&&q.jobId){const job=data.jobs.find(j=>j.id===q.jobId);if(job&&job.status==='Enquiry'){job.status='Booked';job.statusUpdatedAt=new Date().toISOString()}}save();renderQuotes();renderAttention();render()}
 async function deleteQuote(id){if(await showConfirm('Delete this quotation?')){data.quotes=data.quotes.filter(q=>q.id!==id);save();renderQuotes();renderAttention()}}
 
-let editorPhoto=null,editorImage=null,editorRotation=0,editorBusy=false,editorHistory=[],editorHistoryIndex=-1,editorHistoryTimer=null,editorCompare=false,editorComparePosition=50,editorPreviewFrame=0;
+let editorPhoto=null,editorSourcePhoto=null,editorImage=null,editorRotation=0,editorBusy=false,editorHistory=[],editorHistoryIndex=-1,editorHistoryTimer=null,editorCompare=false,editorComparePosition=50,editorPreviewFrame=0;
 const EDITOR_PREVIEW_MAX=1600;
 
 // JRVS Photo Studio workspace controls (v0.9.0)
@@ -2902,16 +2902,50 @@ function initEditorProControls(){
  document.querySelectorAll('#editorBackdrop input[type=range]').forEach(range=>{const label=range.closest('.editor-control')?.querySelector('label');if(!label)return;const value=label.querySelector('span');if(!value)return;const num=document.createElement('input');num.type='number';num.className='editor-number';num.min=range.min;num.max=range.max;num.step=range.step||'1';num.value=range.value;num.setAttribute('aria-label',label.textContent.trim()+' exact value');num.addEventListener('change',()=>{const v=Math.max(Number(num.min),Math.min(Number(num.max),Number(num.value)||0));range.value=v;num.value=v;editorChanged()});range.addEventListener('input',()=>{num.value=range.value});label.appendChild(num);});
 }
 document.addEventListener('keydown',e=>{if(!document.getElementById('editorBackdrop')?.classList.contains('show'))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?editorRedo():editorUndo()}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();editorRedo()}else if(e.key.toLowerCase()==='c'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();toggleEditorCompare()}else if(e.key==='Escape'){if(editorCompare)toggleEditorCompare(false);else closeEditor()}});
-async function openEditor(id){
- const p=photoRecords.find(x=>x.id===id);if(!p)return;editorPhoto=p;editorRotation=0;
- ['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);editorHistory=[];editorHistoryIndex=-1;editorRetouchStrokes=[];editorRetouchSource=null;editorRetouchActive=null;setEditorRetouchMode('off');editorCompare=false;editorComparePosition=50;toggleEditorCompare(false);captureEditorHistory();
- document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';document.getElementById('editorExportProfile').value='agency';document.getElementById('editorTitle').textContent=p.name;
- document.getElementById('editorSubtitle').textContent=p.jobName+(p.isRaw?' · Developed from RAW · Original CR2 remains unchanged':' · Original remains unchanged');document.getElementById('editorStatus').textContent='';
- const img=new Image();let editorSourceBlob=p.blob;if(p.isRaw){try{document.getElementById('editorStatus').textContent='Developing full-resolution RAW image…';editorSourceBlob=await decodeRawToJpeg(p.blob,{halfSize:false,quality:.98})}catch(err){showToast('Could not develop RAW file: '+(err?.message||'decoder error'),'error');return}}const url=URL.createObjectURL(editorSourceBlob);
- img.onload=()=>{if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=img;editorImage._url=url;document.getElementById('editorBackdrop').classList.add('show');initEditorProControls();setEditorTab('basic');editorZoomLevel=1;observeEditorFit();drawEditor();requestAnimationFrame(fitEditorCanvas)};
- img.onerror=()=>{URL.revokeObjectURL(url);showToast(p.isRaw?'RAW original stored safely. Browser RAW decoding is not yet built into this release; convert to JPEG to edit.':'This image could not be opened in the editor.')};img.src=url;
+function captureEditorRecipe(){
+ return {
+  schemaVersion:1,
+  values:Object.fromEntries(EDITOR_KEYS.map(k=>[k,Number(document.getElementById(k)?.value||0)])),
+  rotation:editorRotation,
+  crop:document.getElementById('cropRatio')?.value||'original',
+  preset:document.getElementById('editorPreset')?.value||'none',
+  retouchStrokes:JSON.parse(JSON.stringify(editorRetouchStrokes||[])),
+  savedAt:new Date().toISOString()
+ };
 }
-function closeEditor(){if(editorFitObserver)editorFitObserver.disconnect();document.getElementById('editorBackdrop').classList.remove('show');if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=null;editorPhoto=null}
+function restoreEditorRecipe(recipe){
+ if(!recipe||recipe.schemaVersion!==1)return false;
+ EDITOR_KEYS.forEach(k=>{const el=document.getElementById(k);if(el&&Number.isFinite(Number(recipe.values?.[k])))el.value=recipe.values[k]});
+ editorRotation=Number(recipe.rotation)||0;
+ const crop=document.getElementById('cropRatio');if(crop)crop.value=recipe.crop||'original';
+ const preset=document.getElementById('editorPreset');if(preset)preset.value=recipe.preset||'none';
+ editorRetouchStrokes=Array.isArray(recipe.retouchStrokes)?JSON.parse(JSON.stringify(recipe.retouchStrokes)):[];
+ return true;
+}
+async function openEditor(id){
+ const p=photoRecords.find(x=>String(x.id)===String(id));if(!p)return;
+ const linkedOriginal=(String(p.type||'').toLowerCase()==='edited'&&p.sourcePhotoId)?photoRecords.find(x=>String(x.id)===String(p.sourcePhotoId)):null;
+ editorPhoto=p;editorSourcePhoto=linkedOriginal||p;editorRotation=0;
+ ['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>{const el=document.getElementById(k);if(el)el.value=0});
+ editorHistory=[];editorHistoryIndex=-1;editorRetouchStrokes=[];editorRetouchSource=null;editorRetouchActive=null;setEditorRetouchMode('off');editorCompare=false;editorComparePosition=50;toggleEditorCompare(false);
+ document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';document.getElementById('editorExportProfile').value='agency';document.getElementById('editorTitle').textContent=p.name;
+ const hasRecipe=!!(p.editRecipe&&linkedOriginal);
+ document.getElementById('editorSubtitle').textContent=(editorSourcePhoto.jobName||p.jobName)+(editorSourcePhoto.isRaw?' · RAW source':' · Original source')+(hasRecipe?' · Saved edit recipe restored':' · Original remains unchanged');
+ document.getElementById('editorStatus').textContent=hasRecipe?'Restoring your saved non-destructive edit recipe…':'';
+ const img=new Image();let editorSourceBlob=editorSourcePhoto.blob;
+ if(editorSourcePhoto.isRaw){try{document.getElementById('editorStatus').textContent='Preparing RAW source preview…';editorSourceBlob=editorSourcePhoto.previewBlob instanceof Blob?editorSourcePhoto.previewBlob:await decodeRawToJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98})}catch(err){showToast('Could not prepare RAW source: '+(err?.message||'decoder error'),'error');return}}
+ const url=URL.createObjectURL(editorSourceBlob);
+ img.onload=()=>{
+  if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);
+  editorImage=img;editorImage._url=url;
+  if(hasRecipe)restoreEditorRecipe(p.editRecipe);
+  document.getElementById('editorBackdrop').classList.add('show');initEditorProControls();setEditorTab('basic');editorZoomLevel=1;observeEditorFit();drawEditor();requestAnimationFrame(fitEditorCanvas);captureEditorHistory();
+  document.getElementById('editorStatus').textContent=hasRecipe?'Saved edit recipe loaded. Continue editing and save a new version.':'';
+ };
+ img.onerror=()=>{URL.revokeObjectURL(url);showToast(editorSourcePhoto.isRaw?'RAW source preview could not be opened. Original CR2 remains safe.':'This image could not be opened in the editor.')};
+ img.src=url;
+}
+function closeEditor(){if(editorFitObserver)editorFitObserver.disconnect();document.getElementById('editorBackdrop').classList.remove('show');if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=null;editorPhoto=null;editorSourcePhoto=null}
 function rotateEditor(deg){editorRotation=(editorRotation+deg+360)%360;drawEditor();captureEditorHistory()}
 function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';editorRotation=0;drawEditor();captureEditorHistory()}
 function editorChanged(){
@@ -3157,7 +3191,7 @@ async function saveEditedPhoto(){
  const mime=profile==='png'?'image/png':'image/jpeg',quality=profile==='web'?.86:profile==='max'?.99:.94;
  document.getElementById('editorStatus').textContent='Rendering full-resolution export…';
  const blob=await createFullQualityEditorBlob(mime,quality);if(!blob)throw Error('No output');
- const rec={id:Date.now().toString()+Math.random().toString(16).slice(2),jobId:editorPhoto.jobId,jobName:editorPhoto.jobName,name:editorPhoto.name.replace(/\.[^.]+$/,'')+'_edited.'+(mime==='image/png'?'png':'jpg'),type:'Edited',size:blob.size,mime:blob.type,addedAt:new Date().toISOString(),status:'Edited',isCover:false,sourcePhotoId:editorPhoto.id,blob};
+ const recipe=captureEditorRecipe();const basePhoto=editorSourcePhoto||editorPhoto;const rec={id:Date.now().toString()+Math.random().toString(16).slice(2),jobId:editorPhoto.jobId,jobName:editorPhoto.jobName,name:editorPhoto.name.replace(/\.[^.]+$/,'')+'_edited.'+(mime==='image/png'?'png':'jpg'),type:'Edited',size:blob.size,mime:blob.type,addedAt:new Date().toISOString(),status:'Edited',isCover:false,sourcePhotoId:basePhoto.id,editRecipe:recipe,editRecipeVersion:1,blob};
  await photoRequest('readwrite','put',rec);document.getElementById('editorStatus').textContent='Edited copy saved to this project gallery.';
  const jobId=editorPhoto.jobId;setTimeout(async()=>{closeEditor();document.getElementById('photoJobFilter').value=jobId;await loadPhotos()},500)
  }catch(e){document.getElementById('editorStatus').textContent='Could not save the edited copy. Check available browser storage.'}
