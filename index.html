@@ -1939,7 +1939,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.36.0';
+const APP_VERSION='0.37.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -3093,7 +3093,7 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
  // separates underexposed interior midtones from bright architectural surfaces.
  // This is deterministic local processing, not semantic window recognition.
  if(editorLocalBalance){
-  // V0.36 adaptive interior development:
+  // V0.37 adaptive interior development:
   // 1) Build a multi-scale illumination field from the globally corrected preview.
   // 2) Use a robust upper-mid percentile as the room reference (less sensitive to
   //    large dark furniture than a simple whole-frame mean).
@@ -3152,10 +3152,24 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
     const localTexture=Math.max(0,region-L);
     const textureGuard=1-smooth(38,105,localTexture)*.28;
     let target=L+(localLift+baseLift)*textureGuard;
-    // Smooth highlight shoulder: retain tonal separation in whites without
-    // pretending to reconstruct detail that was clipped in the source.
-    if(target>188){const excess=target-188;target=188+38*(1-Math.exp(-excess/38));}
-    if(target>226)target=226+(target-226)*.24;
+    // V0.37: region-aware highlight management. Bright regions receive a
+    // graduated shoulder, while isolated bright details in a darker room are
+    // treated more gently so lamps, reflections and pale objects retain shape.
+    const brightRegion=smooth(174,232,region);
+    const pixelHighlight=smooth(166,238,target);
+    const highlightConfidence=brightRegion*.72+pixelHighlight*.28;
+    const highlightStrength=.18+.34*highlightConfidence;
+    const shoulderStart=184+8*(1-brightRegion);
+    if(target>shoulderStart){
+     const excess=target-shoulderStart;
+     const compressed=shoulderStart+excess*(1-highlightStrength);
+     // A soft shoulder gradually increases compression towards near-white values.
+     const upper=smooth(218,250,target);
+     target=lerp(compressed,shoulderStart+Math.sqrt(Math.max(0,excess))*Math.sqrt(Math.max(0,255-shoulderStart))*0.55,upper*.22);
+    }
+    // Keep the very top end gentle; this reduces harsh white blocks but cannot
+    // recreate sensor detail already clipped in the RAW source.
+    if(target>232)target=232+(target-232)*.30;
     target=Math.max(0,Math.min(255,target));
     const dr=r-L,dg=g-L,db=b-L;
     const maxDelta=Math.max(dr,dg,db),minDelta=Math.min(dr,dg,db);
@@ -3334,8 +3348,10 @@ function autoEnhanceEditor(){
  let exposure=clamp(Math.log2(target/Math.max(1,p50)),-.16,.30);
  if(p95>242)exposure=Math.min(exposure,.18);
  if(clipRate>.12)exposure=Math.min(exposure,.10);
- let highlights=clamp((p95-214)*-.82,-62,0);
- if(p99>250)highlights=Math.min(highlights,-24);
+ let highlights=clamp((p95-210)*-1.02,-78,0);
+ if(p99>246)highlights=Math.min(highlights,-30);
+ if(clipRate>.035)highlights=Math.min(highlights,-38);
+ if(clipRate>.12)highlights=Math.min(highlights,-54);
  let shadows=clamp((92-p10)*.20,1,18);
  if(mixed)shadows=Math.min(shadows,16);
  const contrast=clamp((164-(p90-p10))*.075,-3,6);
@@ -3356,7 +3372,7 @@ function autoEnhanceEditor(){
  const scene=mixed?'High dynamic range / mixed lighting':p50<90?'Low-light interior':p50>155?'Bright interior':'Balanced interior';
  const status=document.getElementById('editorStatus');
  if(status)status.textContent=`Rental analysis: ${scene} · ${darkZones} dark zones · ${brightZones} bright zones · adaptive local tone + highlight shoulder enabled · WB: ${wb} · ${Math.round(clipRate*100)}% clipped highlights · ${Math.round(performance.now()-started)} ms`;
- showToast('Rental Auto Enhance V0.36 applied: multi-scale room balancing, shadow colour protection and highlight roll-off.','success');
+ showToast('Rental Auto Enhance V0.37 applied: adaptive bright-region compression, highlight shoulder and interior shadow balance.','success');
 }
 function editorSettings(){return Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value]))}
 async function batchApplyEditor(){
