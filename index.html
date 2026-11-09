@@ -944,6 +944,10 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 #editorBackdrop #retouchCursor{display:none;position:absolute;z-index:6;border:1px solid #f7f1df;border-radius:50%;box-shadow:0 0 0 1px #20231e;pointer-events:none;transform:translate(-50%,-50%)}
 #editorBackdrop #editorCanvas{touch-action:none}
 
+
+.package-service-note{display:flex;flex-direction:column;gap:5px;padding:12px 15px;margin:12px 0 16px;border:1px solid var(--line,#e5e4d8);border-radius:12px;background:var(--soft,#f7f6ef);font-size:12px;color:var(--muted,#69715d)}
+.package-service-note strong{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink,#263124)}
+.package-description{white-space:pre-line;line-height:1.5}
 </style>
 <style id="jrvs-v040-polish">
 /* JRVS Property Co. V0.4.0 — cohesive visual refinement */
@@ -1447,6 +1451,7 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
       <div class="pricing-panel active" id="pricing-panel-packages" role="tabpanel" aria-labelledby="pricing-tab-packages">
         <div class="panel quote-panel">
         <div class="quote-panel-head"><div><div class="quote-section-kicker">YOUR SERVICES</div><h3>Packages & extras</h3><p class="muted">Reusable services and add-ons for faster, consistent quoting.</p></div><div class="quote-list-tools"><input id="packageSearch" type="search" placeholder="Search packages…" oninput="renderQuotes()"><button class="secondary" onclick="openPackageForm()">＋ Add package</button></div></div>
+        <div class="package-service-note"><strong>Introductory pricing · AUD</strong><span>Illawarra &amp; South Coast · All photographs professionally edited · High-resolution digital delivery · Travel outside the core service area may incur an additional fee. Pricing is introductory and may be reviewed as JRVS grows.</span></div>
         <div id="packageList" class="package-grid"></div><div class="list-limit-note" id="packageLimitNote"></div>
       </div>
       </div>
@@ -1836,7 +1841,7 @@ function showToast(message, type='success', duration=3600){
  close.addEventListener('click',()=>clearTimeout(timer),{once:true});
 }
 
-// V0.30.0 — deliberate, verified full business-data reset.
+// V0.32.0 — deliberate, verified full business-data reset.
 function openDataReset(){
  const back=document.getElementById('dataResetBackdrop'),phrase=document.getElementById('dataResetPhrase'),accept=document.getElementById('dataResetAccept');
  phrase.value='';accept.disabled=true;
@@ -1934,7 +1939,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.30.0';
+const APP_VERSION='0.32.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -2700,7 +2705,28 @@ async function deleteFinance(id,type){if(!await showConfirm('Delete this transac
 
 let editingQuoteId=null,editingPackageId=null,quoteLineCounter=0;
 const money=n=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(n)||0);
-function ensureQuoteData(){if(!Array.isArray(data.packages))data.packages=[];if(!Array.isArray(data.quotes))data.quotes=[]}
+function ensureQuoteData(){
+ if(!Array.isArray(data.packages))data.packages=[];
+ if(!Array.isArray(data.quotes))data.quotes=[];
+ const defaults=[
+  {key:'jrvs-essential',name:'JRVS Essential',price:119,isExtra:false,description:'Up to 6 edited photographs\nIdeal for smaller rental properties, units and apartments.\n\nIncludes:\n• Key interior room photographs\n• Main living area and kitchen\n• Main bedroom\n• Bathroom\n• Front exterior photograph\n• Basic colour and exposure correction\n• High-resolution digital delivery'},
+  {key:'jrvs-standard',name:'JRVS Standard',price:149,isExtra:false,description:'Up to 10 edited photographs\nIdeal for standard rental homes requiring broader property coverage.\n\nIncludes everything in Essential, plus:\n• Additional room angles\n• Additional bedrooms\n• Backyard and outdoor areas\n• Improved image consistency\n• Perspective and vertical-line correction\n• High-resolution digital delivery'},
+  {key:'jrvs-plus',name:'JRVS Plus',price:189,isExtra:false,description:'Up to 15 edited photographs\nIdeal for larger homes and properties with multiple living spaces or outdoor features.\n\nIncludes everything in Standard, plus:\n• Full interior coverage\n• Front and rear exterior photographs\n• Multiple living and entertaining areas\n• Additional property features and details\n• More comprehensive room coverage\n• Consistent professional editing throughout'},
+  {key:'jrvs-complete',name:'JRVS Complete',price:229,isExtra:false,description:'Up to 20 edited photographs\nIdeal for larger or feature-rich properties requiring a comprehensive photo gallery.\n\nIncludes everything in Plus, plus:\n• Complete interior and exterior coverage\n• Multiple angles of key rooms\n• Gardens, entertaining areas and property features\n• Additional detail photographs\n• Enhanced editing and image consistency\n• Full high-resolution property gallery'},
+  {key:'jrvs-extra-5',name:'Additional 5 photographs',price:30,isExtra:true,description:'Add 5 professionally edited photographs to any selected package.'},
+  {key:'jrvs-extra-10',name:'Additional 10 photographs',price:50,isExtra:true,description:'Add 10 professionally edited photographs to any selected package.'},
+  {key:'jrvs-priority',name:'Priority turnaround',price:30,isExtra:true,description:'Priority editing and delivery. Confirm availability and turnaround when quoting.'},
+  {key:'jrvs-reshoot',name:'Second visit / reshoot',price:60,isExtra:true,description:'From $60. Additional property visit or reshoot. Final price can be adjusted to suit the scope.'},
+  {key:'jrvs-twilight',name:'Twilight photography',price:100,isExtra:true,description:'From $100. Twilight property photography. Final price can be adjusted to suit the property and timing.'}
+ ];
+ let changed=false;
+ defaults.forEach(def=>{
+  const found=data.packages.find(p=>p.defaultKey===def.key||(p.name||'').trim().toLowerCase()===def.name.toLowerCase());
+  if(!found){data.packages.push({id:'pkg-'+def.key,defaultKey:def.key,name:def.name,description:def.description,price:def.price,isExtra:def.isExtra,archived:false,createdAt:new Date().toISOString()});changed=true}
+  else if(!found.defaultKey){found.defaultKey=def.key;changed=true}
+ });
+ if(changed)save();
+}
 
 function switchPricingTab(tab){
  const allowed=['packages','quotes','invoices'];if(!allowed.includes(tab))return;
@@ -2754,10 +2780,16 @@ function openPackageForm(id=null){
  document.getElementById('packageModalTitle').textContent=p?'Edit package':'Add package';
  document.getElementById('pkgName').value=p?.name||'';document.getElementById('pkgDesc').value=p?.description||'';
  document.getElementById('pkgPrice').value=p?.price??'';document.getElementById('pkgExtra').value=p?.isExtra?'yes':'no';
+ const isDefault=!!p?.defaultKey;
+ ['pkgName','pkgDesc','pkgExtra'].forEach(id=>{const el=document.getElementById(id);el.disabled=isDefault;});
+ let hint=document.getElementById('pkgDefaultHint');
+ if(!hint){hint=document.createElement('p');hint.id='pkgDefaultHint';hint.className='muted';document.getElementById('pkgExtra').parentElement.after(hint)}
+ hint.textContent=isDefault?'JRVS standard package details are fixed. You can adjust the price for your business.':'Custom packages can be edited freely.';
+ hint.hidden=false;
  document.getElementById('packageModalBackdrop').classList.add('show');
 }
 function closePackageModal(){document.getElementById('packageModalBackdrop').classList.remove('show')}
-function savePackageForm(e){e.preventDefault();ensureQuoteData();const p={id:editingPackageId||('pkg-'+Date.now()),name:pkgName.value.trim(),description:pkgDesc.value.trim(),price:Number(pkgPrice.value),isExtra:pkgExtra.value==='yes',archived:false};
+function savePackageForm(e){e.preventDefault();ensureQuoteData();const previous=editingPackageId?data.packages.find(x=>x.id===editingPackageId):null;const p={id:editingPackageId||('pkg-'+Date.now()),defaultKey:previous?.defaultKey||null,name:previous?.defaultKey?previous.name:pkgName.value.trim(),description:previous?.defaultKey?previous.description:pkgDesc.value.trim(),price:Number(pkgPrice.value),isExtra:previous?.defaultKey?previous.isExtra:pkgExtra.value==='yes',archived:false,createdAt:previous?.createdAt||new Date().toISOString()};
  if(editingPackageId){const i=data.packages.findIndex(x=>x.id===editingPackageId);if(i>=0)data.packages[i]=p}else data.packages.push(p);
  save();closePackageModal();renderQuotes()}
 function editPackage(id){openPackageForm(id)}
@@ -3089,11 +3121,23 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
     const globalLift=7.5*smooth(28,150,150-L)*(1-smooth(205,250,L));
     const add=lift+globalLift;
     if(add>.15){
-     const gain=(L+add)/Math.max(1,L);
-     d[i]=Math.min(255,d[i]*gain);d[i+1]=Math.min(255,d[i+1]*gain);d[i+2]=Math.min(255,d[i+2]*gain);
+     // Change luminance, not each RGB channel independently. Then compress chroma
+     // only as much as needed to keep all channels in gamut without clipping reds.
+     let targetY=L+add;
+     // Smooth highlight shoulder acts on luminance only, preserving hue.
+     if(targetY>224)targetY=224+(31*(1-Math.exp(-(targetY-224)/31)));
+     targetY=Math.max(0,Math.min(255,targetY));
+     const oldR=d[i],oldG=d[i+1],oldB=d[i+2];
+     const dr=oldR-L,dg=oldG-L,db=oldB-L;
+     let chromaScale=1;
+     const maxDelta=Math.max(dr,dg,db),minDelta=Math.min(dr,dg,db);
+     if(maxDelta>0)chromaScale=Math.min(chromaScale,(255-targetY)/maxDelta);
+     if(minDelta<0)chromaScale=Math.min(chromaScale,targetY/-minDelta);
+     chromaScale=Math.max(0,Math.min(1,chromaScale));
+     d[i]=Math.max(0,Math.min(255,targetY+dr*chromaScale));
+     d[i+1]=Math.max(0,Math.min(255,targetY+dg*chromaScale));
+     d[i+2]=Math.max(0,Math.min(255,targetY+db*chromaScale));
     }
-    // Soft shoulder keeps near-white details from abruptly clipping after lift.
-    for(let ch=0;ch<3;ch++){const v=d[i+ch];if(v>224)d[i+ch]=224+(31*(1-Math.exp(-(v-224)/31)));}
    }
   }
   ctx.putImageData(image,0,0);
