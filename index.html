@@ -1939,7 +1939,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.38.0';
+const APP_VERSION='0.39.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -3142,11 +3142,11 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
     const zoneConfidence=smooth(10,92,deficit);
     // Dark-room recovery is stronger than V0.35, but capped and faded across
     // bright surfaces. Deep blacks remain anchored to avoid grey furniture.
-    const recoveryStrength=0.78+Math.min(.18,fieldStd/360);
-    let localLift=Math.min(70,deficit*recoveryStrength)*roomGate*shadowGate*midtoneGate*blackGuard*highlightGuard*zoneConfidence;
+    const recoveryStrength=0.43+Math.min(.12,fieldStd/520);
+    let localLift=Math.min(46,deficit*recoveryStrength)*roomGate*shadowGate*midtoneGate*blackGuard*highlightGuard*zoneConfidence;
     // Add a small scene-wide midtone floor only where the image is genuinely dim.
     const globalDim=smooth(72,132,112-percentile(.50));
-    const baseLift=2.0*globalDim*smooth(28,124,112-L)*(1-smooth(182,235,L))*blackGuard;
+    const baseLift=0.85*globalDim*smooth(28,124,112-L)*(1-smooth(182,235,L))*blackGuard;
     // Preserve local texture: avoid flattening a pixel that is already darker than
     // its neighbourhood by a large amount (often furniture edges or natural detail).
     const localTexture=Math.max(0,region-L);
@@ -3158,18 +3158,18 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
     const brightRegion=smooth(174,232,region);
     const pixelHighlight=smooth(166,238,target);
     const highlightConfidence=brightRegion*.72+pixelHighlight*.28;
-    const highlightStrength=.18+.34*highlightConfidence;
-    const shoulderStart=184+8*(1-brightRegion);
+    const highlightStrength=.08+.16*highlightConfidence;
+    const shoulderStart=204+10*(1-brightRegion);
     if(target>shoulderStart){
      const excess=target-shoulderStart;
      const compressed=shoulderStart+excess*(1-highlightStrength);
      // A soft shoulder gradually increases compression towards near-white values.
-     const upper=smooth(218,250,target);
-     target=lerp(compressed,shoulderStart+Math.sqrt(Math.max(0,excess))*Math.sqrt(Math.max(0,255-shoulderStart))*0.55,upper*.22);
+     const upper=smooth(238,255,target);
+     target=lerp(compressed,shoulderStart+Math.sqrt(Math.max(0,excess))*Math.sqrt(Math.max(0,255-shoulderStart))*0.62,upper*.12);
     }
     // Keep the very top end gentle; this reduces harsh white blocks but cannot
     // recreate sensor detail already clipped in the RAW source.
-    if(target>232)target=232+(target-232)*.30;
+    if(target>246)target=246+(target-246)*.58;
     target=Math.max(0,Math.min(255,target));
     const dr=r-L,dg=g-L,db=b-L;
     const maxDelta=Math.max(dr,dg,db),minDelta=Math.min(dr,dg,db);
@@ -3211,7 +3211,7 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
     const a=sample(x0,y0),b=sample(x0+1,y0),c0=sample(x0,y0+1),e0=sample(x0+1,y0+1);
     const localBase=(a*(1-fx)+b*fx)*(1-fy)+(c0*(1-fx)+e0*fx)*fy;
     const midtone=smooth(24,76,L)*(1-smooth(190,242,L));
-    const detailStrength=.115*midtone;
+    const detailStrength=.14*midtone;
     const delta=Math.max(-18,Math.min(18,L-localBase));
     const adjusted=L+delta*detailStrength;
     const scale=adjusted/Math.max(1,L);
@@ -3390,8 +3390,8 @@ function autoEnhanceEditor(){
  if(clipRate>.12)highlights=Math.min(highlights,-54);
  let shadows=clamp((92-p10)*.20,1,18);
  if(mixed)shadows=Math.min(shadows,16);
- const contrast=clamp((164-(p90-p10))*.075,-3,6);
- const whites=clamp((232-p95)*.10,-7,5);
+ const contrast=clamp((168-(p90-p10))*.085,-3,8);
+ const whites=clamp((238-p95)*.12,-7,8);
  const blacks=clamp((p05-20)*-.085,-5,2);
  let temperature=0,tint=0,wb='not enough neutral pixels';
  if(neutralN>Math.max(120,n*.035)){
@@ -3411,7 +3411,7 @@ function autoEnhanceEditor(){
  const scene=mixed?'High dynamic range / mixed lighting':p50<90?'Low-light interior':p50>155?'Bright interior':'Balanced interior';
  const status=document.getElementById('editorStatus');
  if(status)status.textContent=`Rental analysis: ${scene} · ${darkZones} dark zones · ${brightZones} bright zones · adaptive local tone + highlight shoulder enabled · WB: ${wb} · ${Math.round(clipRate*100)}% clipped highlights · ${Math.round(performance.now()-started)} ms`;
- showToast('Rental Auto Enhance V0.38 applied: interior tone balance, neutral colour estimate and protected local detail.','success');
+ showToast('Rental Auto Enhance V0.39 applied: restrained shadows, brighter whites and natural interior contrast.','success');
 }
 function editorSettings(){return Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value]))}
 async function batchApplyEditor(){
