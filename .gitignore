@@ -19,4 +19,6 @@ src-tauri/.tauri/
 Thumbs.db
 .vscode/
 .idea/
-\n# Generated desktop frontend\ndesktop-dist/\n
+
+# Generated desktop frontend
+desktop-dist/
