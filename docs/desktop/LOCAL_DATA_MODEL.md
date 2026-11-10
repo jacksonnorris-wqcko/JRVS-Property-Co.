@@ -52,7 +52,7 @@ Use a hybrid relational + JSON-payload design. Relational columns support safe l
 
 ### photos
 - `photo_id TEXT PRIMARY KEY` — preserve current IndexedDB ID.
-- `job_id TEXT NOT NULL` — preserve original jobId.
+- `job_id TEXT NULL` — preserve original jobId when present; allow legacy orphan photos with no linked job.
 - `source_photo_id TEXT NULL` — links edited copy to its source.
 - `original_name TEXT NOT NULL`, `media_type TEXT NULL`, `file_size INTEGER NOT NULL`
 - `photo_type TEXT NULL`, `status TEXT NULL`, `is_cover INTEGER NOT NULL DEFAULT 0`
