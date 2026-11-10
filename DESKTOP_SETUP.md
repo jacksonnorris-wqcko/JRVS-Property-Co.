@@ -32,11 +32,11 @@ Build output is created under `src-tauri/target/release/bundle/`.
 
 ## Current scope and limitations
 
-- The shell loads the existing V0.48.0 web interface without changing its business logic or existing browser storage.
+- The desktop preparation step creates an isolated `desktop-dist/` frontend from the V0.48.0 interface. It removes the Supabase SDK/key bootstrap, does not initialise cloud sync, hides cloud/PWA installation and browser-update controls, and keeps the main PWA source unchanged.
 - The initial window is configured for a desktop workspace (1440 × 940, minimum 1120 × 720).
-- No native filesystem, SQLite, photo-library, backup, or restore commands are enabled yet.
+- The initial shell still uses the existing WebView localStorage and IndexedDB stores as a temporary compatibility layer. No native filesystem, SQLite, managed photo-library, backup, or restore commands are enabled yet.
 - The existing Supabase code and browser/PWA code are intentionally still present at this stage. They will only be retired after local persistence, photo migration, and full backup/restore have been implemented and tested.
-- The initial frontend asset configuration embeds the repository root for a low-risk first launch. Before shipping installers, this will be narrowed to a dedicated desktop asset directory so development documents and repository-only files are not packaged.
-- The existing app still has external runtime dependencies (including the Supabase SDK and RAW decoder). This first shell is not yet an offline-ready desktop release.
+- The generated desktop frontend is isolated in `desktop-dist/`; repository documentation, Rust sources, and development files are not included as frontend assets.
+- Weather data still uses an external service, and genuine RAW decoding still depends on the existing runtime implementation. This first shell is not yet an offline-ready desktop release.
 
 Do not use this shell with important business data yet. The local database and verified migration/backup path are future stages.
