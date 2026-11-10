@@ -177,6 +177,18 @@ fn desktop_save_storage(
 }
 
 #[tauri::command]
+fn desktop_photo_exists(app: AppHandle, photo_id: String) -> Result<bool, String> {
+    let connection = open_database(&app)?;
+    connection
+        .query_row(
+            "SELECT EXISTS(SELECT 1 FROM managed_photos WHERE photo_id=?1)",
+            params![photo_id],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn desktop_storage_status(app: AppHandle) -> Result<DesktopWorkspaceStatus, String> {
     let connection = open_database(&app)?;
     let storage_keys: usize = connection
@@ -436,7 +448,7 @@ fn storage_initialization_script(seed: &HashMap<String, String>) -> Result<Strin
     let seed = seed.replace("</", "<\\/");
     Ok(format!(
         r#"(function() {{
-  if (!window.location.href.startsWith('tauri://') && !window.location.href.startsWith('http://tauri.localhost')) return;
+  // This script is attached only to the native JRVS webview.
   const seed = {seed};
   const original = window.localStorage;
   const memory = new Map(Object.entries(seed));
@@ -506,6 +518,7 @@ fn main() {
             desktop_storage_status,
             desktop_import_legacy_workspace,
             desktop_store_photo,
+            desktop_photo_exists,
             desktop_delete_photo,
             desktop_check_update,
             desktop_install_update
