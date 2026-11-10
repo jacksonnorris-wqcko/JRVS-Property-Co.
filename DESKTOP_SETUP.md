@@ -1,6 +1,6 @@
 # JRVS Property Co. Desktop — Developer Setup
 
-This is the first Tauri 2 desktop shell for the existing JRVS Property Co. V0.48.0 interface. It is deliberately isolated on the `desktop-transition` branch. The current PWA on `main` is not changed.
+This is the Tauri 2 desktop application for JRVS Property Co. The desktop release is independently versioned and remains isolated on `desktop-transition`.. It is deliberately isolated on the `desktop-transition` branch. The current PWA on `main` is not changed.
 
 ## Windows prerequisites
 
@@ -98,34 +98,27 @@ The first backup format is a gzip-compressed JSON payload with structural valida
 
 ## Automatic desktop updates
 
-JRVS Desktop uses the signed Tauri updater and GitHub Releases. Once the first signed desktop installer has been installed, later tagged releases can be checked and installed from inside JRVS. The app checks for updates at startup and the version badge can also be used to check manually.
+JRVS Desktop uses the native Tauri updater and signed GitHub Releases. The installed app checks for a newer signed release shortly after startup. When one is available, JRVS displays an in-app update prompt; choose **Update & restart** to install it. You do not need to download or run a new installer for normal updates. The app also offers a manual check from the version badge and **Settings → App updates → Check now**.
 
-### One-time signing-key setup
+### Signing keys — already configured
 
-The updater requires a stable signing key pair. Generate it on a trusted PC and keep the private key out of the repository.
+The repository already contains its updater public key in `src-tauri/updater.pubkey` and `src-tauri/tauri.conf.json`. The matching private signing key is configured in GitHub Actions as `TAURI_SIGNING_PRIVATE_KEY`; the signed `desktop-v0.49.0` release includes installer signatures and `latest.json`.
 
-In PowerShell, from the project folder:
+**Do not generate a new signing key or replace the public key.** Existing installations trust the current public key. Rotating it would require installing a new baseline installer on every PC before those installations could accept updates. Keep the private key in GitHub Actions and in a secure offline backup; never commit it to the repository.
 
-```powershell
-New-Item -ItemType Directory -Force "$env:USERPROFILE\.tauri" | Out-Null
-npm.cmd run tauri signer generate -- -w "$env:USERPROFILE\.tauri\jrvs-updater.key"
-```
+### Publishing future desktop updates
 
-The command creates a private key and a matching `jrvs-updater.key.pub` public-key file. Do not commit or share `jrvs-updater.key`. Keep a secure offline copy as well; losing the private key prevents publishing trusted updates for existing installations.
+The release workflow runs when a tag matching `desktop-v*` is pushed. It reads the version from `src-tauri/tauri.conf.json`, builds the Windows installers, signs the updater artifacts using the existing GitHub Actions secret, and publishes the installer signatures and `latest.json` to the matching GitHub Release.
 
-1. Copy the complete contents of `jrvs-updater.key.pub` into `src-tauri/updater.pubkey`, replacing `PUBLIC_KEY_PENDING_SETUP`.
-2. Replace the `plugins.updater.pubkey` value in `src-tauri/tauri.conf.json` with the same public-key contents.
-3. In GitHub, open **Settings → Secrets and variables → Actions → New repository secret**. Create `TAURI_SIGNING_PRIVATE_KEY` using the complete contents of `jrvs-updater.key`.
-4. If you protected the key with a password, create `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` with that password. If you used no password, that second secret can be omitted.
+For each new desktop release:
 
-The public key is safe to commit. The private key and its password must only be stored as GitHub Actions secrets and in your own secure backup.
+1. Set the same new semantic version in `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`, and the desktop version plus backup app-version values in `scripts/prepare-desktop.mjs`.
+2. Commit and push the changes to `desktop-transition`. The Windows shell-check workflow builds a test installer.
+3. Create and publish a GitHub Release with a tag matching the version, for example `desktop-v0.52.0`, targeting the commit on `desktop-transition`. Pushing the tag starts the signed release workflow.
+4. Confirm the workflow succeeds and the release contains the Windows installer, its `.sig` signature, and `latest.json`.
 
-### Publishing a desktop release
+Existing installations check the release endpoint on their next launch. The update prompt shows the new version and release notes; selecting **Update & restart** downloads and verifies the signed update before installing it. Windows uses Tauri's passive installer mode to show installation progress.
 
-The `.github/workflows/desktop-release.yml` workflow runs when a tag matching `desktop-v*` is pushed. It reads the desktop version from `src-tauri/tauri.conf.json`, builds the Windows installer, generates signed updater artifacts and uploads the installer plus updater manifest (`latest.json`) to the matching GitHub Release.
+The current V0.50.0 test installer already contains the configured updater public key. The next signed release must have a version newer than 0.50.0 so this test installation can detect it. A version equal to or older than the installed version will not be offered.
 
-The first signed release is **0.49.0**. Because the currently running development shell is not an installed updater-enabled release, install that first Windows installer once. After that, normal future releases can be installed from JRVS without downloading and extracting a new source ZIP.
-
-To create the first release after the public key and GitHub secrets are configured, open **Releases → Draft a new release**. Create the tag `desktop-v0.49.0` targeting the `desktop-transition` branch, then publish the release. This pushes the tag and starts the signed Windows build; the workflow uploads the installer and updater manifest to that release. Do not publish before the public key and private-key secret are in place.
-
-Windows updates use Tauri's passive installer mode, which shows installer progress. The updater verifies the update signature before installation. See the [official Tauri updater guide](https://v2.tauri.app/plugin/updater/) for the signing and updater model.
+See the [official Tauri updater guide](https://v2.tauri.app/plugin/updater/) for the signing and update-artifact format.
