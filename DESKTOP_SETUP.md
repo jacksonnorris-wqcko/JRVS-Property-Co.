@@ -13,6 +13,15 @@ Install these on the Windows development PC:
 
 Official instructions: https://v2.tauri.app/start/prerequisites/
 
+## Get the project onto your PC
+
+1. Open the [desktop-transition branch](https://github.com/jacksonnorris-wqcko/JRVS-Property-Co./tree/desktop-transition).
+2. Choose **Code → Download ZIP** and extract the ZIP to a normal folder, for example `Documents\\JRVS-Desktop`.
+3. Open that extracted folder in File Explorer.
+4. Right-click an empty area in the folder and choose **Open in Terminal** (or open PowerShell and `cd` into the extracted folder).
+
+You do not need Git installed for this first local test. Git is only needed later if you want to pull code changes directly rather than downloading a fresh branch ZIP.
+
 ## First launch
 
 Open PowerShell in the repository folder and run:
