@@ -14,6 +14,12 @@
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error || new Error('Could not open the JRVS photo library.'));
   });
+  const sha256 = async (blob) => {
+    if (!crypto?.subtle) throw new Error('SHA-256 integrity checks are unavailable. Please update Chrome or Edge and try again.');
+    const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+    return Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, '0')).join('');
+  };
+  const sha256Text = async (value) => sha256(new Blob([value], { type: 'application/json' }));
   const blobToBase64 = async (blob) => {
     if (!blob) return null;
     const bytes = new Uint8Array(await blob.arrayBuffer());
@@ -49,25 +55,40 @@
     delete metadata.blob;
     delete metadata.previewBlob;
     for (const key of ['url', 'previewUrl', 'objectUrl', 'previewObjectUrl']) delete metadata[key];
+    const originalSha256 = await sha256(photo.blob);
+    const previewSha256 = photo.previewBlob ? await sha256(photo.previewBlob) : null;
     photoPayload.push({
       ...metadata,
       blobMimeType: photo.blob.type || photo.mimeType || 'application/octet-stream',
       previewMimeType: photo.previewBlob?.type || null,
+      originalByteLength: photo.blob.size,
+      previewByteLength: photo.previewBlob?.size || 0,
+      originalSha256,
+      previewSha256,
       blobBase64: await blobToBase64(photo.blob),
       previewBase64: photo.previewBlob ? await blobToBase64(photo.previewBlob) : null
     });
     if ((index + 1) % 10 === 0) console.info('JRVS export: prepared ' + (index + 1) + ' of ' + photos.length + ' photos…');
   }
 
+  const manifest = {
+    hashAlgorithm: 'SHA-256',
+    photoCount: photoPayload.length,
+    businessSha256: await sha256Text(JSON.stringify(business)),
+    calendarSha256: await sha256Text(JSON.stringify(calendar)),
+    originalPhotoBytes: photoPayload.reduce((sum, photo) => sum + (photo.originalByteLength || 0), 0),
+    previewPhotoBytes: photoPayload.reduce((sum, photo) => sum + (photo.previewByteLength || 0), 0)
+  };
   const payload = {
     format: 'jrvs-legacy-workspace',
-    formatVersion: 1,
+    formatVersion: 2,
     exportedAt: new Date().toISOString(),
     source: 'JRVS Property Co. browser app',
     business,
     calendar,
     photos: photoPayload,
-    hasPhotoLibrary: true
+    hasPhotoLibrary: true,
+    manifest
   };
   const json = JSON.stringify(payload);
   if (!('CompressionStream' in window)) {
