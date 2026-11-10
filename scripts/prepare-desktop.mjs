@@ -76,18 +76,18 @@ html = replaceExactlyOnce(
 );
 
 // Mark the generated entry as desktop-only and suppress legacy browser controls.
-html = replaceExactlyOnce(
-  html,
-  '</head>',
-  `<style>
+const desktopHeadInjection = `<style>
 html.jrvs-desktop #page-settings .desktop-cloud-card,
 html.jrvs-desktop #page-settings .desktop-update-card,
 html.jrvs-desktop #page-settings .desktop-install-card { display: none !important; }
 </style>
 <script>window.__JRVS_DESKTOP__ = true; document.documentElement.classList.add('jrvs-desktop');</script>
-</head>`,
-  'desktop mode injection point'
-);
+`;
+const headCloseIndex = html.indexOf('</head>');
+if (headCloseIndex < 0) {
+  throw new Error('Could not find the document head. Desktop build stopped.');
+}
+html = html.slice(0, headCloseIndex) + desktopHeadInjection + html.slice(headCloseIndex);
 
 // This is a development-shell refresh only. Tauri's signed updater is a later
 // release stage and must not be confused with the old browser service worker.
