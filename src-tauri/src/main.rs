@@ -1,6 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::Manager;
 use tauri_plugin_updater::UpdaterExt;
 
 #[derive(serde::Serialize)]
