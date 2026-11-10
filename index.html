@@ -1415,6 +1415,36 @@ main{max-width:1580px;padding:30px clamp(22px,3.2vw,52px) 44px}
 @media(max-width:560px){#editorBackdrop .editor-top h2{font-size:16px!important}#editorBackdrop .editor-top .muted{font-size:9px!important}#editorBackdrop .editor-top-actions button{font-size:10px!important;padding:6px 7px!important}#editorBackdrop .editor-stage-wrap{flex-basis:38dvh!important;height:38dvh!important}#editorBackdrop .editor-tabs button{font-size:9px!important}#editorBackdrop .jrvs-filmstrip{flex-basis:84px!important;min-height:84px!important}}
 
 
+
+<style id="jrvs-v0462-editor-actions">
+/* V0.46.2 — integrated editor action footer */
+#editorBackdrop .editor-panel .editor-actions{
+ position:sticky!important;bottom:-14px!important;z-index:12!important;
+ display:grid!important;grid-template-columns:minmax(88px,.82fr) minmax(0,1.18fr)!important;
+ gap:8px!important;align-items:center!important;margin:12px -14px -14px!important;
+ padding:11px 14px 13px!important;background:rgba(32,39,33,.97)!important;
+ border-top:1px solid #3b473b!important;box-shadow:0 -8px 18px #10151055!important;
+ backdrop-filter:blur(10px)!important;border-radius:0 0 11px 11px!important;
+}
+#editorBackdrop .editor-panel .editor-actions button{
+ flex:initial!important;min-width:0!important;width:100%!important;min-height:38px!important;
+ padding:8px 12px!important;border-radius:8px!important;font-size:11px!important;
+ font-weight:750!important;letter-spacing:.01em!important;box-shadow:none!important;
+ transition:background .15s ease,border-color .15s ease,transform .15s ease!important;
+}
+#editorBackdrop .editor-panel .editor-actions button.secondary{
+ background:#303a31!important;border:1px solid #53604f!important;color:#e1e8dc!important;
+}
+#editorBackdrop .editor-panel .editor-actions button.secondary:hover{background:#39463a!important;border-color:#718064!important}
+#editorBackdrop .editor-panel .editor-actions button.primary{
+ background:#899b68!important;border:1px solid #9caf7b!important;color:#151b12!important;
+ font-weight:850!important;
+}
+#editorBackdrop .editor-panel .editor-actions button.primary:hover{background:#9bad79!important;border-color:#b1c58b!important}
+#editorBackdrop .editor-panel .editor-actions button:active{transform:translateY(1px)!important}
+#editorBackdrop .editor-panel .editor-actions button:disabled{opacity:.55!important;cursor:wait!important}
+@media(max-width:560px){#editorBackdrop .editor-panel .editor-actions{grid-template-columns:minmax(76px,.8fr) minmax(0,1.2fr)!important;gap:7px!important;padding:9px 11px 11px!important;margin-left:-11px!important;margin-right:-11px!important}}
+</style>
 </style>
 </head>
 <body>
@@ -1995,7 +2025,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.46.1';
+const APP_VERSION='0.46.2';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -3530,7 +3560,7 @@ function autoEnhanceEditor(){
  // V0.40: the previous target (137) produced a consistently under-bright
  // single-JPEG result against the approved original-editor benchmark. Lift the
  // midtone target while retaining highlight headroom and a restrained curve.
- let exposure=clamp(Math.log2(target/Math.max(1,p50)),-.12,.24);
+ let exposure=clamp(Math.log2(target/Math.max(1,p50)),-.04,.24); // V0.46.2: developed RAW previews should not receive a strong second global darkening pass.
  if(p95>232)exposure=Math.min(exposure,.14);
  if(p99>248)exposure=Math.min(exposure,.08);
  if(clipRate>.08)exposure=Math.min(exposure,.06);
