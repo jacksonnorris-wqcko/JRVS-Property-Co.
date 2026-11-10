@@ -4009,7 +4009,8 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUp
 (function(){
  const el=id=>document.getElementById(id);
  const invoke=window.__TAURI__?.core?.invoke;
- let pending=null,busy=false;
+ const setStatus=message=>{const target=el('updateStatus');if(target)target.textContent=message};
+ let pending=null,busy=false,checking=false;
  function showPrompt(update){
   pending=update;el('jrvsUpdateVersion').textContent='Version '+update.version;
   el('jrvsUpdateDescription').textContent='You are running '+update.currentVersion+'. Install the latest JRVS desktop version now.';
@@ -4021,29 +4022,49 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUp
  window.jrvsCloseUpdatePrompt=function(){if(busy)return;el('jrvsUpdateBackdrop').classList.remove('show');el('jrvsUpdateBackdrop').setAttribute('aria-hidden','true')};
  window.jrvsCheckForUpdates=async function(manual=false){
   if(!window.__JRVS_DESKTOP__)return;
-  if(!window.__JRVS_DESKTOP_UPDATER_CONFIGURED__){if(manual)showToast('Automatic updates need their one-time signing-key setup before they can be enabled.','info');return}
-  if(typeof invoke!=='function'){if(manual)showToast('The JRVS update service is unavailable in this app session.','error');return}
-  if(busy)return;
+  if(!window.__JRVS_DESKTOP_UPDATER_CONFIGURED__){
+   setStatus('Automatic updates are not configured in this build.');
+   if(manual)showToast('Automatic updates are not configured in this build.','info');
+   return null;
+  }
+  if(typeof invoke!=='function'){
+   setStatus('The JRVS update service is unavailable in this app session.');
+   if(manual)showToast('The JRVS update service is unavailable in this app session.','error');
+   return null;
+  }
+  if(busy||checking)return null;
+  checking=true;
+  setStatus('Checking for a signed JRVS update…');
   try{
    const update=await invoke('desktop_check_update');
-   if(update){showPrompt(update);return update}
+   if(update){
+    setStatus('Version '+update.version+' is available. Review the update prompt to install it.');
+    showPrompt(update);
+    return update;
+   }
+   setStatus('You are up to date · Version '+APP_VERSION);
    if(manual)showToast('JRVS is already up to date.','success');
    return null;
   }catch(error){
    console.error('JRVS desktop update check failed',error);
+   setStatus('Could not check for updates. Your current version is still usable.');
    if(manual)showToast('Could not check for updates: '+String(error?.message||error),'error');
    return null;
+  }finally{
+   checking=false;
   }
  };
  window.jrvsInstallUpdate=async function(){
   if(!pending||busy)return;
   busy=true;el('jrvsUpdateInstall').disabled=true;el('jrvsUpdateLater').disabled=true;
   el('jrvsUpdateInstall').textContent='Installing…';el('jrvsUpdateProgress').classList.add('show');el('jrvsUpdateError').classList.remove('show');
+  setStatus('Installing version '+pending.version+'… JRVS will restart when the update is ready.');
   try{
    await invoke('desktop_install_update');
   }catch(error){
    busy=false;el('jrvsUpdateInstall').disabled=false;el('jrvsUpdateLater').disabled=false;el('jrvsUpdateInstall').textContent='Try again';
    el('jrvsUpdateProgress').classList.remove('show');el('jrvsUpdateError').textContent='The update could not be installed: '+String(error?.message||error);el('jrvsUpdateError').classList.add('show');
+   setStatus('Update installation failed. Your current version is still usable. Press Check now to retry.');
   }
  };
  if(window.__JRVS_DESKTOP__&&window.__JRVS_DESKTOP_UPDATER_CONFIGURED__)setTimeout(()=>window.jrvsCheckForUpdates(false),2200);
