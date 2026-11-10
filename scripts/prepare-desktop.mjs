@@ -341,6 +341,27 @@ html.jrvs-desktop .desktop-notification-button{position:relative!important;width
 html.jrvs-desktop .desktop-notification-button:hover{background:#2a3327!important;border-color:#728650!important}
 html.jrvs-desktop .desktop-notification-button i{position:absolute!important;top:6px!important;right:6px!important;width:8px!important;height:8px!important;border:1px solid #1e251b!important;border-radius:50%!important;background:#b8d75b!important}
 html.jrvs-desktop .desktop-user-avatar{width:40px!important;height:40px!important;flex:0 0 40px!important;display:grid!important;place-items:center!important;border:1px solid #71804f!important;border-radius:50%!important;background:linear-gradient(145deg,#879b58,#53643a)!important;color:#f7f5e9!important;font-size:12px!important;font-weight:850!important;letter-spacing:.3px!important;box-shadow:0 3px 11px #0004!important}
+
+html.jrvs-desktop #page-dashboard.active{display:grid!important;grid-template-columns:minmax(0,2.1fr) minmax(245px,1fr) minmax(270px,.92fr)!important;grid-template-rows:auto auto auto auto auto!important;grid-template-areas:"heading heading heading" "kpis kpis calendar" "upcoming quick calendar" "recent recent attention" "recent recent activity"!important;gap:14px 15px!important;align-content:start!important;align-items:start!important}
+html.jrvs-desktop #page-dashboard.active>.desktop-dashboard-heading{grid-area:heading!important;min-width:0!important}
+html.jrvs-desktop #page-dashboard.active>.desktop-kpis{grid-area:kpis!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;min-width:0!important}
+html.jrvs-desktop #page-dashboard.active>.desktop-dashboard-layout{display:contents!important}
+html.jrvs-desktop #page-dashboard.active .desktop-main-column,
+html.jrvs-desktop #page-dashboard.active .desktop-right-column{display:contents!important}
+html.jrvs-desktop #page-dashboard.active .desktop-main-column>section:first-child{grid-area:upcoming!important}
+html.jrvs-desktop #page-dashboard.active .desktop-main-column>section:nth-child(2){grid-area:recent!important;align-self:start!important}
+html.jrvs-desktop #page-dashboard.active .desktop-right-column>section:nth-child(1){grid-area:quick!important}
+html.jrvs-desktop #page-dashboard.active .desktop-right-column>section:nth-child(2){grid-area:calendar!important;align-self:start!important}
+html.jrvs-desktop #page-dashboard.active .desktop-right-column>section:nth-child(3){grid-area:attention!important}
+html.jrvs-desktop #page-dashboard.active .desktop-right-column>section:nth-child(4){grid-area:activity!important}
+@media(max-width:1180px){
+ html.jrvs-desktop #page-dashboard.active{grid-template-columns:minmax(0,1.4fr) minmax(230px,.9fr)!important;grid-template-rows:auto auto auto auto auto auto!important;grid-template-areas:"heading heading" "kpis kpis" "upcoming quick" "calendar attention" "recent recent" "activity activity"!important}
+}
+@media(max-width:760px){
+ html.jrvs-desktop #page-dashboard.active{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto!important;grid-template-areas:"heading" "kpis" "upcoming" "quick" "calendar" "recent" "attention" "activity"!important}
+ html.jrvs-desktop #page-dashboard.active>.desktop-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+
 html.jrvs-desktop body.jrvs-dashboard-active .version.desktop-version-action{display:none!important}
 @media(max-width:1450px){
  html.jrvs-desktop .shell{grid-template-columns:226px minmax(0,1fr)!important}
