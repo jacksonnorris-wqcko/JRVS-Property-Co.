@@ -32,6 +32,9 @@
     ],
     "category": "Business",
     "shortDescription": "JRVS Property Co. business management",
-    "longDescription": "Local-first desktop business management for JRVS Property Co."
+    "longDescription": "Local-first desktop business management for JRVS Property Co.",
+    "icon": [
+      "icons/icon.ico"
+    ]
   }
 }
