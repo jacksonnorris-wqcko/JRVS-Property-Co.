@@ -457,6 +457,86 @@ html.jrvs-desktop .editor-panel details summary{color:#e7ecdf!important}
 @media(max-width:650px){html.jrvs-desktop #page-quotes .package-grid{grid-template-columns:1fr!important}html.jrvs-desktop #quoteLines .quote-line{grid-template-columns:minmax(0,1fr) 62px 90px 30px!important}}
 
 </style>
+
+<style id="jrvs-desktop-v053-reference-polish">
+/* Reference design refinement: stronger hierarchy, roomier controls and balanced dashboard proportions. */
+html.jrvs-desktop .shell>aside{padding:23px 16px 16px!important;gap:23px!important}
+html.jrvs-desktop .brand img{width:188px!important;height:112px!important}
+html.jrvs-desktop .shell>aside .nav-btn{min-height:49px!important;padding:0 14px!important;font-size:13px!important;gap:14px!important}
+html.jrvs-desktop .shell>aside .nav-btn span:first-child{font-size:19px!important}
+html.jrvs-desktop .shell>main{padding:24px 24px 30px!important}
+html.jrvs-desktop #page-dashboard.active{column-gap:17px!important;row-gap:16px!important}
+html.jrvs-desktop .desktop-dashboard-heading{min-height:80px!important;margin-bottom:2px!important}
+html.jrvs-desktop .desktop-dashboard-heading h2{font-size:32px!important;line-height:1.14!important;letter-spacing:-1px!important}
+html.jrvs-desktop .desktop-dashboard-heading p{font-size:13px!important;line-height:1.4!important}
+html.jrvs-desktop .desktop-kicker{font-size:9px!important;letter-spacing:1.9px!important}
+html.jrvs-desktop .desktop-kpis{gap:13px!important;margin:0!important}
+html.jrvs-desktop .desktop-kpi{min-height:94px!important;padding:15px 17px!important;gap:13px!important;border-radius:15px!important}
+html.jrvs-desktop .desktop-kpi-icon{width:50px!important;height:50px!important;flex-basis:50px!important;border-radius:13px!important;font-size:23px!important}
+html.jrvs-desktop .desktop-kpi span{font-size:9px!important;letter-spacing:1.1px!important}
+html.jrvs-desktop .desktop-kpi strong{font-size:29px!important;margin:4px 0 2px!important}
+html.jrvs-desktop .desktop-kpi small{font-size:10px!important}
+html.jrvs-desktop .desktop-card{padding:17px 17px 16px!important;border-radius:15px!important}
+html.jrvs-desktop .desktop-card-head{margin-bottom:14px!important}
+html.jrvs-desktop .desktop-card-head h3{font-size:16px!important;letter-spacing:-.25px!important}
+html.jrvs-desktop .desktop-text-action{font-size:10px!important}
+html.jrvs-desktop .desktop-jobs-head,html.jrvs-desktop .desktop-job-row{grid-template-columns:78px 64px minmax(0,1.55fr) minmax(82px,.8fr) 88px!important;gap:9px!important}
+html.jrvs-desktop .desktop-jobs-head{min-height:36px!important;padding:0 11px!important;font-size:10px!important}
+html.jrvs-desktop .desktop-job-row{min-height:51px!important;padding:8px 11px!important}
+html.jrvs-desktop .desktop-job-date,html.jrvs-desktop .desktop-job-time{font-size:10px!important}
+html.jrvs-desktop .desktop-job-property strong{font-size:11px!important}
+html.jrvs-desktop .desktop-job-property small{font-size:10px!important}
+html.jrvs-desktop .desktop-job-agent{font-size:10px!important}
+html.jrvs-desktop .desktop-status-pill{font-size:9px!important;padding:5px 9px!important}
+html.jrvs-desktop .desktop-quick-grid{gap:9px!important}
+html.jrvs-desktop .desktop-quick-action{min-height:78px!important;padding:11px 13px!important;gap:6px!important;border-radius:11px!important}
+html.jrvs-desktop .desktop-quick-action span{font-size:22px!important}
+html.jrvs-desktop .desktop-quick-action b{font-size:10px!important}
+html.jrvs-desktop .desktop-calendar-card .desktop-card-head h3{font-size:16px!important}
+html.jrvs-desktop .desktop-calendar-grid{gap:4px!important;margin:4px 0 12px!important}
+html.jrvs-desktop .desktop-calendar-weekday{font-size:9px!important;padding:6px 0!important}
+html.jrvs-desktop .desktop-calendar-day{height:31px!important;font-size:10px!important;border-radius:9px!important}
+html.jrvs-desktop .desktop-outline-action{min-height:34px!important;font-size:10px!important}
+html.jrvs-desktop .desktop-count-pill{min-width:27px!important;height:27px!important;font-size:11px!important}
+html.jrvs-desktop .attention-item{padding:10px 11px!important}
+html.jrvs-desktop .attention-item strong{font-size:11px!important}
+html.jrvs-desktop .attention-item small{font-size:10px!important}
+html.jrvs-desktop .recent-job-list{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:11px!important}
+html.jrvs-desktop .recent-job-cover,html.jrvs-desktop .recent-job-placeholder{height:132px!important;flex-basis:132px!important}
+html.jrvs-desktop .recent-job-main{padding:10px 11px 11px!important}
+html.jrvs-desktop .recent-job-main strong{font-size:11px!important}
+html.jrvs-desktop .recent-job-main small{font-size:10px!important}
+html.jrvs-desktop .recent-job-meta{font-size:9px!important;gap:7px!important}
+html.jrvs-desktop .desktop-activity-row{gap:10px!important;padding:10px 0!important}
+html.jrvs-desktop .desktop-activity-icon{width:29px!important;height:29px!important;flex-basis:29px!important;font-size:14px!important}
+html.jrvs-desktop .desktop-activity-copy strong{font-size:11px!important}
+html.jrvs-desktop .desktop-activity-copy small{font-size:10px!important}
+html.jrvs-desktop .desktop-empty{padding:26px 14px!important;font-size:12px!important;line-height:1.5!important}
+@media(max-width:1450px){
+ html.jrvs-desktop .shell>main{padding:20px 19px 25px!important}
+ html.jrvs-desktop #page-dashboard.active{column-gap:13px!important;row-gap:13px!important}
+ html.jrvs-desktop .desktop-card{padding:14px!important}
+ html.jrvs-desktop .desktop-kpi{padding:12px!important;gap:10px!important}
+ html.jrvs-desktop .desktop-kpi-icon{width:44px!important;height:44px!important;flex-basis:44px!important}
+ html.jrvs-desktop .desktop-kpi strong{font-size:26px!important}
+ html.jrvs-desktop .desktop-job-row,html.jrvs-desktop .desktop-jobs-head{grid-template-columns:70px 55px minmax(0,1.5fr) minmax(68px,.7fr) 78px!important;gap:6px!important}
+ html.jrvs-desktop .recent-job-cover,html.jrvs-desktop .recent-job-placeholder{height:116px!important;flex-basis:116px!important}
+}
+@media(max-width:1180px){
+ html.jrvs-desktop #page-dashboard.active{grid-template-columns:minmax(0,1.4fr) minmax(245px,.95fr)!important;grid-template-rows:auto auto auto auto auto auto!important;grid-template-areas:"heading heading" "kpis kpis" "upcoming quick" "calendar attention" "recent recent" "activity activity"!important}
+ html.jrvs-desktop #page-dashboard.active>.desktop-kpis{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+ html.jrvs-desktop .desktop-job-row,html.jrvs-desktop .desktop-jobs-head{grid-template-columns:70px minmax(0,1fr) 80px!important}
+ html.jrvs-desktop .desktop-job-time,html.jrvs-desktop .desktop-job-agent{display:none!important}
+ html.jrvs-desktop .desktop-job-property{grid-column:2!important}
+}
+@media(max-width:900px){
+ html.jrvs-desktop .shell>main{padding:15px!important}
+ html.jrvs-desktop #page-dashboard.active{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"heading" "kpis" "upcoming" "quick" "calendar" "recent" "attention" "activity"!important}
+ html.jrvs-desktop #page-dashboard.active>.desktop-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ html.jrvs-desktop .desktop-dashboard-heading h2{font-size:25px!important}
+ html.jrvs-desktop .recent-job-list{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+</style>
 <script>
 window.__JRVS_DESKTOP__ = true;
 window.__JRVS_DESKTOP_UPDATER_CONFIGURED__ = ${updaterConfigured};
