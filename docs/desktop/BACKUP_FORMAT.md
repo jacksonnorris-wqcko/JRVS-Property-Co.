@@ -1,75 +1,38 @@
-# JRVS Desktop — Portable Backup Format
+# JRVS Property Co. — Portable Workspace Backup
 
-**Format name:** JRVS Portable Workspace  
-**Initial format version:** 1  
-**Container:** ZIP archive  
-**Purpose:** Full local backup and manual transfer between Windows PCs
+**Current format:** JRVS Portable Workspace, version 1  
+**File extension:** `.jrvsbackup.gz`  
+**Container:** GZIP-compressed UTF-8 JSON
 
-## Archive layout
+## Payload structure
 
-```text
-JRVS-Backup-<date>-<workspace-id>.jrvsbackup
-  manifest.json
-  database/jrvs.sqlite
-  photos/original/<photo-id>.<ext>
-  photos/preview/<photo-id>.<ext>
-  photos/edited/<photo-id>.<ext>
-  settings/settings.json
-  checksums/sha256.json
-```
+The decompressed JSON contains:
 
-The extension is a ZIP container with a JRVS-specific extension. A normal ZIP utility may inspect it, but restore must use the JRVS validator.
-
-## Manifest
-
-The manifest must include:
-
-- `formatName`: `jrvs-portable-workspace`
-- `formatVersion`: integer (initially 1)
+- `format`: `jrvs-portable-workspace`
+- `formatVersion`: integer (currently 1)
 - `appVersion`
-- `schemaVersion`
-- `workspaceId` — stable UUID for this business workspace, not a machine ID.
-- `createdAt` — ISO-8601 timestamp.
-- `recordCounts` by entity type.
-- `photoCounts` by original/preview/edited asset type.
-- `totalAssetBytes`
-- `databaseFile`
-- `checksumAlgorithm`: `SHA-256`
-- `checksumsFile`
+- `exportedAt`: ISO-8601 timestamp
+- `business`: complete `jrvs-data` object, including unknown fields and numbering state
+- `calendar`: complete `jrvs-calendar` array
+- `photos`: an array of full photo metadata plus base64-encoded original and optional preview blobs
+- `hasPhotoLibrary`: indicates whether restore should reconcile the target photo library to the source backup
 
-## Backup consistency
+Legacy browser exports use the same structure with `format` set to `jrvs-legacy-workspace`.
 
-- Use SQLite's online backup API or a consistent read transaction; never copy a live database file while writes are in progress.
-- Pause/queue app writes during the backup snapshot.
-- Ensure every photo referenced by the snapshot is included.
-- Compute SHA-256 checksums for the database and every asset.
-- Write the manifest/checksum index last, then close the archive.
-- The app must report backup success only after the archive can be reopened and every checksum verified.
+## Backup behaviour
 
-## Restore and transfer
+- The backup is assembled from the SQLite-backed localStorage compatibility store and the active IndexedDB photo library.
+- Photo originals are included byte-for-byte as base64 data and are also mirrored into the native managed photo folder.
+- The original browser/PWA data is not changed by export.
+- The app downloads the finished compressed file to the normal Windows download location.
+- A restore validates the format, required arrays, business object and presence of every photo original before changing records.
+- Before a restore/import, the app downloads a full safety backup of the current desktop workspace. The native importer also retains a JSON snapshot of the existing SQLite key/value store under the workspace backups folder.
 
-- Restore first into a temporary workspace, never directly over the active workspace.
-- Validate archive format/version, safe relative paths, manifest counts, checksum index, SQLite integrity (`PRAGMA integrity_check`) and schema version.
-- Validate every photo path referenced by the database exists and matches its checksum.
-- Display a summary before the final replace: record counts, photos, total size, source workspace and backup date.
-- Make a rollback backup of the current workspace before promotion.
-- Promote staged workspace atomically where the platform allows; if promotion fails, preserve the existing active workspace.
-- Do not merge two workspaces automatically.
-- Keep the workspace UUID and all record IDs unchanged across PCs.
-- On a new PC, restore the complete backup and then resume using the same business identity and numbering sequences.
+## Current limitations and safeguards
 
-## Backup retention and user experience
+- Version 1 uses gzip-compressed JSON rather than a ZIP container.
+- Per-file SHA-256 checksums and archive-level integrity manifests are not yet implemented.
+- Very large libraries may require substantial memory while blobs are encoded and compressed.
+- The first desktop restore flow is designed for a single workspace replacement, not merging two businesses.
+- Keep the original browser workspace and a separate backup until you have checked the imported records, photo count and several sample files.
 
-- Default to a complete portable backup with all photos.
-- Allow choosing the destination folder and show estimated size before starting.
-- Show progress by database snapshot, asset copy, hashing, archive write and final verification.
-- Offer a backup reminder/status indicator, but never silently upload data.
-- Metadata-only exports, if ever offered, must be clearly distinguished and must warn that photos are excluded.
-- Do not automatically delete old backups. The user controls retention.
-
-## Failure handling
-
-- Failed backup must not alter the active database or managed photo library.
-- Failed restore must leave the active workspace untouched.
-- A failed checksum must identify the exact archive entry and stop promotion.
-- An unsupported future format version must be rejected with a clear upgrade message, not partially restored.
