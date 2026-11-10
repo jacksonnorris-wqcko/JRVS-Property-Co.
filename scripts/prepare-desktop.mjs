@@ -117,7 +117,7 @@ for (const forbidden of ['@supabase/supabase-js', 'JRVS_SUPABASE_URL=', 'sb_publ
 
 // Parse every inline script without executing it. This catches syntax errors in
 // the generated Windows frontend before Tauri starts bundling.
-const inlineScripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)];
+const inlineScripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
 if (inlineScripts.length < 2) {
   throw new Error('Expected the desktop marker and main app scripts in the generated frontend.');
 }
