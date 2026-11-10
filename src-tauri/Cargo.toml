@@ -1,0 +1,18 @@
+[package]
+name = "jrvs-property-co"
+version = "0.48.0"
+description = "JRVS Property Co. desktop application"
+authors = ["JRVS Property Co."]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
