@@ -60,17 +60,17 @@ html = replaceExactlyOnce(
 
 html = replaceExactlyOnce(html, '<link rel="manifest" href="manifest.json">', '', 'PWA manifest link');
 html = replaceExactlyOnce(html, '<section class="settings-card cloud-control-card">', '<section class="settings-card cloud-control-card desktop-cloud-card">', 'cloud settings card');
-html = replaceExactlyOnce(
-  html,
-  '<section class="settings-card"><div class="settings-card-head"><span class="settings-icon">↻</span><div><h3>App updates</h3>',
-  '<section class="settings-card desktop-migration-card">
+const desktopMigrationCard = `<section class="settings-card desktop-migration-card">
   <div class="settings-card-head"><span class="settings-icon">⇄</span><div><h3>Workspace data & backups</h3><p>Move your existing JRVS records onto this PC and protect the whole workspace.</p></div><span class="pill">Local storage</span></div>
   <div class="row-card"><div><strong>Create a full backup</strong><small>Includes jobs, clients, quotes, invoices, calendar events and the photo library.</small></div><button class="primary" type="button" onclick="jrvsCreateDesktopBackup()">Create backup</button></div>
   <div class="row-card"><div><strong>Import an existing JRVS export</strong><small>Choose a .jrvslegacy.gz export from your old browser app or a .jrvsbackup.gz desktop backup.</small></div><input id="jrvsDesktopImportFile" type="file" accept=".gz,.jrvslegacy,.jrvsbackup,application/gzip,application/json" onchange="jrvsImportWorkspaceFile(this)"></div>
   <div class="settings-note">Imports leave the original browser workspace untouched. A safety backup is downloaded before replacing the records on this PC. Photo originals are copied into the JRVS managed photo folder.</div>
   <div class="desktop-data-status" id="jrvsDesktopDataStatus">Checking the local JRVS workspace…</div>
-</section>
-        <section class="settings-card desktop-update-card"><div class="settings-card-head"><span class="settings-icon">↻</span><div><h3>App updates</h3>',
+</section>`;
+html = replaceExactlyOnce(
+  html,
+  '<section class="settings-card"><div class="settings-card-head"><span class="settings-icon">↻</span><div><h3>App updates</h3>',
+  desktopMigrationCard + '\n        <section class="settings-card desktop-update-card"><div class="settings-card-head"><span class="settings-icon">↻</span><div><h3>App updates</h3>',
   'browser update settings card'
 );
 html = replaceExactlyOnce(
