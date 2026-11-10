@@ -512,6 +512,17 @@ html.jrvs-desktop .desktop-activity-icon{width:29px!important;height:29px!import
 html.jrvs-desktop .desktop-activity-copy strong{font-size:11px!important}
 html.jrvs-desktop .desktop-activity-copy small{font-size:10px!important}
 html.jrvs-desktop .desktop-empty{padding:26px 14px!important;font-size:12px!important;line-height:1.5!important}
+html.jrvs-desktop .desktop-empty-state{grid-column:1/-1!important;min-width:0!important;min-height:160px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:16px!important;padding:22px 24px!important;border:1px dashed #414c3b!important;border-radius:12px!important;background:radial-gradient(ellipse at 50% 0%,#293325 0%,#1a201a 72%)!important;color:#eaf0de!important;text-align:left!important}
+html.jrvs-desktop .desktop-empty-state.compact{min-height:112px!important;padding:15px 18px!important;gap:13px!important}
+html.jrvs-desktop .desktop-empty-symbol{width:44px!important;height:44px!important;flex:0 0 44px!important;display:grid!important;place-items:center!important;border:1px solid #5a6b44!important;border-radius:13px!important;background:#35442c!important;color:#d5e879!important;font-size:22px!important}
+html.jrvs-desktop .desktop-empty-copy{min-width:0!important}
+html.jrvs-desktop .desktop-empty-copy strong{display:block!important;color:#f0f3e8!important;font-size:12px!important;font-weight:800!important}
+html.jrvs-desktop .desktop-empty-copy p{margin:5px 0 0!important;color:#aeb9a3!important;font-size:10px!important;line-height:1.5!important}
+html.jrvs-desktop .desktop-empty-cta{min-height:34px!important;flex:none!important;padding:0 12px!important;border:1px solid #c5dd71!important;border-radius:9px!important;background:#b9d260!important;color:#1c2512!important;font-size:10px!important;font-weight:850!important}
+html.jrvs-desktop .desktop-empty-cta:hover{background:#d0e97b!important;transform:translateY(-1px)!important}
+html.jrvs-desktop .desktop-activity-empty{min-height:82px!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
+@media(max-width:900px){html.jrvs-desktop .desktop-empty-state{min-height:125px!important;padding:16px!important;gap:11px!important}html.jrvs-desktop .desktop-empty-state.compact{min-height:105px!important}html.jrvs-desktop .desktop-empty-symbol{width:38px!important;height:38px!important;flex-basis:38px!important}}
+
 @media(max-width:1450px){
  html.jrvs-desktop .shell>main{padding:20px 19px 25px!important}
  html.jrvs-desktop #page-dashboard.active{column-gap:13px!important;row-gap:13px!important}
