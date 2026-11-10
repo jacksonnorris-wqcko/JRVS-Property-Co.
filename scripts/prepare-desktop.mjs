@@ -43,6 +43,12 @@ html = replaceExactlyOnce(
   '// Desktop builds are installed and updated by the Windows app, not a PWA service worker.',
   'PWA service-worker registration'
 );
+html = replaceExactlyOnce(
+  html,
+  "document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUpdates()});",
+  '// Desktop update checks are handled by the installed Windows app.',
+  'PWA visibility-based update check'
+);
 
 html = replaceExactlyOnce(html, '<link rel="manifest" href="manifest.json">', '', 'PWA manifest link');
 html = replaceExactlyOnce(html, '<section class="settings-card cloud-control-card">', '<section class="settings-card cloud-control-card desktop-cloud-card">', 'cloud settings card');
@@ -105,7 +111,7 @@ async function waitForWorkerActivation`
 );
 
 // Fail closed if the generated desktop entry accidentally retains cloud bootstrap.
-for (const forbidden of ['@supabase/supabase-js', 'JRVS_SUPABASE_URL=', 'sb_publishable_', 'jrvsCloudInit();', "navigator.serviceWorker.register('./sw.js')"]) {
+for (const forbidden of ['@supabase/supabase-js', 'JRVS_SUPABASE_URL=', 'sb_publishable_', 'jrvsCloudInit();', "navigator.serviceWorker.register('./sw.js')", 'visibilitychange', 'checkForUpdates()});']) {
   if (html.includes(forbidden)) throw new Error(`Desktop output still contains forbidden browser/cloud wiring: ${forbidden}`);
 }
 
