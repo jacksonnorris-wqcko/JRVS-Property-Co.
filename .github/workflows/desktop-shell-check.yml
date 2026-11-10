@@ -12,9 +12,10 @@ on:
 permissions:
   contents: read
 
+# Keep normal development checks replaceable, but never cancel a release run.
 concurrency:
-  group: jrvs-desktop-${{ github.ref }}
-  cancel-in-progress: true
+  group: jrvs-desktop-${{ github.ref }}-${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[release]') && 'release' || 'check' }}
+  cancel-in-progress: ${{ !(github.event_name == 'push' && contains(github.event.head_commit.message, '[release]')) }}
 
 jobs:
   windows-build:
@@ -77,3 +78,92 @@ jobs:
             D:/a/jrvs/src-tauri/target/release/bundle/msi/*.msi
           if-no-files-found: error
           retention-days: 14
+
+  publish-signed-update:
+    name: Publish signed desktop update
+    needs: windows-build
+    # Only an intentional release-ready commit can publish. PRs, manual checks,
+    # and ordinary development commits never reach the public update channel.
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[release]')
+    runs-on: windows-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: D:/a/jrvs
+    steps:
+      - name: Clone release-ready source into Windows-safe directory
+        shell: pwsh
+        working-directory: D:/a
+        run: |
+          git clone --filter=blob:none --no-checkout "https://github.com/${{ github.repository }}.git" "D:/a/jrvs"
+          git -C "D:/a/jrvs" fetch --depth 1 origin "${{ github.sha }}"
+          git -C "D:/a/jrvs" checkout --detach FETCH_HEAD
+          if ($LASTEXITCODE -ne 0) { throw "Release source checkout failed." }
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Prepare desktop frontend and icons
+        run: |
+          npm run desktop:prepare
+          npm run desktop:icons
+
+      - name: Validate release version and tag
+        shell: pwsh
+        run: |
+          $tauri = Get-Content -Raw "src-tauri/tauri.conf.json" | ConvertFrom-Json
+          $package = Get-Content -Raw "package.json" | ConvertFrom-Json
+          $cargo = Get-Content -Raw "src-tauri/Cargo.toml"
+          $version = [string]$tauri.version
+          if ([string]::IsNullOrWhiteSpace($version)) { throw "Desktop version is missing from tauri.conf.json." }
+          if ($package.version -ne $version) { throw "package.json version ($($package.version)) does not match Tauri version ($version)." }
+          if ($cargo -notmatch ('(?m)^version = "' + [regex]::Escape($version) + '"$')) { throw "Cargo.toml version does not match Tauri version ($version)." }
+          $tag = "desktop-v$version"
+          git ls-remote --exit-code --tags origin "refs/tags/$tag" *> $null
+          if ($LASTEXITCODE -eq 0) { throw "Release tag $tag already exists. Bump the desktop version before publishing another update." }
+          "JRVS_DESKTOP_VERSION=$version" >> $env:GITHUB_ENV
+          "JRVS_DESKTOP_TAG=$tag" >> $env:GITHUB_ENV
+          Write-Host "Validated release candidate $tag"
+
+      - name: Verify updater signing secret
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
+            throw "Missing GitHub Actions secret TAURI_SIGNING_PRIVATE_KEY. No release was published."
+          }
+
+      - name: Build, sign and publish GitHub Release
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: D:/a/jrvs
+          tagName: ${{ env.JRVS_DESKTOP_TAG }}
+          releaseName: JRVS Property Co. Desktop ${{ env.JRVS_DESKTOP_VERSION }}
+          releaseBody: |
+            JRVS Property Co. Desktop for Windows.
+
+            This release passed the JRVS Windows desktop build and installer verification before publication.
+
+            JRVS Desktop checks for signed updates when it starts. When an update is available, open the in-app prompt and choose “Update & restart”. No installer download is needed for existing installations.
+          releaseDraft: false
+          prerelease: false
+          args: --config src-tauri/tauri.release.conf.json
+          updaterJsonPreferNsis: true
+          uploadUpdaterJson: true
