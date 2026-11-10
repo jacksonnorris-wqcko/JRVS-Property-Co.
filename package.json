@@ -1,14 +1,15 @@
 {
   "name": "jrvs-property-co-desktop",
   "private": true,
-  "version": "0.48.0",
+  "version": "0.49.0",
   "description": "Windows desktop shell for JRVS Property Co.",
   "scripts": {
     "tauri": "tauri",
     "desktop:dev": "npm run desktop:prepare && npm run desktop:icons && tauri dev",
     "desktop:build": "npm run desktop:prepare && npm run desktop:icons && tauri build",
     "desktop:prepare": "node scripts/prepare-desktop.mjs",
-    "desktop:icons": "tauri icon jrvs-app-512.png --output src-tauri/icons"
+    "desktop:icons": "tauri icon jrvs-app-512.png --output src-tauri/icons",
+    "desktop:build:update": "npm run desktop:prepare && npm run desktop:icons && tauri build --config src-tauri/tauri.release.conf.json"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0"
