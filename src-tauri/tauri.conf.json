@@ -1,26 +1,13 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "JRVS Property Co",
-  "version": "0.49.0",
+  "version": "0.50.0",
   "identifier": "com.jrvspropertyco.desktop",
   "build": {
     "frontendDist": "../desktop-dist"
   },
   "app": {
     "withGlobalTauri": true,
-    "windows": [
-      {
-        "label": "main",
-        "title": "JRVS Property Co.",
-        "width": 1440,
-        "height": 940,
-        "minWidth": 1120,
-        "minHeight": 720,
-        "resizable": true,
-        "fullscreen": false,
-        "center": true
-      }
-    ],
     "security": {
       "csp": null
     }
