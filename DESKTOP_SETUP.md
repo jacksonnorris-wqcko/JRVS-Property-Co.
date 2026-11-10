@@ -39,16 +39,33 @@ npm run desktop:build
 
 Build output is created under `src-tauri/target/release/bundle/`.
 
-## Current scope and limitations
+## Desktop workspace storage and migration (V0.50.0)
 
-- The desktop preparation step creates an isolated `desktop-dist/` frontend from the V0.48.0 interface. It removes the Supabase SDK/key bootstrap, does not initialise cloud sync, hides cloud/PWA installation and browser-update controls, and keeps the main PWA source unchanged.
-- The initial window is configured for a desktop workspace (1440 × 940, minimum 1120 × 720).
-- The initial shell still uses the existing WebView localStorage and IndexedDB stores as a temporary compatibility layer. No native filesystem, SQLite, managed photo-library, backup, or restore commands are enabled yet.
-- Legacy Supabase routines remain in the shared source so the existing PWA can continue working on `main`; the generated desktop frontend strips the Supabase SDK, credentials/bootstrap, sync initialisation and cloud settings UI. The shared legacy routines can be removed from the desktop source once local persistence, photo migration, and full backup/restore are implemented and verified.
-- The generated desktop frontend is isolated in `desktop-dist/`; repository documentation, Rust sources, and development files are not included as frontend assets.
-- Weather data still uses an external service, and genuine RAW decoding still depends on the existing runtime implementation. This first shell is not yet an offline-ready desktop release.
+- The desktop app creates its own SQLite database at the Tauri application data path under `workspace/jrvs.sqlite`. A compatibility table stores the complete `jrvs-data` and `jrvs-calendar` JSON payloads without dropping unknown fields or changing existing record IDs and number sequences.
+- The frontend keeps its existing synchronous localStorage interface, but the desktop webview loads and saves those keys through a native SQLite-backed adapter. Writes are committed transactionally in short batches.
+- Photo records continue to be used by the existing photo UI in IndexedDB. Every new or imported photo is also copied to the native managed library under `workspace/photos/originals` and `workspace/photos/previews`, with metadata recorded in SQLite. Originals are not moved or deleted from their source.
+- Settings now includes a **Workspace data & backups** panel. It exports a complete compressed backup (`.jrvsbackup.gz`) containing business data, calendar events and photo blobs, and can import a supported backup or legacy export.
+- The old browser/PWA data lives in a different browser storage profile and is not automatically visible to the Windows app. Use the read-only exporter described below to create a migration file; the source browser data remains untouched.
+- The desktop release remains isolated on `desktop-transition`. The stable browser/PWA version on `main` is not modified.
+- The legacy Supabase routines remain in shared source for compatibility, but the desktop build removes the Supabase SDK and cloud initialisation. No cloud login or sync is required by the desktop app.
+- Weather still uses an external service and the RAW decoder still loads from the existing remote runtime. This release is not fully offline-ready.
+- The normalized relational `business_records` model in `docs/desktop/LOCAL_DATA_MODEL.md` remains a future schema promotion. Current SQLite persistence stores full JSON records intact to preserve compatibility.
 
-Do not use this shell with important business data yet. The local database and verified migration/backup path are future stages.
+### Migrate from the existing browser app
+
+1. Open the original JRVS browser/PWA app in Chrome or Edge on the PC where its data currently lives.
+2. Open the [legacy export helper](https://raw.githubusercontent.com/jacksonnorris-wqcko/JRVS-Property-Co./desktop-transition/scripts/export-legacy-workspace.js) and copy its complete contents.
+3. In the old JRVS browser tab, press **F12**, select **Console**, paste the helper and press **Enter**. If Chrome asks to allow pasting, follow its on-screen instruction. The helper reads localStorage and the existing IndexedDB photo library; it does not delete or rewrite anything.
+4. Wait for the download named `JRVS-Legacy-Migration-YYYY-MM-DD.jrvslegacy.gz`.
+5. Open the installed JRVS Desktop app, go to **Settings → Workspace data & backups**, select that file under **Import an existing JRVS export**, review the counts and confirm.
+6. JRVS first downloads a safety backup of the desktop workspace, then copies the business records, calendar events and photo files into the local desktop workspace.
+
+### Portable backups
+
+Use **Create backup** in the same Settings panel. Keep the resulting `.jrvsbackup.gz` somewhere separate from the PC (for example, an external drive). The file contains the original photo data and preview blobs as well as the business records and calendar. Restoring a backup replaces the desktop workspace after confirmation; the app downloads a safety backup first.
+
+The first backup format is a gzip-compressed JSON payload with structural validation. Per-asset SHA-256 verification, scheduled backup reminders and a native restore preview are planned follow-up hardening. Keep the original browser app/data and at least one separate backup until you have confirmed the imported record and photo counts.
+
 
 
 ## Automatic desktop updates
