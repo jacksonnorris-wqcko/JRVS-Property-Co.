@@ -1,68 +1,31 @@
-# JRVS Desktop — Managed Photo Library Specification
+# JRVS Desktop — Managed Photo Library
 
-## Confirmed decision
+## Current implementation (V0.50.0)
 
-JRVS Desktop will use an application-managed photo library. When a user imports a photo from a camera card, downloads folder or other location, the app copies the file into its own library. It never moves or deletes the original source file.
-
-This avoids broken links when a card is formatted, a folder is moved, or the business is transferred to another PC.
-
-## Proposed Windows layout
-
-Use Tauri's application data directory, resolved at runtime (never hard-code a username or drive letter):
+JRVS keeps the existing IndexedDB photo collection as the photo studio's active working cache and creates a second, native managed copy in the Tauri application data folder:
 
 ```text
-<app-data>/JRVS Property Co/
-  workspace/
-    jrvs.sqlite
-    photos/
-      originals/
-        <photo-id>.<extension>
-      previews/
-        <photo-id>.jpg
-      edited/
-        <photo-id>.<extension>
-      staging/
-    backups/
-    logs/
+<app-data>/workspace/
+  jrvs.sqlite
+  photos/
+    originals/<photo-id>.<original-extension>
+    previews/<photo-id>.jpg
+    staging/
+    trash/
+  backups/
 ```
 
-The actual app-data path must be obtained through Tauri's path API. The app should expose a user-friendly **Open JRVS Data Folder** action in Settings.
+- The app obtains its application data path from Tauri at runtime. It does not hard-code a Windows username or drive letter.
+- New and changed photo records are mirrored to the managed folder and indexed in SQLite.
+- Original source files are written to staging first and then promoted to the managed path.
+- Photo IDs are sanitized for filesystem use. The original filename and full metadata remain in SQLite.
+- Deleting a photo moves the managed assets to the workspace trash folder; it does not immediately purge the only native copy.
+- The migration exporter includes IndexedDB photo Blobs and previews in the portable legacy export. Import stores those blobs back into the photo UI cache and copies the originals into the managed folder.
 
-## Import behaviour
+## Important distinction
 
-- Copy into a staging file first, then hash and verify.
-- Rename the managed file using stable photo ID, not user filename, to avoid collisions.
-- Preserve original filename and extension in metadata.
-- Preserve RAW files byte-for-byte.
-- Generate/retain a preview as a separate asset.
-- Promote staged file only after verification and database transaction readiness.
-- Do not use temporary browser object URLs as persisted file paths.
+The current photo UI still reads and writes its IndexedDB working cache. Native managed copies provide a separate filesystem copy and make portable backups possible, but the app has not yet switched every photo viewer/editor to read directly from managed paths. A later stage will make the native managed library the primary source and add recovery/reconciliation tooling.
 
-## Edited images and recipes
+## RAW and offline support
 
-- Original source files are immutable.
-- Each edited output is a separate asset with its own photo ID.
-- Preserve `sourcePhotoId`, `editRecipe` and `editRecipeVersion`.
-- The rendered edited image remains available even if the source RAW decoder or recipe renderer is unavailable.
-- Do not rewrite existing flattened edited images as recipes.
-
-## RAW support
-
-The current app dynamically imports FlashRaw 0.1.0 from esm.sh. Desktop must package a pinned local copy and its required WebAssembly assets; RAW development must not depend on first-use internet access. Preserve the current embedded-JPEG preview fallback and label it honestly when used.
-
-Before declaring RAW desktop support complete, validate at least:
-- the user's Canon EOS 600D CR2 sample;
-- import preview and full-resolution development;
-- colour, exposure, white balance and highlight behaviour;
-- export dimensions and metadata;
-- offline startup and offline RAW development.
-
-The existing photo studio roadmap explicitly notes that the prior CR2 fallback could use embedded camera JPEG previews and that RAW decoder output needs validation against actual camera files. Do not claim equivalence based only on a successful import.
-
-## Integrity and recovery
-
-- On startup or on-demand, compare every photo metadata path with the filesystem.
-- Missing assets are shown as missing; do not delete their metadata.
-- Unreferenced files are quarantined/reported before cleanup, never immediately purged.
-- Photo deletion uses a staged trash/quarantine path and a database transaction so failures can be rolled back.
-- A full backup includes every referenced original, preview and edited asset.
+The current RAW decoder is loaded dynamically from the existing external runtime. Fully offline RAW support, pinned decoder assets, and validation against the user's Canon EOS 600D CR2 samples remain outstanding. Do not claim full offline RAW editing until those tests pass.
