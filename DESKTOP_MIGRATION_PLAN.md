@@ -107,6 +107,36 @@
 
 
 
+## V0.50 implementation audit — current branch
+
+The following V0.50 foundations are now implemented in the desktop branch:
+
+- A SQLite-backed `workspace_storage` compatibility layer stores the complete `jrvs-data` and `jrvs-calendar` JSON values transactionally without renumbering or dropping unknown fields.
+- The Tauri webview initialization script flushes pending storage changes when the window is hidden or the page is unloaded.
+- A read-only browser export helper packages all business/calendar values and IndexedDB photo Blobs.
+- Current export/backup format version 2 includes SHA-256 hashes and byte lengths for business data, calendar data, photo originals and optional previews. The importer retains compatibility with version 1 archives.
+- The native photo mirror is connected to committed IndexedDB photo-store writes, adds, deletes and clears. Originals/previews are staged into the app-managed folder and indexed in SQLite; deleted files are quarantined.
+- The import waits for the native photo mirror queue before committing business/calendar values to SQLite.
+- A Settings panel supports full compressed backup and import, with a downloaded pre-import backup plus a native JSON snapshot of current SQLite key/value data.
+- All changes remain isolated on `desktop-transition`; `main` is unchanged.
+
+### Still outstanding before V0.50 can be considered production-ready
+
+- Obtain a successful latest Windows CI build for the current branch head.
+- Run the migration against a real export from the user's Windows browser profile and compare every record type, calendar count, photo count, stable IDs, cross-links and JOB/QUO/INV sequences.
+- Verify the native managed photo count/bytes against the IndexedDB cache; open representative JPEG and CR2 originals, previews, edited copies, cover photos and orphan assets.
+- Confirm a second write to an existing photo ID cannot leave a stale managed original. Normal editing currently creates a new record ID, but this invariant needs a test.
+- Complete a full backup → restore round trip on a separate clean Windows profile or another PC; verify sample asset hashes and numbering after restart.
+- Improve the restore to a fully staged/atomic database-and-photo-library swap with automatic rollback if any step fails.
+- Decide and implement reconciliation/recovery if the managed copy is missing or has a checksum mismatch.
+- Bundle/pin the RAW decoder and validate CR2 development offline. Until this is done, do not claim that RAW editing works offline.
+- Remove or replace remaining runtime network dependencies (including weather) before claiming full offline operation.
+- Test upgrades from the installed V0.49.0 installer, uninstall behaviour, and the signed updater from the user's own Windows PC. Keep the working PWA and its browser data as the fallback.
+
+### Current release position
+
+V0.50.0 is an implementation candidate, not an accepted production release yet. A successful CI build verifies compilation and generated-script syntax only. It does not prove migration correctness, backup restoration, file integrity on a real photo library, full offline operation or Windows installer upgrade behaviour.
+
 ## Desktop preflight audit — current scaffold status
 
 - Windows GitHub Actions must clone this repository into a safe path such as `D:/a/jrvs`. Its actual repository name ends in a period, which Windows normalises in paths and which broke the default checkout workspace.
