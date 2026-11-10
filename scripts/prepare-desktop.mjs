@@ -65,13 +65,13 @@ html = replaceExactlyOnce(
   'PWA install settings card'
 );
 
-html = replaceExactlyOnce(html, 'Manage your JRVS account, device setup and app updates.', 'Manage your local workspace, storage and backups.', 'desktop settings description');
+html = replaceExactlyOnce(html, 'Manage your JRVS account, device setup and app updates.', 'Manage this PC\'s JRVS workspace and app preferences.', 'desktop settings description');
 html = replaceExactlyOnce(html, 'Records are stored locally and can sync to your private JRVS cloud account.', 'Records are stored on this PC in your local JRVS workspace.', 'local storage description');
 html = replaceExactlyOnce(html, '<span class="pill">Local + Cloud</span>', '<span class="pill">Local only</span>', 'local-only storage label');
 html = replaceExactlyOnce(
   html,
   'Automatic app updates do not replace or delete saved records. Keep your cloud account credentials secure. Avoid clearing browser data, as this can remove local records and photos that have not been synchronised.',
-  'Your business records and photo library stay on this PC. Use JRVS backups to protect or transfer your workspace.',
+  'This initial desktop shell stores records and photos in the WebView profile on this PC. Native JRVS backup and restore tools are not enabled yet; do not use this build as the only copy of important business data.',
   'desktop data privacy note'
 );
 html = replaceExactlyOnce(
