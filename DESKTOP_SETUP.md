@@ -43,13 +43,29 @@ Build output is created under `src-tauri/target/release/bundle/`.
 
 - The desktop app creates its own SQLite database at the Tauri application data path under `workspace/jrvs.sqlite`. A compatibility table stores the complete `jrvs-data` and `jrvs-calendar` JSON payloads without dropping unknown fields or changing existing record IDs and number sequences.
 - The frontend keeps its existing synchronous localStorage interface, but the desktop webview loads and saves those keys through a native SQLite-backed adapter. Writes are committed transactionally in short batches.
-- Photo records continue to be used by the existing photo UI in IndexedDB. Every new or imported photo is also copied to the native managed library under `workspace/photos/originals` and `workspace/photos/previews`, with metadata recorded in SQLite. Originals are not moved or deleted from their source.
-- Settings now includes a **Workspace data & backups** panel. It exports a complete compressed backup (`.jrvsbackup.gz`) containing business data, calendar events and photo blobs, and can import a supported backup or legacy export.
+- Photo records continue to be used by the existing photo UI in IndexedDB. Committed photo additions, updates and deletes are mirrored to the native managed library under `workspace/photos/originals`, `workspace/photos/previews` and `workspace/photos/trash`, with metadata recorded in SQLite. The native mirror queue is flushed during import. Originals are copied; source files are not moved or deleted.
+- Settings includes a **Workspace data & backups** panel. Current exports use format version 2 (`.jrvsbackup.gz`) and include SHA-256 checksums plus byte lengths for business data, calendar data, and each photo original/preview. Version 1 files remain importable but do not have checksum verification.
 - The old browser/PWA data lives in a different browser storage profile and is not automatically visible to the Windows app. Use the read-only exporter described below to create a migration file; the source browser data remains untouched.
 - The desktop release remains isolated on `desktop-transition`. The stable browser/PWA version on `main` is not modified.
 - The legacy Supabase routines remain in shared source for compatibility, but the desktop build removes the Supabase SDK and cloud initialisation. No cloud login or sync is required by the desktop app.
 - Weather still uses an external service and the RAW decoder still loads from the existing remote runtime. This release is not fully offline-ready.
 - The normalized relational `business_records` model in `docs/desktop/LOCAL_DATA_MODEL.md` remains a future schema promotion. Current SQLite persistence stores full JSON records intact to preserve compatibility.
+
+### V0.50 verification status and limitations
+
+The code path now mirrors photo-library transactions into the native managed folder and checks version 2 migration/backup payload hashes before replacement. The build workflow verifies the generated desktop frontend and compiles the Tauri application; it does not exercise a real Windows user profile or a real photo library.
+
+Before treating V0.50 as production-ready, complete these checks on the target Windows PC:
+
+1. Export the existing browser workspace using the read-only helper below.
+2. Import the export into JRVS Desktop. Confirm the reported business/calendar/photo counts match the export.
+3. Check several original JPEGs and CR2 files, previews, edited outputs, cover selections and orphan photos.
+4. Create a full backup, restore it into a separate clean Windows user profile or test PC, and compare counts plus sample file hashes.
+5. Restart the app and confirm job, quote and invoice sequences continue correctly.
+6. Disconnect the PC from the internet and verify the normal workflows. RAW development is still known to require the remote decoder; do not treat offline RAW as supported.
+7. Keep the old browser workspace and the downloaded pre-import backup until the checks pass.
+
+**Important:** Import is a guarded replacement workflow, not yet a fully atomic swap of SQLite and the photo directory. The safety backup is downloaded before import, but the user must keep it available for manual recovery if an interrupted import is reported. Do not uninstall the old working app or delete its browser data during this test.
 
 ### Migrate from the existing browser app
 
