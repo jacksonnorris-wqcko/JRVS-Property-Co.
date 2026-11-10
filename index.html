@@ -2281,7 +2281,7 @@ function exportCalendarICS(){
  lines.push('END:VCALENDAR');const blob=new Blob([lines.filter(Boolean).join('\r\n')],{type:'text/calendar;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='JRVS-Business-Calendar.ics';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showToast('Calendar export created. Import the .ics file into your calendar app.');
 }
 
-function showPage(name){if(name==='calendar')renderCalendar();if(name==='quotes')renderQuotes();if(name==='finances')renderFinances();document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.page===name));document.getElementById('pageTitle').textContent=pageInfo[name][0];document.getElementById('pageSub').textContent=pageInfo[name][1];const eyebrow=document.getElementById('pageEyebrow');if(eyebrow)eyebrow.textContent=({dashboard:'Business workspace',calendar:'Schedule',jobs:'Business workspace',clients:'Business workspace',photos:'Media workspace',quotes:'Sales workspace',finances:'Business management',settings:'Preferences'})[name]||'Business workspace';window.scrollTo(0,0);}
+function showPage(name){document.body.classList.toggle('jrvs-dashboard-active',name==='dashboard');if(name==='calendar')renderCalendar();if(name==='quotes')renderQuotes();if(name==='finances')renderFinances();document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.page===name));document.getElementById('pageTitle').textContent=pageInfo[name][0];document.getElementById('pageSub').textContent=pageInfo[name][1];const eyebrow=document.getElementById('pageEyebrow');if(eyebrow)eyebrow.textContent=({dashboard:'Business workspace',calendar:'Schedule',jobs:'Business workspace',clients:'Business workspace',photos:'Media workspace',quotes:'Sales workspace',finances:'Business management',settings:'Preferences'})[name]||'Business workspace';window.scrollTo(0,0);}
 
 // Global search. No keyboard shortcut is registered, and search never writes to storage.
 function buildGlobalSearchResults(query){
@@ -2439,7 +2439,7 @@ function render(){
  };
  const jobTerm=(document.getElementById('jobSearch')?.value||'').trim().toLowerCase();const matchingJobs=data.jobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).filter(j=>!jobTerm||[j.name,j.client,j.address,j.status,j.date,j.notes].join(' ').toLowerCase().includes(jobTerm));const visibleJobs=listLimit(matchingJobs,jobTerm);document.getElementById('jobsList').innerHTML=visibleJobs.map(jobCard).join('')||'<div class="empty"><b>No matching jobs</b>Try another search or create a new job.</div>';const jobsNote=document.getElementById('jobsLimitNote');if(jobsNote)jobsNote.textContent=listLimitMessage(matchingJobs.length,visibleJobs.length,jobTerm,'jobs');
  dashboardPhotoUrls.forEach(u=>URL.revokeObjectURL(u));dashboardPhotoUrls=[];
- const recent=data.jobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,5);
+ const recent=data.jobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,4);
  document.getElementById('recentJobs').className=recent.length?'recent-job-list':'empty';
  document.getElementById('recentJobs').innerHTML=recent.map(j=>{
   const pics=photoRecords.filter(p=>p.jobId===j.id),cover=pics.find(p=>p.isCover)||pics[0];
@@ -4030,7 +4030,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUp
      const event=events.find(e=>String(e.jobId||e.sourceId||'')===String(j.id));
      const time=j.startTime||j.time||event?.startTime||'—';
      const status=String(j.status||'Enquiry'),tone=/pending|await/i.test(status)?'pending':/confirm|book/i.test(status)?'confirmed':'other';
-     return '<button type="button" class="desktop-job-row" onclick="viewJob(\\''+safe(j.id)+'\\')"><span class="desktop-job-date">'+safe(dayLabel(j.date))+'</span><span class="desktop-job-time">'+safe(time)+'</span><span class="desktop-job-property"><strong>'+safe(j.name||'Property job')+'</strong><small>'+safe(j.address||'Address not entered')+'</small></span><span class="desktop-job-agent">'+safe(j.agent||j.client||'—')+'</span><span class="desktop-status-pill '+tone+'">'+safe(status)+'</span></button>';
+     return "<button type='button' class='desktop-job-row' onclick=\"viewJob('"+safe(j.id)+"')\"><span class='desktop-job-date'>"+safe(dayLabel(j.date))+"</span><span class='desktop-job-time'>"+safe(time)+"</span><span class='desktop-job-property'><strong>"+safe(j.name||'Property job')+"</strong><small>"+safe(j.address||'Address not entered')+"</small></span><span class='desktop-job-agent'>"+safe(j.agent||j.client||'—')+"</span><span class='desktop-status-pill "+tone+"'>"+safe(status)+"</span></button>";
     }).join('');
     target.innerHTML='<div class="desktop-jobs-table"><div class="desktop-jobs-head"><span>Date</span><span>Time</span><span>Property / address</span><span>Agent</span><span>Status</span></div>'+rows+'</div>';
    }else target.innerHTML='<div class="desktop-empty">No upcoming jobs yet. Create a job or add a booking to your calendar.</div>';
