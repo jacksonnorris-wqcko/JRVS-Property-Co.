@@ -3798,7 +3798,7 @@ async function smartFinishWholeProperty(){
  const source=editorSourcePhoto||editorPhoto;
  const targets=photoRecords.filter(p=>String(p.jobId)===String(source.jobId)&&String(p.id)!==String(source.id)&&p.type==='Original'&&p.blob instanceof Blob);
  if(!targets.length){showToast('No other original photos are available in this property.','info');return}
- const accepted=await showConfirm('Analyse '+targets.length+' other original photos individually and create new edited copies? JRVS will use this photo as the brightness reference while protecting each image\\'s own highlights and colour. Originals and existing edits stay untouched.',{title:'Smart Finish · whole property',confirmText:'Finish property photos',danger:false});
+ const accepted=await showConfirm('Analyse '+targets.length+' other original photos individually and create new edited copies? JRVS will use this photo as the brightness reference while protecting each image\'s own highlights and colour. Originals and existing edits stay untouched.',{title:'Smart Finish · whole property',confirmText:'Finish property photos',danger:false});
  if(!accepted)return;
  editorBusy=true;const buttons=[...document.querySelectorAll('#editorBackdrop button')];buttons.forEach(b=>b.disabled=true);
  const saved={photo:editorPhoto,sourcePhoto:editorSourcePhoto,image:editorImage,rotation:editorRotation,retouchStrokes:editorRetouchStrokes,retouchSource:editorRetouchSource,localBalance:editorLocalBalance,naturalCurve:editorNaturalCurve,lastAnalysis:editorLastAnalysis,settings:editorSettings(),crop:document.getElementById('cropRatio')?.value||'original',preset:document.getElementById('editorPreset')?.value||'none'};
