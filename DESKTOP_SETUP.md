@@ -106,19 +106,27 @@ The repository already contains its updater public key in `src-tauri/updater.pub
 
 **Do not generate a new signing key or replace the public key.** Existing installations trust the current public key. Rotating it would require installing a new baseline installer on every PC before those installations could accept updates. Keep the private key in GitHub Actions and in a secure offline backup; never commit it to the repository.
 
-### Publishing future desktop updates
+### Fully automated desktop releases
 
-The release workflow runs when a tag matching `desktop-v*` is pushed. It reads the version from `src-tauri/tauri.conf.json`, builds the Windows installers, signs the updater artifacts using the existing GitHub Actions secret, and publishes the installer signatures and `latest.json` to the matching GitHub Release.
+The desktop branch now has a gated, end-to-end release path. **You do not need to create GitHub Releases or tags manually for future versions.**
 
-For each new desktop release:
+The workflow has two stages:
 
-1. Set the same new semantic version in `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`, and the desktop version plus backup app-version values in `scripts/prepare-desktop.mjs`.
-2. Commit and push the changes to `desktop-transition`. The Windows shell-check workflow builds a test installer.
-3. Create and publish a GitHub Release with a tag matching the version, for example `desktop-v0.52.0`, targeting the commit on `desktop-transition`. Pushing the tag starts the signed release workflow.
-4. Confirm the workflow succeeds and the release contains the Windows installer, its `.sig` signature, and `latest.json`.
+1. Every push to `desktop-transition` runs the Windows desktop build, validates the generated frontend, checks that NSIS/MSI installers exist, and uploads a temporary test artifact.
+2. Only a push whose final commit message contains `[release]` proceeds to the signed publish stage. That stage checks that `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` all use the same version, confirms the version tag does not already exist, verifies the updater signing secret, then builds, signs and publishes the GitHub Release and `latest.json`.
+
+Normal development commits, pull requests, and manual CI runs cannot publish to the update channel. If the Windows test build fails, the signed release stage is skipped. If version validation or signing fails, publication stops.
+
+**Release convention for future work:** after requested changes are complete and ready to ship, the final commit pushed to `desktop-transition` must include `[release]` in its commit message, for example:
+
+```
+[release] JRVS Desktop 0.53.0
+```
+
+Before that final commit, set the same new semantic version in `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`, and the desktop version plus backup app-version values in `scripts/prepare-desktop.mjs`. The signed publish job creates the matching `desktop-vX.Y.Z` tag and GitHub Release automatically. The separate tag-triggered `desktop-release.yml` remains available as a manual recovery path, but is no longer part of the normal release process.
+
+The workflow is intentionally isolated to `desktop-transition`; the stable `main` browser/PWA branch is not changed. Keep the existing `TAURI_SIGNING_PRIVATE_KEY` secret and public key unchanged.
 
 Existing installations check the release endpoint on their next launch. The update prompt shows the new version and release notes; selecting **Update & restart** downloads and verifies the signed update before installing it. Windows uses Tauri's passive installer mode to show installation progress.
-
-The installed V0.51.0 desktop build already contains the configured updater public key. The next signed release is V0.52.0. A release must have a version newer than the installed version to be offered; a version equal to or older than the installed version will not be offered.
 
 See the [official Tauri updater guide](https://v2.tauri.app/plugin/updater/) for the signing and update-artifact format.
