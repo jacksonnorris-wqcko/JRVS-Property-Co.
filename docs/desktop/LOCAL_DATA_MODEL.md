@@ -17,7 +17,7 @@
 
 | Existing store | Current contents | Desktop destination |
 |---|---|---|
-| localStorage `jrvs-data` | jobs, clients, quotes, invoices, income, expenses, packages, attentionCleared, numberSequences, deleted and other app fields | typed records plus preserved JSON payload and app settings |
+| localStorage `jrvs-data` | jobs, clients, quotes, invoices, income, expenses, packages, attentionCleared, numberSequences, deleted and other app fields | business_records + workspace_state + app_settings, preserving complete JSON |
 | localStorage `jrvs-calendar` | calendar event array | calendar_events |
 | IndexedDB `jrvs-photo-library` / `photos` | photo metadata and Blob fields (including optional previewBlob) | photos metadata + managed original/preview/edited files |
 | Browser preferences | theme/UI and other settings where present | app_settings key/value JSON; preserve separately from business records |
@@ -63,6 +63,12 @@ Use a hybrid relational + JSON-payload design. Relational columns support safe l
 - `metadata_json TEXT NOT NULL` — preserves the full photo record minus Blob objects and temporary object URLs.
 - Foreign-key relationship to job records is validated at application level during import so legacy orphan photos can be reported and recovered rather than silently discarded.
 - Indexes on job_id, source_photo_id and (job_id, is_cover).
+
+### workspace_state
+- `state_key TEXT PRIMARY KEY`
+- `value_json TEXT NOT NULL`
+- Preserves every non-record top-level key from `jrvs-data`, including `numberSequences`, `attentionCleared`, `deleted` tombstones and unrecognised future keys.
+- Number sequences and tombstones are business-critical state, not UI settings. New job/quote/invoice numbers must be allocated transactionally using the preserved sequence values.
 
 ### app_settings
 - `setting_key TEXT PRIMARY KEY`
