@@ -26,6 +26,16 @@
 - RAW development dynamically imports `flashraw@0.1.0` from esm.sh. Desktop packaging should bundle or otherwise pin/package this dependency so RAW processing does not unexpectedly rely on a live CDN.
 - Existing records have legacy identifiers and cross-links. The desktop migration must preserve IDs and references rather than regenerate them wholesale.
 
+
+## Confirmed desktop product direction
+
+- **Platform focus:** Windows PC only. Mobile layouts, mobile PWA packaging and phone-specific support are not part of the desktop roadmap.
+- **Local-only desktop:** no cloud sync, cloud login, Supabase dependency or cloud reset feature in the finished desktop application. Business data and the photo library remain on the PC; backups are local files that the user can manually transfer to another PC.
+- **Approved brand:** use the supplied JRVS Property Co. logo as-is, with sage olive green `#899B68` and warm cream `#F7F1DF`. Do not redraw or approximate the logo.
+- **Approved visual direction:** premium dark charcoal desktop workspace with sage accents and cream typography; left navigation, compact high-information dashboard, prominent job/photo workflows, and a dedicated full-screen Photo Studio.
+- **No misleading status:** never show cloud sync or cloud-storage indicators. The status area should communicate local storage, system health and verified local backup status.
+- The first Tauri shell is a compatibility launch only. It still relies on the WebView's localStorage and IndexedDB stores; SQLite, managed file storage, native backups and the redesigned dashboard are later milestones. Do not treat the shell as the finished local-data app.
+
 ## Target desktop architecture
 
 - **Tauri 2 shell:** native Windows window, application menu, installer, filesystem integration and app lifecycle.
