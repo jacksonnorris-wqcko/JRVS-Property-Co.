@@ -442,17 +442,23 @@ fn desktop_update_photo_metadata(
     let metadata: serde_json::Value = serde_json::from_str(&metadata_json)
         .map_err(|e| format!("Photo metadata was invalid: {e}"))?;
     let connection = open_database(&app)?;
-    let existing_json: Option<String> = connection
+    let existing_row: Option<(String, String, Option<String>)> = connection
         .query_row(
-            "SELECT metadata_json FROM managed_photos WHERE photo_id=?1",
+            "SELECT metadata_json, original_relpath, preview_relpath FROM managed_photos WHERE photo_id=?1",
             params![photo_id],
-            |row| row.get(0),
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
         )
         .optional()
         .map_err(|e| e.to_string())?;
-    let Some(existing_json) = existing_json else {
+    let Some((existing_json, original_relpath, preview_relpath)) = existing_row else {
         return Ok(false);
     };
+    let root = workspace_dir(&app)?;
+    if !root.join(&original_relpath).is_file()
+        || preview_relpath.as_ref().is_some_and(|path| !root.join(path).is_file())
+    {
+        return Ok(false);
+    }
     let existing: serde_json::Value = serde_json::from_str(&existing_json)
         .map_err(|e| format!("Stored managed photo metadata was invalid: {e}"))?;
     let same_original = existing.get("__jrvsManagedOriginalSha256")
