@@ -47,7 +47,7 @@ CREATE INDEX idx_calendar_events_job
 
 CREATE TABLE photos (
   photo_id          TEXT PRIMARY KEY,
-  job_id            TEXT NOT NULL,
+  job_id            TEXT,
   source_photo_id   TEXT,
   original_name     TEXT NOT NULL,
   media_type        TEXT,
