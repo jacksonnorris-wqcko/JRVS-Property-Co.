@@ -2,7 +2,7 @@
 
 use base64::Engine;
 use rusqlite::{params, Connection, OptionalExtension};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::{
     collections::HashMap,
     fs,
@@ -148,6 +148,27 @@ fn uuid_fallback() -> String {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis().to_string())
         .unwrap_or_else(|_| "unknown".to_string())
+}
+
+fn replace_staged_file(temp: &Path, target: &Path, staging: &Path, stable_id: &str) -> Result<(), String> {
+    if target.exists() {
+        let previous = staging.join(format!("{stable_id}-previous-{}.tmp", uuid_fallback()));
+        fs::rename(target, &previous)
+            .map_err(|e| format!("Could not stage the previous managed photo file: {e}"))?;
+        match fs::rename(temp, target) {
+            Ok(()) => {
+                let _ = fs::remove_file(previous);
+                Ok(())
+            }
+            Err(error) => {
+                let _ = fs::rename(&previous, target);
+                Err(format!("Could not replace the managed photo file: {error}"))
+            }
+        }
+    } else {
+        fs::rename(temp, target)
+            .map_err(|e| format!("Could not commit the managed photo file: {e}"))
+    }
 }
 
 fn safe_extension(name: &str) -> String {
@@ -328,16 +349,14 @@ fn desktop_store_photo(
     let original_temp = staging.join(format!("{stable_id}.original.tmp"));
     fs::write(&original_temp, &original_bytes)
         .map_err(|e| format!("Could not stage the original photo: {e}"))?;
-    fs::rename(&original_temp, &original_target)
-        .map_err(|e| format!("Could not commit the original photo copy: {e}"))?;
+    replace_staged_file(&original_temp, &original_target, &staging, &stable_id)?;
 
     let (preview_relative, preview_size) = if let Some(bytes) = preview_bytes {
         let file = format!("{stable_id}.jpg");
         let target = previews.join(&file);
         let temp = staging.join(format!("{stable_id}.preview.tmp"));
         fs::write(&temp, &bytes).map_err(|e| format!("Could not stage the preview: {e}"))?;
-        fs::rename(&temp, &target)
-            .map_err(|e| format!("Could not commit the preview copy: {e}"))?;
+        replace_staged_file(&temp, &target, &staging, &stable_id)?;
         (Some(format!("photos/previews/{file}")), bytes.len() as u64)
     } else {
         (None, 0)
