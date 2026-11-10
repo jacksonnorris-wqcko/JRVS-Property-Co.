@@ -6,6 +6,7 @@
 - Added a native localStorage compatibility adapter so existing app workflows save to the desktop database without an immediate rewrite of every screen.
 - Connected committed IndexedDB photo additions, edits, deletions and photo-library clears to the native managed photo folder.
 - Added safe staged writes for photo originals/previews, SQLite metadata updates and a quarantine folder for deleted assets.
+- Added SHA-256 fingerprint checks for same-ID photo updates; unchanged assets only update metadata, while changed or missing managed files are recopied.
 - Added a read-only legacy browser exporter at `scripts/export-legacy-workspace.js`.
 - Added version 2 portable migration/backup files with SHA-256 checksums and byte-length verification for business data, calendar data and each photo original/preview.
 - Kept version 1 migration/backup imports supported for existing files.
