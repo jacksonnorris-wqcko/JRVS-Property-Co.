@@ -39,6 +39,18 @@ npm run desktop:build
 
 Build output is created under `src-tauri/target/release/bundle/`.
 
+## Downloading the Windows test installer
+
+Every push to `desktop-transition` runs the Windows installer build. When the run succeeds:
+
+1. Open [JRVS Desktop Shell Check runs](https://github.com/jacksonnorris-wqcko/JRVS-Property-Co./actions/workflows/desktop-shell-check.yml).
+2. Open the latest successful run for the commit you want to test.
+3. Scroll to **Artifacts** and download **JRVS-Desktop-Windows-Installers**.
+4. Extract the downloaded ZIP. Use the `.exe` NSIS installer for the normal test installation; the `.msi` is included as an alternative.
+5. Install into Windows as a test app. Do not import your live business data yet.
+
+These CI artifacts are temporary test builds retained for 14 days. They are not signed production releases and do not enable the in-app updater. A successful CI run proves the installer was generated and packaged; it does not replace the real Windows migration, photo and restore checks below.
+
 ## Desktop workspace storage and migration (V0.50.0)
 
 - The desktop app creates its own SQLite database at the Tauri application data path under `workspace/jrvs.sqlite`. A compatibility table stores the complete `jrvs-data` and `jrvs-calendar` JSON payloads without dropping unknown fields or changing existing record IDs and number sequences.
