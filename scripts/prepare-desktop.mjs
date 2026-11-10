@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, rm } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -112,6 +112,6 @@ for (const forbidden of ['@supabase/supabase-js', 'JRVS_SUPABASE_URL=', 'sb_publ
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await copyFile(path.join(root, 'jrvs-logo.png'), path.join(output, 'jrvs-logo.png'));
-await import('node:fs/promises').then(({ writeFile }) => writeFile(path.join(output, 'index.html'), html, 'utf8'));
+await writeFile(path.join(output, 'index.html'), html, 'utf8');
 
 console.log('Prepared local-only JRVS desktop frontend in desktop-dist/.');
