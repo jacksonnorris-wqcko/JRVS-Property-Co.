@@ -519,7 +519,7 @@ fn storage_initialization_script(seed: &HashMap<String, String>) -> Result<Strin
     replace(entries) {{ for (const [key,value] of Object.entries(entries || {{}})) storage.setItem(key,value); }}
   }};
   window.addEventListener('pagehide', () => {{ try {{ flush(); }} catch (_) {{}} }});
-  window.addEventListener('visibilitychange', () => {{ if (document.visibilityState === 'hidden') {{ try {{ flush(); }} catch (_) {{}} }} }});
+  document.addEventListener('visibilitychange', () => {{ if (document.visibilityState === 'hidden') {{ try {{ flush(); }} catch (_) {{}} }} }});
   window.__JRVS_NATIVE_STORAGE_READY__ = true;
 }})();"#
     ))
