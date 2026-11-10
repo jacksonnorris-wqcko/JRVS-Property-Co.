@@ -16,16 +16,22 @@ jobs:
   windows-build:
     name: Windows Tauri build
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     defaults:
       run:
-        working-directory: jrvs
+        working-directory: D:\\a\\jrvs
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-        with:
-          # The repository name ends in a period, which Windows disallows in folder names.
-          path: jrvs
+      # The GitHub repository name ends in a period. Windows normalises trailing
+      # dots in path segments, which breaks the default Actions workspace path.
+      # Clone into a stable directory outside GITHUB_WORKSPACE instead.
+      - name: Clone source into Windows-safe directory
+        shell: pwsh
+        working-directory: D:\\a
+        run: |
+          git clone --filter=blob:none --no-checkout "https://github.com/${{ github.repository }}.git" "D:\\a\\jrvs"
+          git -C "D:\\a\\jrvs" fetch --depth 1 origin "${{ github.sha }}"
+          git -C "D:\\a\\jrvs" checkout --detach FETCH_HEAD
+          if ($LASTEXITCODE -ne 0) { throw "Repository checkout failed." }
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
