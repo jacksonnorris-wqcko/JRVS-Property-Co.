@@ -13,11 +13,11 @@ The first desktop release stores the complete existing browser application value
 - `storage_value TEXT NOT NULL`
 - `updated_at TEXT NOT NULL`
 
-The key values `jrvs-data` and `jrvs-calendar` retain their original JSON structures. This is deliberate: it preserves all current fields, IDs, unknown future properties, deletion tombstones and numbering sequences while the data model is being migrated. The JavaScript UI continues to use the established synchronous localStorage API through a small native adapter; the native adapter batches writes into SQLite transactions.
+The key values `jrvs-data` and `jrvs-calendar` retain their original JSON structures. This deliberately preserves all current fields, IDs, unknown future properties, deletion tombstones and numbering sequences while the data model is being migrated. The JavaScript UI continues to use the established synchronous localStorage API through a native adapter; the native adapter batches writes into SQLite transactions.
 
 ### managed_photos
 
-The app continues to use IndexedDB as the photo UI's active working cache, and makes a separate native managed copy of every imported or changed original:
+The photo editor continues to use IndexedDB as its active working cache. A native bridge mirrors committed photo writes and deletes into a managed folder and records:
 
 - `photo_id TEXT PRIMARY KEY`
 - `original_name TEXT NOT NULL`
@@ -28,17 +28,18 @@ The app continues to use IndexedDB as the photo UI's active working cache, and m
 - `metadata_json TEXT NOT NULL`
 - `updated_at TEXT NOT NULL`
 
-Managed files live under the Tauri app-data folder in `workspace/photos/originals` and `workspace/photos/previews`. Deletes move managed assets to a `trash` folder instead of immediately destroying them.
+New photo originals and previews are copied into Tauri's application-data folder under `workspace/photos/originals` and `workspace/photos/previews`. Metadata-only changes do not recopy the original. Committed deletes quarantine managed files in `workspace/photos/trash`.
 
 ## Import and preservation rules
 
 - The migration exporter reads the complete `jrvs-data` and `jrvs-calendar` localStorage values from the source browser profile.
 - It reads every record from IndexedDB database `jrvs-photo-library`, object store `photos`, and includes original and preview Blob bytes in the migration file.
+- Current version 2 exports include SHA-256 checksums and byte lengths for business data, calendar data, and each photo asset. The importer verifies these before replacement.
 - Original record IDs and JSON properties are retained. No business records are renumbered during import.
 - The import is explicit; the old browser data is not cleared, overwritten or moved.
 - The native database creates a pre-import JSON safety snapshot before replacing its business and calendar values.
-- Every photo copied to the native library is written to a staging file and promoted into the managed library after the write succeeds.
+- Photo assets are mirrored to disk only after their IndexedDB transaction commits.
 
 ## Planned schema promotion
 
-The hybrid `business_records`, `calendar_events`, `workspace_state` and `app_settings` tables described in the former design are still the intended next step. Promote data from the complete JSON payloads only after parity tests cover every current workflow. The first desktop release intentionally favours compatibility over premature normalization.
+The normalized `business_records`, `calendar_events`, `workspace_state` and `app_settings` tables described in the former design are still the intended next step. Promote data from the complete JSON payloads only after parity tests cover every current workflow. The first desktop release intentionally favours compatibility over premature normalization.
