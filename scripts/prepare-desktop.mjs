@@ -82,12 +82,18 @@ html = replaceExactlyOnce(
 );
 
 // Mark the generated entry as desktop-only and suppress legacy browser controls.
+const updaterKey = (await readFile(path.join(root, 'src-tauri', 'updater.pubkey'), 'utf8').catch(() => '')).trim();
+const updaterConfigured = Boolean(updaterKey && updaterKey !== 'PUBLIC_KEY_PENDING_SETUP');
 const desktopHeadInjection = `<style>
 html.jrvs-desktop #page-settings .desktop-cloud-card,
 html.jrvs-desktop #page-settings .desktop-update-card,
 html.jrvs-desktop #page-settings .desktop-install-card { display: none !important; }
 </style>
-<script>window.__JRVS_DESKTOP__ = true; document.documentElement.classList.add('jrvs-desktop');</script>
+<script>
+window.__JRVS_DESKTOP__ = true;
+window.__JRVS_DESKTOP_UPDATER_CONFIGURED__ = ${updaterConfigured};
+document.documentElement.classList.add('jrvs-desktop');
+</script>
 `;
 const headCloseIndex = html.indexOf('</head>');
 if (headCloseIndex < 0) {
