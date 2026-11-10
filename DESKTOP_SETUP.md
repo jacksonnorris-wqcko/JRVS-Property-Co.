@@ -77,10 +77,10 @@ The public key is safe to commit. The private key and its password must only be 
 
 ### Publishing a desktop release
 
-The `.github/workflows/desktop-release.yml` workflow can run from **Actions → JRVS Desktop Release → Run workflow** (select the `desktop-transition` branch), or when a tag matching `desktop-v*` is pushed. It reads the desktop version from `src-tauri/tauri.conf.json`, builds the Windows installer, generates signed updater artifacts and publishes a GitHub Release with the updater manifest (`latest.json`).
+The `.github/workflows/desktop-release.yml` workflow runs when a tag matching `desktop-v*` is pushed. It reads the desktop version from `src-tauri/tauri.conf.json`, builds the Windows installer, generates signed updater artifacts and uploads the installer plus updater manifest (`latest.json`) to the matching GitHub Release.
 
 The first signed release is **0.49.0**. Because the currently running development shell is not an installed updater-enabled release, install that first Windows installer once. After that, normal future releases can be installed from JRVS without downloading and extracting a new source ZIP.
 
-To create the first release after the public key and GitHub secrets are configured, open the repository's **Actions** tab, select **JRVS Desktop Release**, click **Run workflow**, and choose the `desktop-transition` branch. The workflow creates the `desktop-v0.49.0` tag from that branch and publishes the installer. Do not run the release before the public key and private-key secret are in place.
+To create the first release after the public key and GitHub secrets are configured, open **Releases → Draft a new release**. Create the tag `desktop-v0.49.0` targeting the `desktop-transition` branch, then publish the release. This pushes the tag and starts the signed Windows build; the workflow uploads the installer and updater manifest to that release. Do not publish before the public key and private-key secret are in place.
 
 Windows updates use Tauri's passive installer mode, which shows installer progress. The updater verifies the update signature before installation. See the [official Tauri updater guide](https://v2.tauri.app/plugin/updater/) for the signing and updater model.
