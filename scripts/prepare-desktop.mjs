@@ -115,6 +115,20 @@ for (const forbidden of ['@supabase/supabase-js', 'JRVS_SUPABASE_URL=', 'sb_publ
   if (html.includes(forbidden)) throw new Error(`Desktop output still contains forbidden browser/cloud wiring: ${forbidden}`);
 }
 
+// Parse every inline script without executing it. This catches syntax errors in
+// the generated Windows frontend before Tauri starts bundling.
+const inlineScripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)];
+if (inlineScripts.length < 2) {
+  throw new Error('Expected the desktop marker and main app scripts in the generated frontend.');
+}
+for (let index = 0; index < inlineScripts.length; index += 1) {
+  try {
+    new Function(inlineScripts[index][1]);
+  } catch (error) {
+    throw new Error(`Generated desktop inline script ${index + 1} has a syntax error: ${error.message}`);
+  }
+}
+
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await copyFile(path.join(root, 'jrvs-logo.png'), path.join(output, 'jrvs-logo.png'));
