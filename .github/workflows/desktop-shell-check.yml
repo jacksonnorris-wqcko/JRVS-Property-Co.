@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: jrvs-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   windows-build:
     name: Windows Tauri build
