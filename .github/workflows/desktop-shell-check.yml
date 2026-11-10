@@ -17,9 +17,15 @@ jobs:
     name: Windows Tauri build
     runs-on: windows-latest
     timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: jrvs
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          # The repository name ends in a period, which Windows disallows in folder names.
+          path: jrvs
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
