@@ -70,6 +70,13 @@ CREATE INDEX idx_photos_source
 CREATE INDEX idx_photos_job_cover
   ON photos(job_id, is_cover);
 
+-- Non-record top-level values from jrvs-data. This includes numbering counters,
+-- cleared-attention state, deletion tombstones and any unrecognised future keys.
+CREATE TABLE workspace_state (
+  state_key     TEXT PRIMARY KEY,
+  value_json    TEXT NOT NULL CHECK (json_valid(value_json))
+);
+
 CREATE TABLE app_settings (
   setting_key   TEXT PRIMARY KEY,
   value_json    TEXT NOT NULL CHECK (json_valid(value_json))
