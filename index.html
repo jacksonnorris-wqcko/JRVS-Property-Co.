@@ -2461,6 +2461,34 @@ function esc(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 // Photos are stored separately from job/client records in IndexedDB.
 const PHOTO_DB='jrvs-photo-library',PHOTO_STORE='photos';
 function openPhotoDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(PHOTO_DB,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(PHOTO_STORE))req.result.createObjectStore(PHOTO_STORE,{keyPath:'id'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+
+async function jrvsPhotoBase64(blob){
+ if(!blob)return null;
+ const bytes=new Uint8Array(await blob.arrayBuffer());let binary='';
+ for(let offset=0;offset<bytes.length;offset+=0x8000)binary+=String.fromCharCode(...bytes.subarray(offset,offset+0x8000));
+ return btoa(binary);
+}
+async function jrvsMirrorPhoto(photo){
+ if(!window.__JRVS_DESKTOP__||!photo?.id||!photo?.blob)return;
+ const invoke=window.__TAURI__?.core?.invoke;
+ if(!invoke)throw new Error('The native photo-storage service is unavailable.');
+ const metadata={...photo};delete metadata.blob;delete metadata.previewBlob;
+ for(const key of ['url','previewUrl','objectUrl','previewObjectUrl'])delete metadata[key];
+ await invoke('desktop_store_photo',{
+  photoId:String(photo.id),originalName:String(photo.name||photo.originalName||('photo-'+photo.id+'.bin')),
+  mimeType:photo.blob.type||photo.mimeType||null,metadataJson:JSON.stringify(metadata),
+  originalBase64:await jrvsPhotoBase64(photo.blob),
+  previewBase64:photo.previewBlob?await jrvsPhotoBase64(photo.previewBlob):null
+ });
+}
+async function jrvsSyncManagedPhotoCopies(records){
+ if(!window.__JRVS_DESKTOP__||!records?.length)return;
+ const invoke=window.__TAURI__?.core?.invoke;if(!invoke)return;
+ for(const photo of records){
+  try{if(!(await invoke('desktop_photo_exists',{photoId:String(photo.id)})))await jrvsMirrorPhoto(photo)}
+  catch(error){console.error('JRVS managed photo copy needs attention',photo?.name||photo?.id,error)}
+ }
+}
 async function photoRequest(mode,action,value){
  const db=await openPhotoDB();
  return new Promise((resolve,reject)=>{
@@ -2483,7 +2511,15 @@ async function photoRequest(mode,action,value){
    req.onerror=()=>{try{tx.abort()}catch(_){};reject(req.error||new Error('Could not read project photos'))};
   } else {db.close();reject(new Error('Unsupported photo database action'));return}
   if(action!=='setCover'){req.onsuccess=()=>{result=req.result};req.onerror=()=>{try{tx.abort()}catch(_){};reject(req.error||new Error('Photo database request failed'))};}
-  tx.oncomplete=()=>{db.close();resolve(result)};
+  tx.oncomplete=async()=>{
+   db.close();
+   try{
+    if(action==='put'&&window.__JRVS_DESKTOP__)await jrvsMirrorPhoto(value);
+    else if((action==='delete'||action==='delete_silent')&&window.__JRVS_DESKTOP__)await window.__TAURI__?.core?.invoke?.('desktop_delete_photo',{photoId:String(value)});
+    else if(action==='setCover'&&window.__JRVS_DESKTOP__){const all=await photoRequest('readonly','all');for(const photo of all||[])await jrvsMirrorPhoto(photo)}
+   }catch(error){console.error('JRVS managed photo storage failed',error);if(typeof showToast==='function')showToast('A managed photo copy could not be saved. Your in-app photo remains available.','error')}
+   resolve(result);
+  };
   tx.onerror=()=>{const err=tx.error||new Error('Photo database transaction failed');db.close();reject(err)};
   tx.onabort=()=>{const err=tx.error||new Error('Photo database transaction was cancelled');db.close();reject(err)};
  });
@@ -2500,7 +2536,7 @@ async function loadPhotos(){try{photoRecords=await photoRequest('readonly','all'
    try{await photoRequest('readwrite','put',p)}catch(err){console.warn('Could not persist photo type repair',p.name,err)}
   }
  }
- await ensureRawPreviews();populatePhotoJobFilter();renderPhotos();render()}
+ await jrvsSyncManagedPhotoCopies(photoRecords);await ensureRawPreviews();populatePhotoJobFilter();renderPhotos();render()}
 function populatePhotoJobFilter(){const el=document.getElementById('photoJobFilter');if(!el)return;const old=el.value;el.innerHTML='<option value="all">All projects</option>'+data.jobs.map(j=>`<option value="${esc(j.id)}">${esc(j.name)}</option>`).join('');if([...el.options].some(o=>o.value===old))el.value=old}
 
 // V0.41 — genuine sensor RAW development via FlashRaw WebAssembly.
