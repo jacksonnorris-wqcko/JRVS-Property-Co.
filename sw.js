@@ -1,4 +1,4 @@
-const CACHE_NAME='jrvs-property-co-v0.45.0';
+const CACHE_NAME='jrvs-property-co-v0.46.0';
 const CORE=['./','./index.html','./manifest.json','./version.json','./assets/jrvs-app-192.png','./assets/jrvs-app-512.png'];
 const RAW_CDN_HOSTS=['esm.sh'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
