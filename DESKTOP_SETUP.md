@@ -119,6 +119,6 @@ For each new desktop release:
 
 Existing installations check the release endpoint on their next launch. The update prompt shows the new version and release notes; selecting **Update & restart** downloads and verifies the signed update before installing it. Windows uses Tauri's passive installer mode to show installation progress.
 
-The current V0.50.0 test installer already contains the configured updater public key. The next signed release must have a version newer than 0.50.0 so this test installation can detect it. A version equal to or older than the installed version will not be offered.
+The installed V0.51.0 desktop build already contains the configured updater public key. The next signed release is V0.52.0. A release must have a version newer than the installed version to be offered; a version equal to or older than the installed version will not be offered.
 
 See the [official Tauri updater guide](https://v2.tauri.app/plugin/updater/) for the signing and update-artifact format.
