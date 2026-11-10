@@ -2986,7 +2986,23 @@ function renderQuotes(){
  const visiblePackages=listLimit(matchingPackages,packageTerm);
  const packageNote=document.getElementById('packageLimitNote');
  if(packageNote)packageNote.textContent=listLimitMessage(matchingPackages.length,visiblePackages.length,packageTerm,'packages');
- pl.innerHTML=visiblePackages.length?visiblePackages.map(p=>`<div class="package-card"><div class="package-card-main"><div><div class="package-name">${esc(p.name)}</div><div class="package-description">${esc(p.description||'No description added yet.')}</div><span class="package-tag">${p.isExtra?'OPTIONAL EXTRA':'SERVICE PACKAGE'}</span></div><div class="package-price">${money(p.price)}</div></div><div class="package-actions"><button class="tiny-btn" onclick="editPackage('${p.id}')">Edit package</button><button class="tiny-btn danger" onclick="deletePackage('${p.id}')">Delete</button></div></div>`).join(''):`<div class="quote-empty"><strong>${active.length?'No matching packages':'No service packages yet'}</strong><span>${active.length?'Try another package name or description.':'Add your first package to make creating quotes quicker.'}</span></div>`;
+ pl.innerHTML=visiblePackages.length?visiblePackages.map(p=>{
+  const descriptionLines=String(p.description||'No description added yet.').split(/\r?\n/).map(line=>line.trim()).filter(Boolean);
+  const bulletStart=descriptionLines.findIndex(line=>/^[•*-]\s*/.test(line));
+  const overviewLines=bulletStart>=0?descriptionLines.slice(0,bulletStart).filter(line=>!/^includes:?$/i.test(line)):descriptionLines.slice(0,3);
+  const inclusionLines=bulletStart>=0?descriptionLines.slice(bulletStart).map(line=>line.replace(/^[•*-]\s*/,'')):[];
+  const overviewHtml=overviewLines.map(esc).join('<br>');
+  const inclusionsHtml=inclusionLines.map(line=>'<li>'+esc(line)+'</li>').join('');
+  return `<article class="package-card ${p.isExtra?'is-extra':'is-package'}">
+   <div class="package-card-head">
+    <div class="package-card-title"><span class="package-tag">${p.isExtra?'OPTIONAL EXTRA':'SERVICE PACKAGE'}</span><div class="package-name">${esc(p.name)}</div></div>
+    <div class="package-price">${money(p.price)}</div>
+   </div>
+   <div class="package-description">${overviewHtml||'No description added yet.'}</div>
+   ${inclusionLines.length?`<details class="package-inclusions"><summary>View inclusions · ${inclusionLines.length}</summary><ul>${inclusionsHtml}</ul></details>`:''}
+   <div class="package-actions"><button class="tiny-btn" type="button" onclick="editPackage('${p.id}')">Edit package</button><button class="tiny-btn danger" type="button" onclick="deletePackage('${p.id}')">Delete</button></div>
+  </article>`;
+ }).join(''):`<div class="quote-empty"><strong>${active.length?'No matching packages':'No service packages yet'}</strong><span>${active.length?'Try another package name or description.':'Add your first package to make creating quotes quicker.'}</span></div>`;
  const ql=document.getElementById('quoteList');
  const search=(document.getElementById('quoteSearch')?.value||'').toLowerCase().trim();
  const filter=document.getElementById('quoteStatusFilter')?.value||'all';
@@ -3056,14 +3072,35 @@ function openQuoteForm(id=null){
 }
 function closeQuoteModal(){document.getElementById('quoteModalBackdrop').classList.remove('show')}
 function addQuoteLine(item=null){
+ ensureQuoteData();
  const id=++quoteLineCounter,wrap=document.createElement('div');wrap.className='quote-line';wrap.dataset.line=id;
- const opts=data.packages.filter(p=>!p.archived).map(p=>`<option value="${p.id}" data-price="${p.price}" data-name="${esc(p.name)}">${esc(p.name)}</option>`).join('');
- wrap.innerHTML=`<select class="line-package" aria-label="Package"><option value="">Custom item</option>${opts}</select><input class="line-qty" type="number" min="1" step="1" value="1" aria-label="Quantity"><input class="line-price" type="number" min="0" step="0.01" placeholder="Price" aria-label="Unit price"><button type="button" class="tiny-btn danger" onclick="this.parentElement.remove();calcQuoteTotals()">×</button>`;
+ wrap.dataset.itemName=String(item?.name||'');
+ const activePackages=data.packages.filter(p=>!p.archived);
+ const opts=activePackages.map(p=>`<option value="${esc(String(p.id))}">${esc(p.name)} · ${money(p.price)}</option>`).join('');
+ wrap.innerHTML=`<select class="line-package" aria-label="Package"><option value="">Custom item</option>${opts}</select><input class="line-qty" type="number" min="1" step="1" value="1" aria-label="Quantity"><input class="line-price" type="number" min="0" step="0.01" placeholder="Price (AUD)" aria-label="Unit price"><button type="button" class="tiny-btn danger" aria-label="Remove quote item" title="Remove item">×</button>`;
  document.getElementById('quoteLines').appendChild(wrap);
- const sel=wrap.querySelector('.line-package'),qty=wrap.querySelector('.line-qty'),price=wrap.querySelector('.line-price');
- if(item){sel.value=item.packageId||'';qty.value=item.qty||1;price.value=item.price??0}
- sel.addEventListener('change',()=>{const o=sel.selectedOptions[0];if(o.dataset.price)price.value=o.dataset.price;calcQuoteTotals()});
- qty.addEventListener('input',calcQuoteTotals);price.addEventListener('input',calcQuoteTotals);
+ const sel=wrap.querySelector('.line-package'),qty=wrap.querySelector('.line-qty'),price=wrap.querySelector('.line-price'),remove=wrap.querySelector('button');
+ if(item){
+  const existingPackage=activePackages.find(p=>String(p.id)===String(item.packageId||''));
+  sel.value=existingPackage?String(existingPackage.id):'';
+  qty.value=item.qty||1;
+  price.value=item.price??0;
+ }
+ const applyPackageSelection=()=>{
+  const selectedPackage=activePackages.find(p=>String(p.id)===String(sel.value));
+  if(selectedPackage){
+   const packagePrice=Number(selectedPackage.price);
+   price.value=Number.isFinite(packagePrice)?packagePrice.toFixed(2):'';
+   wrap.dataset.itemName=String(selectedPackage.name||'');
+  }else{
+   wrap.dataset.itemName=String(item?.name||'Custom item');
+  }
+  calcQuoteTotals();
+ };
+ sel.addEventListener('change',applyPackageSelection);
+ qty.addEventListener('input',calcQuoteTotals);
+ price.addEventListener('input',calcQuoteTotals);
+ remove.addEventListener('click',()=>{wrap.remove();calcQuoteTotals()});
 }
 function calcQuoteTotals(){
  const lines=[...document.querySelectorAll('#quoteLines .quote-line')];let subtotal=0;
@@ -3086,7 +3123,7 @@ function saveQuoteForm(e){
  const existing=editingQuoteId?data.quotes.find(x=>x.id===editingQuoteId):null;let job=data.jobs.find(j=>j.id===qJob.value)||null;
  const newJobName=document.getElementById('qNewJobName').value.trim(),newJobAddress=document.getElementById('qNewJobAddress').value.trim();
  if(!job&&!newJobName){showToast('Enter a job or property name.');document.getElementById('qNewJobName').focus();return}
- const items=[...document.querySelectorAll('#quoteLines .quote-line')].map(line=>{const sel=line.querySelector('.line-package'),opt=sel.selectedOptions[0];return {packageId:sel.value||null,name:opt?.dataset.name||'Custom item',qty:Number(line.querySelector('.line-qty').value)||1,price:Number(line.querySelector('.line-price').value)||0}}).filter(x=>x.qty>0);
+ const items=[...document.querySelectorAll('#quoteLines .quote-line')].map(line=>{const sel=line.querySelector('.line-package'),selectedPackage=data.packages.find(p=>!p.archived&&String(p.id)===String(sel.value));return {packageId:selectedPackage?.id||null,name:selectedPackage?.name||line.dataset.itemName||'Custom item',qty:Number(line.querySelector('.line-qty').value)||1,price:Number(line.querySelector('.line-price').value)||0}}).filter(x=>x.qty>0);
  if(!items.length){showToast('Add at least one quote item.');return}
  const subtotal=jrvsRound2(items.reduce((sum,x)=>sum+x.qty*x.price,0)),mode=qGst.value,gst=mode==='exclusive'?jrvsRound2(subtotal*.1):mode==='inclusive'?jrvsRound2(subtotal/11):0,total=mode==='exclusive'?jrvsRound2(subtotal+gst):subtotal;
  if(creatingClient)data.clients.unshift(client);
