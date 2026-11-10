@@ -179,6 +179,19 @@ html.jrvs-desktop .app-confirm-copy p{color:#b5c0b0!important}
 html.jrvs-desktop .app-confirm-icon{background:#35452d!important;color:#dceba7!important}
 html.jrvs-desktop .editor-panel,html.jrvs-desktop .editor-panel details,html.jrvs-desktop .editor-history{background:#1d251f!important;color:#edf1e8!important;border-color:#3b4839!important}
 html.jrvs-desktop .editor-panel-heading,html.jrvs-desktop .editor-panel .editor-control label,html.jrvs-desktop .editor-panel details summary{color:#e7ecdf!important}
+html.jrvs-desktop .photo-card,html.jrvs-desktop .photo-info{background:#1b221c!important;border-color:#394637!important;color:#edf1e8!important}
+html.jrvs-desktop .photo-meta,html.jrvs-desktop .photo-info small{color:#acb8a5!important}
+html.jrvs-desktop .job-workflow-actions,html.jrvs-desktop .batch-studio{background:#1d251e!important;border:1px solid #3d4937!important;color:#e8eee0!important}
+html.jrvs-desktop .job-workflow-actions label,html.jrvs-desktop .batch-studio label{color:#c5d0b8!important}
+html.jrvs-desktop .photo-select-wrap{background:#273324!important;color:#e9efdc!important;border-color:#80945f!important}
+html.jrvs-desktop .photo-preview-action{background:#202b22e8!important;color:#e8f0d9!important;border-color:#718656!important}
+html.jrvs-desktop .photo-cover-badge{background:#35432e!important;color:#e2ecbf!important;border-color:#718656!important}
+html.jrvs-desktop .calendar-grid .cal-weekday{background:#202920!important;color:#bfcaaa!important}
+html.jrvs-desktop .calendar-grid .cal-cell{background:#171e18!important;color:#dfe5d7!important;border-color:#394637!important}
+html.jrvs-desktop .quote-stat-icon{background:#30402b!important;color:#d8e8aa!important}
+html.jrvs-desktop .finance-status,html.jrvs-desktop .job-status-pill{background:#30402b!important;color:#d8e8aa!important}
+html.jrvs-desktop .quote-total{background:#20291f!important;color:#eff3e8!important;border:1px solid #465441!important}
+html.jrvs-desktop .editor-panel,html.jrvs-desktop .editor-panel details,html.jrvs-desktop .editor-history{background:#1d251f!important;color:#edf1e8!important;border-color:#3b4839!important}
 @media(max-width:1100px){html.jrvs-desktop #page-quotes .package-grid{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))!important}}
 @media(max-width:650px){html.jrvs-desktop #page-quotes .package-grid{grid-template-columns:1fr!important}html.jrvs-desktop #quoteLines .quote-line{grid-template-columns:minmax(0,1fr) 62px 90px 30px!important}}
 
