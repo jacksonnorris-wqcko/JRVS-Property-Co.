@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "JRVS Property Co.",
+  "productName": "JRVS Property Co",
   "version": "0.48.0",
   "identifier": "com.jrvspropertyco.desktop",
   "build": {
