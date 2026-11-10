@@ -21,6 +21,7 @@ JRVS keeps the existing IndexedDB photo collection as the Photo Studio's active 
 - Metadata-only changes update the SQLite metadata row without recopying a potentially large original file.
 - Committed photo deletes move managed assets to the workspace trash folder; clearing the photo store quarantines all indexed managed assets.
 - The photo mirror has a serial queue and exposes a flush operation so migration/backup workflows can wait for native writes to finish.
+- Each committed photo write is SHA-256 fingerprinted. When the same photo ID is written again, the native bridge updates metadata without recopying unchanged bytes; if the original/preview hash changes or a managed file is missing, the assets are copied again.
 - Original source files are written to staging first and then promoted to their managed path.
 - Photo IDs are sanitized for filesystem use. The original filename and full metadata remain in SQLite.
 - Imports copy photo Blobs into IndexedDB, wait for the native mirror queue, and only then commit the business/calendar payload to SQLite.
