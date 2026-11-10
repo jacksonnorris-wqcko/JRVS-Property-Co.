@@ -106,6 +106,18 @@
 - No cloud sync, authentication or cloud reset dependency remains in the final desktop edition.
 
 
+
+## Desktop preflight audit — current scaffold status
+
+- Windows GitHub Actions must clone this repository into a safe path such as `D:/a/jrvs`. Its actual repository name ends in a period, which Windows normalises in paths and which broke the default checkout workspace.
+- Tauri frontend assets are generated into `desktop-dist/` by `scripts/prepare-desktop.mjs`; the repository root is not bundled.
+- The generated desktop HTML removes the Supabase SDK/bootstrap, does not initialise cloud sync, hides cloud account/sync UI and strips PWA manifest/service-worker/update/install wiring. The legacy PWA source remains intact for the current `main` branch.
+- A Windows ICO file is configured for the desktop bundle. The icon is based on the existing JRVS app artwork.
+- The first shell remains a compatibility build: records/photos still use the WebView localStorage/IndexedDB profile. It does not yet have SQLite runtime integration, the native managed photo library, import/export, backup/restore or automatic desktop updates.
+- The SQLite design includes a dedicated `workspace_state` table for complete non-record data such as `numberSequences`, `attentionCleared`, `deleted` tombstones and future keys. The photo row permits a missing job link so orphan assets can be retained.
+- The initial shell still calls the existing Wollongong weather API and RAW decoder source. It must not be described as fully offline-capable until these are packaged or explicitly removed.
+- A successful CI compile is a build check only. The first launch, existing app behaviour, local storage persistence, photo flows and Windows installer still require hands-on testing on the user's PC.
+
 ## Confirmed user decisions and detailed specifications
 
 - **Photo ownership confirmed:** copy all imported originals into the JRVS-managed library. Never move/delete the source files. Preserve RAW bytes, previews, edited outputs and edit recipes as separate assets.
