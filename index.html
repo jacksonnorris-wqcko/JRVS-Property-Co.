@@ -1792,7 +1792,16 @@ async function jrvsCloudSignOut(){
  const {error}=await jrvsSupabase.auth.signOut();if(error)return jrvsCloudMessage(error.message,true);
  jrvsCloudSession=null;jrvsCloudUi();jrvsCloudMessage('Signed out. Local data remains on this device.');
 }
-function jrvsMergeRecords(localRows, cloudRows, label, conflicts){
+const jrvsRecordTime=x=>Date.parse(x.updatedAt||x.modifiedAt||x.updated_at||x.modified_at||x.createdAt||x.addedAt||'')||0;
+// Tombstones: [{k:'jobs',id:'..',at:ISO}] record deletions so they survive sync instead of being re-added.
+function jrvsTombMap(list,key){const m=new Map();(Array.isArray(list)?list:[]).forEach(t=>{if(t&&t.k===key&&t.id!=null){const at=Date.parse(t.at||'')||0,id=String(t.id);if(!m.has(id)||m.get(id)<at)m.set(id,at)}});return m}
+function jrvsMergeDeleted(a,b){
+ const m=new Map();
+ [...(Array.isArray(b)?b:[]),...(Array.isArray(a)?a:[])].forEach(t=>{if(!t||t.id==null||!t.k)return;const key=t.k+':'+t.id,old=m.get(key);if(!old||(Date.parse(t.at||'')||0)>(Date.parse(old.at||'')||0))m.set(key,{k:t.k,id:String(t.id),at:t.at})});
+ const cutoff=Date.now()-365*864e5;
+ return [...m.values()].filter(t=>(Date.parse(t.at||'')||0)>cutoff);
+}
+function jrvsMergeRecords(localRows, cloudRows, label, conflicts, tomb){
  const out=new Map(), unkeyed=[];
  (Array.isArray(cloudRows)?cloudRows:[]).forEach((x,i)=>{if(!x||typeof x!=='object')return;if(x.id==null){unkeyed.push(x);return;}out.set(String(x.id),x)});
  (Array.isArray(localRows)?localRows:[]).forEach((x,i)=>{
@@ -1801,20 +1810,36 @@ function jrvsMergeRecords(localRows, cloudRows, label, conflicts){
   const id=String(x.id),old=out.get(id);
   if(!old){out.set(id,x);return;}
   if(JSON.stringify(old)===JSON.stringify(x))return;
-  const oldTime=Date.parse(old.updatedAt||old.modifiedAt||old.updated_at||old.modified_at||old.createdAt||old.addedAt||'')||0;
-  const newTime=Date.parse(x.updatedAt||x.modifiedAt||x.updated_at||x.modified_at||x.createdAt||x.addedAt||'')||0;
+  const oldTime=jrvsRecordTime(old),newTime=jrvsRecordTime(x);
   if(newTime>oldTime)out.set(id,x);
   else if(newTime===oldTime){conflicts.push({type:label,id,local:x,cloud:old});}
  });
+ // A deletion wins unless the record was edited after it was deleted.
+ const kept=[...out.values()].filter(r=>{const d=tomb&&tomb.get(String(r.id));return !(d&&d>=jrvsRecordTime(r))});
  // Legacy records without IDs are retained rather than silently discarded. They cannot be deduplicated safely.
- return [...out.values(),...unkeyed];
+ return [...kept,...unkeyed];
 }
 function jrvsMergeBusiness(local,cloud,conflicts){
  const result={...(cloud||{}),...(local||{})};
- const arrayKeys=new Set(['jobs','clients','quotes','income','expenses','packages','attentionCleared']);
+ result.deleted=jrvsMergeDeleted(local?.deleted,cloud?.deleted);
+ const arrayKeys=['jobs','clients','quotes','invoices','income','expenses','packages'];
  for(const key of arrayKeys){
-  if(Array.isArray(local?.[key])||Array.isArray(cloud?.[key]))result[key]=jrvsMergeRecords(local?.[key],cloud?.[key],key,conflicts);
+  if(Array.isArray(local?.[key])||Array.isArray(cloud?.[key]))result[key]=jrvsMergeRecords(local?.[key],cloud?.[key],key,conflicts,jrvsTombMap(result.deleted,key));
  }
+ // attentionCleared is a list of plain strings: union them (the record merge only handles objects).
+ if(Array.isArray(local?.attentionCleared)||Array.isArray(cloud?.attentionCleared))result.attentionCleared=[...new Set([...(cloud?.attentionCleared||[]),...(local?.attentionCleared||[])])];
+ // Number counters: highest wins, and never fall below the highest number actually in use.
+ const seq={},pools={job:result.jobs,quote:result.quotes,invoice:result.invoices};
+ for(const kind of ['job','quote','invoice']){
+  seq[kind]=Math.max(Number(local?.numberSequences?.[kind])||0,Number(cloud?.numberSequences?.[kind])||0);
+  const seen=new Map();
+  (pools[kind]||[]).forEach(r=>{
+   const m=String(r?.number||'').match(/(\d{5})$/);if(m)seq[kind]=Math.max(seq[kind],Number(m[1])+1);
+   if(!r?.number)return;const prev=seen.get(r.number);
+   if(prev&&String(prev.id)!==String(r.id))conflicts.push({type:'duplicate-'+kind+'-number',id:r.number,local:r,cloud:prev});else seen.set(r.number,r);
+  });
+ }
+ result.numberSequences=seq;
  return result;
 }
 async function jrvsCloudSync(){
@@ -1829,11 +1854,15 @@ async function jrvsCloudSync(){
   if(readError)throw readError;
   const localBusiness=JSON.parse(localStorage.getItem('jrvs-data')||'{}');
   const localCalendar=JSON.parse(localStorage.getItem('jrvs-calendar')||'[]');
-  const localPhotos=await photoRequest('readonly','all')||[];
+  let localPhotos=await photoRequest('readonly','all')||[];
   const cloudPayload=remote?.payload||{};
   const conflicts=[];
   const mergedBusiness=jrvsMergeBusiness(localBusiness,cloudPayload.business||{},conflicts);
-  const mergedCalendar=jrvsMergeRecords(localCalendar,cloudPayload.calendar||[],'calendar',conflicts);
+  const mergedCalendar=jrvsMergeRecords(localCalendar,cloudPayload.calendar||[],'calendar',conflicts,jrvsTombMap(mergedBusiness.deleted,'calendar'));
+  // Photos deleted on any device: remove the local copy (older than the deletion) and ignore the cloud record.
+  const photoTomb=jrvsTombMap(mergedBusiness.deleted,'photos');
+  for(const lp of localPhotos.filter(p=>p&&p.id&&photoTomb.has(String(p.id))&&(Date.parse(p.addedAt||'')||0)<=photoTomb.get(String(p.id)))){await photoRequest('readwrite','delete_silent',lp.id)}
+  localPhotos=localPhotos.filter(p=>!(p&&p.id&&photoTomb.has(String(p.id))&&(Date.parse(p.addedAt||'')||0)<=photoTomb.get(String(p.id))));
   // Normalise legacy cloud photo metadata. Older releases could write a photo
   // record without storage_path; the established object path is userId/photoId.
   // Invalid metadata is quarantined for diagnostics and never blocks business sync.
@@ -1843,6 +1872,7 @@ async function jrvsCloudSync(){
    const raw=rawCloudPhotoMeta[i];
    if(!raw||typeof raw!=='object'||!raw.id){skippedCloudPhotos.push({index:i,reason:'missing photo id'});continue;}
    const id=String(raw.id);
+   if(photoTomb.has(id)&&(Date.parse(raw.addedAt||'')||0)<=photoTomb.get(id))continue;
    const storagePath=(typeof raw.storage_path==='string'&&raw.storage_path.trim())?raw.storage_path.trim():(userId+'/'+id);
    cloudPhotoMeta.push({...raw,id,storage_path:storagePath});
   }
@@ -1897,6 +1927,8 @@ async function jrvsCloudSync(){
   syncStage='applying verified local business snapshot';
   localStorage.setItem('jrvs-data',JSON.stringify(mergedBusiness));
   localStorage.setItem('jrvs-calendar',JSON.stringify(mergedCalendar));
+  // V0.47: refresh the in-memory copies. Previously the screen kept showing pre-sync data and the next save() overwrote the merge.
+  data={...data,...mergedBusiness};calendarEvents=mergedCalendar;jrvsSnapshot();
   jrvsCloudMessage('Two-way sync complete · '+(mergedBusiness.jobs?.length||0)+' jobs · '+(mergedBusiness.clients?.length||0)+' clients · '+(await photoRequest('readonly','all')).length+' photos'+(conflicts.length?' · '+conflicts.length+' item(s) need conflict review':'')+(skippedCloudPhotos.length?' · '+skippedCloudPhotos.length+' photo(s) need review':''));
   showToast('JRVS two-way sync completed.');
   await loadPhotos();renderQuotes();renderFinances();render();
@@ -2025,16 +2057,41 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.46.2';
+const APP_VERSION='0.47.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
 if(!Array.isArray(data.packages))data.packages=[];if(!Array.isArray(data.quotes))data.quotes=[];if(!Array.isArray(data.income))data.income=[];if(!Array.isArray(data.expenses))data.expenses=[];if(!Array.isArray(data.attentionCleared))data.attentionCleared=[];
-const save=()=>localStorage.setItem('jrvs-data',JSON.stringify(data));
+// ---- V0.47 data integrity helpers ----------------------------------------
+const JRVS_SYNC_KEYS=['jobs','clients','quotes','invoices','income','expenses','packages'];
+const jrvsNewId=prefix=>(prefix?prefix+'-':'')+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,12));
+const jrvsRound2=n=>Math.round(((Number(n)||0)+Number.EPSILON)*100)/100;
+const jrvsFingerprint=r=>{try{const c={...r};delete c.updatedAt;return JSON.stringify(c)}catch(e){return ''}};
+const jrvsBaseline=new Map(); // 'collection:id' -> fingerprint at last save/load
+function jrvsStampList(name,list,now){
+ (list||[]).forEach(r=>{
+  if(!r||typeof r!=='object'||r.id==null)return;
+  const key=name+':'+r.id,fp=jrvsFingerprint(r),old=jrvsBaseline.get(key);
+  if(old===undefined){if(!r.updatedAt)r.updatedAt=now}else if(old!==fp)r.updatedAt=now;
+  jrvsBaseline.set(key,fp);
+ });
+}
+function jrvsSnapshot(skipCalendar){
+ jrvsBaseline.clear();
+ JRVS_SYNC_KEYS.forEach(k=>(data[k]||[]).forEach(r=>{if(r&&r.id!=null)jrvsBaseline.set(k+':'+r.id,jrvsFingerprint(r))}));
+ if(!skipCalendar)(calendarEvents||[]).forEach(r=>{if(r&&r.id!=null)jrvsBaseline.set('calendar:'+r.id,jrvsFingerprint(r))});
+}
+function jrvsTombstone(collection,id){
+ if(!Array.isArray(data.deleted))data.deleted=[];
+ data.deleted.push({k:collection,id:String(id),at:new Date().toISOString()});
+ save();
+}
+const save=()=>{const now=new Date().toISOString();JRVS_SYNC_KEYS.forEach(k=>jrvsStampList(k,data[k],now));localStorage.setItem('jrvs-data',JSON.stringify(data))};
+jrvsSnapshot(true);
 const JRVS_NUMBER_PREFIX={job:'JOB',quote:'QUO',invoice:'INV'};
 function jrvsNextNumber(kind){
  if(!data.numberSequences||typeof data.numberSequences!=='object')data.numberSequences={job:0,quote:0,invoice:0};
- const key=kind,used=(data[kind==='job'?'jobs':kind==='quote'?'quotes':'invoices']||[]).map(x=>Number(String(x.number||'').match(/(\\d{5})$/)?.[1])).filter(Number.isFinite);
+ const key=kind,used=(data[kind==='job'?'jobs':kind==='quote'?'quotes':'invoices']||[]).map(x=>Number(String(x.number||'').match(/(\d{5})$/)?.[1])).filter(Number.isFinite);
  const current=Math.max(Number(data.numberSequences[key])||0,...used.map(n=>n+1));
  if(current>99999)throw new Error('The '+kind+' number sequence has reached 99999.');
  data.numberSequences[key]=current+1;
@@ -2067,7 +2124,8 @@ const CALENDAR_KEY='jrvs-calendar';
 let calendarEvents=(()=>{try{return JSON.parse(localStorage.getItem(CALENDAR_KEY)||'[]')}catch(e){return []}})();
 let calendarCursor=new Date();calendarCursor.setHours(12,0,0,0);
 let calendarView='month';
-const calSave=()=>localStorage.setItem(CALENDAR_KEY,JSON.stringify(calendarEvents));
+const calSave=()=>{jrvsStampList('calendar',calendarEvents,new Date().toISOString());localStorage.setItem(CALENDAR_KEY,JSON.stringify(calendarEvents))};
+jrvsSnapshot();
 const calDate=d=>{const x=new Date(d);return isNaN(x)?'':`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`};
 const calSafe=(v)=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function calendarSources(){
@@ -2174,7 +2232,7 @@ function openCalendarEvent(date='',event=null){
 function closeCalendarEvent(){document.getElementById('calendarEventBackdrop').classList.remove('show')}
 function deleteCalendarEvent(){
  const id=document.getElementById('calEventId').value;if(!id)return;
- calendarEvents=calendarEvents.filter(x=>x.id!==id);calSave();closeCalendarEvent();renderCalendar();render();
+ calendarEvents=calendarEvents.filter(x=>x.id!==id);calSave();jrvsTombstone('calendar',id);closeCalendarEvent();renderCalendar();render();
  showToast('Calendar event deleted. Linked business records were not changed.');
 }
 
@@ -2252,7 +2310,7 @@ async function deleteRecord(type,id){
  if(type==='client'&&data.jobs.some(j=>(j.client||'').toLowerCase()===item.name.toLowerCase())&&!await showConfirm('This client is linked to jobs. Delete the client record? Job details will remain.'))return;
  if(!await showConfirm(`Delete "${item.name}"? This cannot be undone.`))return;
  if(type==='job')data.jobs=data.jobs.filter(x=>x.id!==id);else data.clients=data.clients.filter(x=>x.id!==id);
- save();render();
+ jrvsTombstone(type==='job'?'jobs':'clients',id);render();
 }
 function viewJob(id){
  const j=data.jobs.find(x=>x.id===id);if(!j)return;
@@ -2314,7 +2372,7 @@ function closeClientDetail(){document.getElementById('clientDetailBackdrop').cla
 document.getElementById('recordForm').addEventListener('submit',e=>{
  e.preventDefault();const type=e.target.dataset.type,id=e.target.dataset.editId,item=Object.fromEntries(new FormData(e.target));
  if(id){const list=type==='job'?data.jobs:data.clients,i=list.findIndex(x=>x.id===id);if(i>=0)list[i]={...list[i],...item};}
- else{item.id=Date.now().toString();if(type==='job'){item.number=jrvsNextNumber('job');data.jobs.unshift(item)}else data.clients.unshift(item);}
+ else{item.id=jrvsNewId();if(type==='job'){item.number=jrvsNextNumber('job');data.jobs.unshift(item)}else data.clients.unshift(item);}
  save();closeModal();e.target.reset();render();
 });
 
@@ -2374,6 +2432,7 @@ function esc(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 const PHOTO_DB='jrvs-photo-library',PHOTO_STORE='photos';
 function openPhotoDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(PHOTO_DB,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(PHOTO_STORE))req.result.createObjectStore(PHOTO_STORE,{keyPath:'id'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
 async function photoRequest(mode,action,value){
+ if(action==='delete')jrvsTombstone('photos',value);
  const db=await openPhotoDB();
  return new Promise((resolve,reject)=>{
   let result;const tx=db.transaction(PHOTO_STORE,mode),store=tx.objectStore(PHOTO_STORE);
@@ -2381,7 +2440,7 @@ async function photoRequest(mode,action,value){
   if(action==='all') req=store.getAll();
   else if(action==='get') req=store.get(value);
   else if(action==='put') req=store.put(value);
-  else if(action==='delete') req=store.delete(value);
+  else if(action==='delete'||action==='delete_silent') req=store.delete(value);
   else if(action==='setCover'){
    req=store.getAll();
    req.onsuccess=()=>{
@@ -2798,14 +2857,14 @@ function updateFinanceForm(selected=''){
 function closeFinanceModal(){document.getElementById('financeModalBackdrop').classList.remove('show')}
 function saveFinanceForm(e){
  e.preventDefault();ensureFinanceData();const type=fType.value,arr=type==='income'?data.income:data.expenses;
- const rec={id:editingFinanceId||'txn-'+Date.now(),date:fDate.value,description:fDescription.value.trim(),category:fCategory.value,amount:Number(fAmount.value),jobId:fJob.value||null,status:type==='income'?fStatus.value:'Paid',notes:fNotes.value.trim()};
+ const rec={id:editingFinanceId||jrvsNewId('txn'),date:fDate.value,description:fDescription.value.trim(),category:fCategory.value,amount:Number(fAmount.value),jobId:fJob.value||null,status:type==='income'?fStatus.value:'Paid',notes:fNotes.value.trim()};
  if(editingFinanceId){const oldArr=type==='income'?data.income:data.expenses,idx=oldArr.findIndex(x=>x.id===editingFinanceId);if(idx>=0)oldArr[idx]=rec}
  else arr.push(rec);
  save();closeFinanceModal();renderFinances();render();
 }
 function editFinance(id,type){openFinanceForm(type,id)}
 function markIncomePaid(id){const x=data.income.find(x=>x.id===id);if(x){x.status='Paid';x.paidDate=new Date().toISOString().slice(0,10);save();renderFinances();render()}}
-async function deleteFinance(id,type){if(!await showConfirm('Delete this transaction?'))return;const arr=type==='income'?data.income:data.expenses;const idx=arr.findIndex(x=>x.id===id);if(idx>=0)arr.splice(idx,1);save();renderFinances();render()}
+async function deleteFinance(id,type){if(!await showConfirm('Delete this transaction?'))return;const arr=type==='income'?data.income:data.expenses;const idx=arr.findIndex(x=>x.id===id);if(idx>=0)arr.splice(idx,1);jrvsTombstone(type==='income'?'income':'expenses',id);renderFinances();render()}
 
 let editingQuoteId=null,editingPackageId=null,quoteLineCounter=0;
 const money=n=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(n)||0);
@@ -2893,11 +2952,11 @@ function openPackageForm(id=null){
  document.getElementById('packageModalBackdrop').classList.add('show');
 }
 function closePackageModal(){document.getElementById('packageModalBackdrop').classList.remove('show')}
-function savePackageForm(e){e.preventDefault();ensureQuoteData();const previous=editingPackageId?data.packages.find(x=>x.id===editingPackageId):null;const p={id:editingPackageId||('pkg-'+Date.now()),defaultKey:previous?.defaultKey||null,name:previous?.defaultKey?previous.name:pkgName.value.trim(),description:previous?.defaultKey?previous.description:pkgDesc.value.trim(),price:Number(pkgPrice.value),isExtra:previous?.defaultKey?previous.isExtra:pkgExtra.value==='yes',archived:false,createdAt:previous?.createdAt||new Date().toISOString()};
+function savePackageForm(e){e.preventDefault();ensureQuoteData();const previous=editingPackageId?data.packages.find(x=>x.id===editingPackageId):null;const p={id:editingPackageId||(jrvsNewId('pkg')),defaultKey:previous?.defaultKey||null,name:previous?.defaultKey?previous.name:pkgName.value.trim(),description:previous?.defaultKey?previous.description:pkgDesc.value.trim(),price:Number(pkgPrice.value),isExtra:previous?.defaultKey?previous.isExtra:pkgExtra.value==='yes',archived:false,createdAt:previous?.createdAt||new Date().toISOString()};
  if(editingPackageId){const i=data.packages.findIndex(x=>x.id===editingPackageId);if(i>=0)data.packages[i]=p}else data.packages.push(p);
  save();closePackageModal();renderQuotes()}
 function editPackage(id){openPackageForm(id)}
-async function deletePackage(id){if(await showConfirm('Delete this package? Existing saved quotes will not change.')){data.packages=data.packages.filter(p=>p.id!==id);save();renderQuotes();renderAttention()}}
+async function deletePackage(id){if(await showConfirm('Delete this package? Existing saved quotes will not change.')){data.packages=data.packages.filter(p=>p.id!==id);jrvsTombstone('packages',id);renderQuotes();renderAttention()}}
 
 function updateQuoteJobOptions(clientId,selectedJobId=''){
  const client=data.clients.find(c=>c.id===clientId);
@@ -2943,7 +3002,7 @@ function calcQuoteTotals(){
  const lines=[...document.querySelectorAll('#quoteLines .quote-line')];let subtotal=0;
  lines.forEach(line=>{subtotal+=(Number(line.querySelector('.line-qty').value)||0)*(Number(line.querySelector('.line-price').value)||0)});
  const mode=document.getElementById('qGst').value;let gst=0,total=subtotal;
- if(mode==='exclusive'){gst=subtotal*.1;total=subtotal+gst}else if(mode==='inclusive'){gst=subtotal/11}
+ if(mode==='exclusive'){gst=jrvsRound2(subtotal*.1);total=jrvsRound2(subtotal+gst)}else if(mode==='inclusive'){gst=jrvsRound2(subtotal/11)}
  document.getElementById('quoteTotals').innerHTML=`<div class="quote-total-row"><span>Subtotal ${mode==='inclusive'?'(GST inclusive)':''}</span><strong>${money(subtotal)}</strong></div><div class="quote-total-row"><span>GST component</span><strong>${money(gst)}</strong></div><div class="quote-total-row" style="border-top:1px solid #d5dccb;margin-top:6px;padding-top:9px;font-size:16px"><strong>Total AUD</strong><strong>${money(total)}</strong></div>`;
 }
 document.addEventListener('input',e=>{if(e.target.id==='qGst')calcQuoteTotals()});
@@ -2962,10 +3021,10 @@ function saveQuoteForm(e){
  if(!job&&!newJobName){showToast('Enter a job or property name.');document.getElementById('qNewJobName').focus();return}
  const items=[...document.querySelectorAll('#quoteLines .quote-line')].map(line=>{const sel=line.querySelector('.line-package'),opt=sel.selectedOptions[0];return {packageId:sel.value||null,name:opt?.dataset.name||'Custom item',qty:Number(line.querySelector('.line-qty').value)||1,price:Number(line.querySelector('.line-price').value)||0}}).filter(x=>x.qty>0);
  if(!items.length){showToast('Add at least one quote item.');return}
- const subtotal=items.reduce((sum,x)=>sum+x.qty*x.price,0),mode=qGst.value,gst=mode==='exclusive'?subtotal*.1:mode==='inclusive'?subtotal/11:0,total=mode==='exclusive'?subtotal+gst:subtotal;
+ const subtotal=jrvsRound2(items.reduce((sum,x)=>sum+x.qty*x.price,0)),mode=qGst.value,gst=mode==='exclusive'?jrvsRound2(subtotal*.1):mode==='inclusive'?jrvsRound2(subtotal/11):0,total=mode==='exclusive'?jrvsRound2(subtotal+gst):subtotal;
  if(creatingClient)data.clients.unshift(client);
  if(!job){job={id:'job-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),number:jrvsNextNumber('job'),name:newJobName,client:client.name,date:'',status:'Enquiry',address:newJobAddress,notes:'Created with a new quotation.',createdAt:new Date().toISOString()};data.jobs.unshift(job)}
- const q={id:editingQuoteId||'quote-'+Date.now(),number:existing?.number||jrvsNextNumber('quote'),jobNumber:job?.number||'',clientId:client.id,clientName:client.name,jobId:job?.id||null,jobName:job?.name||'',date:qDate.value,validUntil:qValid.value,gstMode:mode,status:qStatus.value,items,subtotal,gst,total,notes:qNotes.value.trim(),createdAt:existing?.createdAt||new Date().toISOString()};
+ const q={id:editingQuoteId||jrvsNewId('quote'),number:existing?.number||jrvsNextNumber('quote'),jobNumber:job?.number||'',clientId:client.id,clientName:client.name,jobId:job?.id||null,jobName:job?.name||'',date:qDate.value,validUntil:qValid.value,gstMode:mode,status:qStatus.value,items,subtotal,gst,total,notes:qNotes.value.trim(),createdAt:existing?.createdAt||new Date().toISOString()};
  if(existing){const i=data.quotes.findIndex(x=>x.id===editingQuoteId);data.quotes[i]=q}else data.quotes.push(q);
  save();closeQuoteModal();renderQuotes();renderAttention();render();showToast(existing?'Quote updated.':'Quote saved with its linked client and job.');
 }
@@ -3003,11 +3062,11 @@ function submitInvoiceCreator(){const id=document.getElementById('invoiceQuoteSe
 function createInvoiceFromQuote(id){
  const q=data.quotes.find(x=>x.id===id);if(!q)return;if(q.status!=='Accepted'){showToast('Only accepted quotations can be converted into invoices.');return}
  const due=new Date();due.setDate(due.getDate()+14);
- const inv={id:'invoice-'+Date.now(),number:jrvsNextNumber('invoice'),quoteNumber:q.number,jobNumber:q.jobNumber||data.jobs.find(j=>String(j.id)===String(q.jobId))?.number||'',quoteId:q.id,clientId:q.clientId,clientName:q.clientName,jobId:q.jobId||null,jobName:q.jobName||'',date:new Date().toISOString().slice(0,10),dueDate:due.toISOString().slice(0,10),gstMode:q.gstMode||'exclusive',items:(q.items||[]).map(x=>({...x})),subtotal:Number(q.subtotal)||0,gst:Number(q.gst)||0,total:Number(q.total)||0,notes:q.notes||'',status:'Unpaid',createdAt:new Date().toISOString()};
+ const inv={id:jrvsNewId('invoice'),number:jrvsNextNumber('invoice'),quoteNumber:q.number,jobNumber:q.jobNumber||data.jobs.find(j=>String(j.id)===String(q.jobId))?.number||'',quoteId:q.id,clientId:q.clientId,clientName:q.clientName,jobId:q.jobId||null,jobName:q.jobName||'',date:new Date().toISOString().slice(0,10),dueDate:due.toISOString().slice(0,10),gstMode:q.gstMode||'exclusive',items:(q.items||[]).map(x=>({...x})),subtotal:Number(q.subtotal)||0,gst:Number(q.gst)||0,total:Number(q.total)||0,notes:q.notes||'',status:'Unpaid',createdAt:new Date().toISOString()};
  data.invoices.push(inv);save();renderInvoices();showToast(`Invoice ${inv.number} created. You can now print or save it as a PDF.`);
 }
 function markInvoicePaid(id){const inv=data.invoices.find(x=>x.id===id);if(!inv)return;inv.status='Paid';inv.paidDate=new Date().toISOString().slice(0,10);save();renderInvoices()}
-async function deleteInvoice(id){if(!await showConfirm('Delete this invoice? The original quotation will remain unchanged.'))return;data.invoices=data.invoices.filter(x=>x.id!==id);save();renderInvoices()}
+async function deleteInvoice(id){if(!await showConfirm('Delete this invoice? The original quotation will remain unchanged.'))return;data.invoices=data.invoices.filter(x=>x.id!==id);jrvsTombstone('invoices',id);renderInvoices()}
 function printBusinessDocument(type,id){
  const record=type==='quote'?data.quotes.find(x=>x.id===id):data.invoices.find(x=>x.id===id);if(!record)return;
  const client=data.clients.find(c=>c.id===record.clientId)||{};const job=data.jobs.find(j=>j.id===record.jobId)||{};
@@ -3057,14 +3116,14 @@ function convertQuoteToJob(id){
  const client=data.clients.find(c=>c.id===q.clientId);
  const linkedJobName=(q.jobName||'').trim();
  const name=linkedJobName||`Photography — ${q.clientName||client?.name||'New job'}`;
- const job={id:'job-'+Date.now(),number:jrvsNextNumber('job'),name,client:client?.name||q.clientName||'',date:'',status:'Booked',address:'',notes:`Created from accepted quotation ${q.number}.\\nQuoted services: ${(q.items||[]).map(x=>`${x.qty} × ${x.name}`).join(', ')}\\nQuoted total: ${money(q.total)}`};
+ const job={id:jrvsNewId('job'),number:jrvsNextNumber('job'),name,client:client?.name||q.clientName||'',date:'',status:'Booked',address:'',notes:`Created from accepted quotation ${q.number}.\\nQuoted services: ${(q.items||[]).map(x=>`${x.qty} × ${x.name}`).join(', ')}\\nQuoted total: ${money(q.total)}`};
  data.jobs.push(job);q.jobId=job.id;q.jobNumber=job.number;q.jobName=job.name;q.convertedAt=new Date().toISOString();
  save();render();renderQuotes();
  showPage('jobs');viewJob(job.id);
 }
 function editQuote(id){openQuoteForm(id)}
 function changeQuoteStatus(id){const q=data.quotes.find(x=>x.id===id);if(!q)return;const states=['Draft','Sent','Accepted','Declined'];q.status=states[(states.indexOf(q.status)+1)%states.length];if(q.status==='Accepted'&&q.jobId){const job=data.jobs.find(j=>j.id===q.jobId);if(job&&job.status==='Enquiry'){job.status='Booked';job.statusUpdatedAt=new Date().toISOString()}}save();renderQuotes();renderAttention();render()}
-async function deleteQuote(id){if(await showConfirm('Delete this quotation?')){data.quotes=data.quotes.filter(q=>q.id!==id);save();renderQuotes();renderAttention()}}
+async function deleteQuote(id){if(await showConfirm('Delete this quotation?')){data.quotes=data.quotes.filter(q=>q.id!==id);jrvsTombstone('quotes',id);renderQuotes();renderAttention()}}
 
 let editorPhoto=null,editorSourcePhoto=null,editorImage=null,editorRotation=0,editorBusy=false,editorHistory=[],editorHistoryIndex=-1,editorHistoryTimer=null,editorCompare=false,editorComparePosition=50,editorPreviewFrame=0;
 const EDITOR_PREVIEW_MAX=1600;
