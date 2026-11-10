@@ -4,7 +4,7 @@
   "version": "0.48.0",
   "identifier": "com.jrvspropertyco.desktop",
   "build": {
-    "frontendDist": "../"
+    "frontendDist": "../desktop-dist"
   },
   "app": {
     "windows": [
@@ -26,7 +26,10 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": [
+      "nsis",
+      "msi"
+    ],
     "category": "Business",
     "shortDescription": "JRVS Property Co. business management",
     "longDescription": "Local-first desktop business management for JRVS Property Co."
