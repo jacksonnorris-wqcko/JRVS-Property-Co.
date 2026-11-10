@@ -40,7 +40,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "PUBLIC_KEY_PENDING_SETUP",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDcyNEE0Q0Y2MUNENjNGRTEKUldUaFA5WWM5a3hLY29jcVdvNDZQKzY4czhwaVJ4RXlyWXQxb2pmdUZ6elJrd1RQS0Ewd3pZOTEK",
       "endpoints": [
         "https://github.com/jacksonnorris-wqcko/JRVS-Property-Co./releases/latest/download/latest.json"
       ],
