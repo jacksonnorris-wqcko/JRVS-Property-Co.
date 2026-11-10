@@ -79,7 +79,7 @@ jobs:
           releaseBody: |
             JRVS Property Co. Desktop for Windows.
 
-            Install this release once. Future signed updates can be checked and installed from inside JRVS Desktop.
+            JRVS Desktop checks for signed updates when it starts. When an update is available, open the in-app prompt and choose “Update & restart”. No installer download is needed for existing installations.
           releaseDraft: false
           prerelease: false
           args: --config src-tauri/tauri.release.conf.json
