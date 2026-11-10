@@ -15,6 +15,14 @@ function replaceExactlyOnce(source, before, after, label) {
 
 let html = await readFile(path.join(root, 'index.html'), 'utf8');
 
+// The desktop shell has its own independently versioned release track.
+html = replaceExactlyOnce(
+  html,
+  "const APP_VERSION='0.48.0';",
+  "const APP_VERSION='0.49.0';",
+  'desktop application version'
+);
+
 // The desktop edition is local-only. Keep the legacy PWA untouched on main,
 // while removing cloud and browser-install wiring from this desktop snapshot.
 html = replaceExactlyOnce(
