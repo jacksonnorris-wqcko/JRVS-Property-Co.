@@ -1712,7 +1712,14 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
 <option value="natural">Natural Listing</option><option value="bright">Bright &amp; Airy</option><option value="window">Window Balanced</option><option value="warm">Warm Lifestyle</option><option value="modern">Crisp Modern</option><option value="soft">Soft Neutral</option><option value="luxury">Luxury Contrast</option><option value="wood">Wood &amp; Stone</option><option value="bathroom">Bathroom Clean</option>
 </optgroup><optgroup label="Exterior · Professional">
 <option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option><option value="twilight">Twilight Mood</option>
-</optgroup></select><div class="jrvs-auto-enhance-card"><div class="jrvs-auto-enhance-copy"><strong>Rental Auto Enhance</strong><span>Analyses this photo and automatically balances light, colour and tonal range.</span></div><button class="secondary jrvs-auto-enhance-button" type="button" onclick="autoEnhanceEditor()">✦ Analyse &amp; enhance photo</button><div class="jrvs-auto-enhance-note">One click · Every photo analysed individually · Original always preserved</div></div></div>
+</optgroup></select><div class="jrvs-auto-enhance-card jrvs-property-finish-card">
+ <div class="jrvs-auto-enhance-copy"><strong>JRVS Property Finish</strong><span>Reads the actual light and colour in each photo, then builds a restrained property-ready edit. Every image gets its own correction.</span></div>
+ <label class="jrvs-finish-intent-label" for="jrvsFinishIntent">FINISH APPROACH</label>
+ <select id="jrvsFinishIntent" class="jrvs-finish-intent"><option value="natural">Natural listing · balanced and true-to-life</option><option value="bright">Bright listing · lighter, open feel</option><option value="window">Window-safe · protect bright highlights</option></select>
+ <button class="secondary jrvs-auto-enhance-button" type="button" onclick="autoEnhanceEditor()">✦ Analyse &amp; apply Property Finish</button>
+ <div class="jrvs-finish-report" id="jrvsFinishReport" aria-live="polite">Ready to analyse this photo. The original will remain untouched.</div>
+ <div class="jrvs-auto-enhance-note">Local image analysis · Non-destructive edit recipe · Review before saving</div>
+</div></div>
 <details class="editor-section jrvs-quick-controls" open data-editor-group="basic">
 <summary>Quick light adjustments <span class="jrvs-section-hint">Exposure · contrast · tonal balance</span></summary>
 <div class="editor-control"><label>Exposure <span id="exposureVal">0</span></label><input id="exposure" type="range" min="-2" max="2" step="0.05" value="0" oninput="editorChanged()"></div>
@@ -1766,7 +1773,8 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
 </section>
 
 <div class="editor-control" data-editor-group="export"><label>Export profile</label><select id="editorExportProfile"><option value="agency">Real estate agency · JPEG high quality</option><option value="web">Web delivery · JPEG balanced</option><option value="max">Maximum quality · JPEG</option><option value="png">PNG · lossless</option></select></div>
-<div class="editor-tools"><button class="secondary" type="button" onclick="batchApplyEditor()">Apply edits to this project's other originals</button></div>
+<div class="editor-tools jrvs-property-batch-tools"><button class="secondary" type="button" onclick="batchApplyEditor()">Apply this exact look to other originals</button><button class="secondary jrvs-room-match-button" type="button" onclick="smartFinishWholeProperty()">✦ Smart Finish · whole property</button></div>
+<div class="editor-help jrvs-room-match-help">Smart Finish analyses each original separately, then balances the property's overall brightness around this photo. It creates new edited copies and never changes originals.</div>
 <div class="editor-control" data-editor-group="detail"><label>HDR merge (experimental)</label><input id="hdrFiles" type="file" accept="image/*" multiple><div class="editor-help">Select 2–5 bracketed JPEG/PNG photos from the same viewpoint to create an exposure-fused HDR-style result.</div><button class="secondary" type="button" onclick="mergeHdrSelection()">Merge selected bracketed photos</button></div>
 <div class="editor-control" data-editor-group="geometry"><label>Crop</label><select id="cropRatio" onchange="editorChanged()"><option value="original">Original ratio</option><option value="4:3">4:3</option><option value="3:2">3:2</option><option value="16:9">16:9</option><option value="1:1">Square</option></select><div class="editor-help">Crop is centred. Choose a ratio before saving.</div></div>
 <div class="editor-actions"><button class="secondary" onclick="resetEditor()">Reset</button><button class="primary" onclick="saveEditedPhoto()">Save edited copy</button></div><div class="editor-status" id="editorStatus"></div>
@@ -3258,6 +3266,7 @@ let editorRetouchMode='off',editorRetouchStrokes=[],editorRetouchSource=null,edi
 let editorRetouchBrushSize=34,editorRetouchOpacity=0.9,editorRetouchHardness=0.72;
 let editorLocalBalance=false;
 let editorNaturalCurve=false;
+let editorLastAnalysis=null;
 function observeEditorFit(){
  const stage=document.getElementById('editorStage');
  if(editorFitObserver)editorFitObserver.disconnect();
@@ -3270,8 +3279,11 @@ function initEditorProControls(){
 document.addEventListener('keydown',e=>{if(!document.getElementById('editorBackdrop')?.classList.contains('show'))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?editorRedo():editorUndo()}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();editorRedo()}else if(e.key.toLowerCase()==='c'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();toggleEditorCompare()}else if(e.key==='Escape'){if(editorCompare)toggleEditorCompare(false);else closeEditor()}});
 function captureEditorRecipe(){
  return {
-  schemaVersion:2,
+  schemaVersion:3,
   localBalance:!!editorLocalBalance,
+  naturalCurve:!!editorNaturalCurve,
+  finishIntent:document.getElementById('jrvsFinishIntent')?.value||'natural',
+  finishAnalysis:editorLastAnalysis?{scene:editorLastAnalysis.scene,median:editorLastAnalysis.p50,highlightClipRate:editorLastAnalysis.clipRate,shadowRate:editorLastAnalysis.shadowRate,spatialRange:editorLastAnalysis.spatialRange,neutralConfidence:editorLastAnalysis.neutralConfidence,intent:editorLastAnalysis.intent}:null,
   values:Object.fromEntries(EDITOR_KEYS.map(k=>[k,Number(document.getElementById(k)?.value||0)])),
   rotation:editorRotation,
   crop:document.getElementById('cropRatio')?.value||'original',
@@ -3281,8 +3293,12 @@ function captureEditorRecipe(){
  };
 }
 function restoreEditorRecipe(recipe){
- if(!recipe||![1,2].includes(recipe.schemaVersion))return false;
+ if(!recipe||![1,2,3].includes(recipe.schemaVersion))return false;
  editorLocalBalance=!!recipe.localBalance;
+ editorNaturalCurve=!!recipe.naturalCurve;
+ editorLastAnalysis=recipe.finishAnalysis?{...recipe.finishAnalysis,intent:recipe.finishIntent||recipe.finishAnalysis.intent||'natural'}:null;
+ const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value=recipe.finishIntent||'natural';
+ jrvsRenderFinishReport(editorLastAnalysis);
  EDITOR_KEYS.forEach(k=>{const el=document.getElementById(k);if(el&&Number.isFinite(Number(recipe.values?.[k])))el.value=recipe.values[k]});
  editorRotation=Number(recipe.rotation)||0;
  const crop=document.getElementById('cropRatio');if(crop)crop.value=recipe.crop||'original';
@@ -3312,7 +3328,7 @@ async function openEditor(id){
  const linkedOriginal=(String(p.type||'').toLowerCase()==='edited'&&p.sourcePhotoId)?photoRecords.find(x=>String(x.id)===String(p.sourcePhotoId)):null;
  editorPhoto=p;editorSourcePhoto=linkedOriginal||p;editorRotation=0;
  ['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>{const el=document.getElementById(k);if(el)el.value=0});
- editorHistory=[];editorHistoryIndex=-1;editorRetouchStrokes=[];editorRetouchSource=null;editorRetouchActive=null;editorLocalBalance=false;editorNaturalCurve=false;setEditorRetouchMode('off');editorCompare=false;editorComparePosition=50;toggleEditorCompare(false);
+ editorHistory=[];editorHistoryIndex=-1;editorRetouchStrokes=[];editorRetouchSource=null;editorRetouchActive=null;editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value='natural';jrvsRenderFinishReport(null);setEditorRetouchMode('off');editorCompare=false;editorComparePosition=50;toggleEditorCompare(false);
  document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';document.getElementById('editorExportProfile').value='agency';document.getElementById('editorTitle').textContent=p.name;const rawDevelopBtn=document.getElementById('editorRawDevelopBtn');if(rawDevelopBtn)rawDevelopBtn.style.display=editorSourcePhoto.isRaw?'inline-flex':'none';
  const hasRecipe=!!(p.editRecipe&&linkedOriginal);
  document.getElementById('editorSubtitle').textContent=(editorSourcePhoto.jobName||p.jobName)+(editorSourcePhoto.isRaw?' · RAW source':' · Original source')+(hasRecipe?' · Saved edit recipe restored':' · Original remains unchanged');
@@ -3356,16 +3372,16 @@ async function developEditorRawSource(){
 }
 function closeEditor(){if(editorFitObserver)editorFitObserver.disconnect();clearEditorFilmstripUrls();document.getElementById('editorBackdrop').classList.remove('show');if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=null;editorPhoto=null;editorSourcePhoto=null}
 function rotateEditor(deg){editorRotation=(editorRotation+deg+360)%360;drawEditor();captureEditorHistory()}
-function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';editorRotation=0;drawEditor();captureEditorHistory()}
+function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';editorRotation=0;editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;jrvsRenderFinishReport(null);drawEditor();captureEditorHistory()}
 function editorChanged(){
  // Coalesce rapid slider events into one preview render per animation frame.
  if(!editorPreviewFrame)editorPreviewFrame=requestAnimationFrame(()=>{editorPreviewFrame=0;drawEditor()});
  clearTimeout(editorHistoryTimer);editorHistoryTimer=setTimeout(captureEditorHistory,250);
 }
 const EDITOR_KEYS=['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'];
-function currentEditorState(){return {values:Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value])),rotation:editorRotation,crop:document.getElementById('cropRatio').value,preset:document.getElementById('editorPreset').value,localBalance:!!editorLocalBalance}}
+function currentEditorState(){return {values:Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value])),rotation:editorRotation,crop:document.getElementById('cropRatio').value,preset:document.getElementById('editorPreset').value,localBalance:!!editorLocalBalance,naturalCurve:!!editorNaturalCurve}}
 function captureEditorHistory(){const state=currentEditorState(),last=editorHistory[editorHistoryIndex];if(last&&JSON.stringify(last)===JSON.stringify(state))return;editorHistory=editorHistory.slice(0,editorHistoryIndex+1);editorHistory.push(state);if(editorHistory.length>60)editorHistory.shift();editorHistoryIndex=editorHistory.length-1}
-function restoreEditorHistory(i){if(i<0||i>=editorHistory.length)return;editorHistoryIndex=i;const s=editorHistory[i];Object.entries(s.values).forEach(([k,v])=>document.getElementById(k).value=v);editorRotation=s.rotation;document.getElementById('cropRatio').value=s.crop;document.getElementById('editorPreset').value=s.preset;editorLocalBalance=!!s.localBalance;drawEditor()}
+function restoreEditorHistory(i){if(i<0||i>=editorHistory.length)return;editorHistoryIndex=i;const s=editorHistory[i];Object.entries(s.values).forEach(([k,v])=>document.getElementById(k).value=v);editorRotation=s.rotation;document.getElementById('cropRatio').value=s.crop;document.getElementById('editorPreset').value=s.preset;editorLocalBalance=!!s.localBalance;editorNaturalCurve=!!s.naturalCurve;drawEditor()}
 function editorUndo(){clearTimeout(editorHistoryTimer);captureEditorHistory();restoreEditorHistory(editorHistoryIndex-1)}
 function editorRedo(){restoreEditorHistory(editorHistoryIndex+1)}
 function toggleEditorCompare(force){editorCompare=typeof force==='boolean'?force:!editorCompare;const bar=document.getElementById('editorCompareBar');if(bar)bar.hidden=!editorCompare;const r=document.getElementById('editorCompareRange');if(r)r.value=editorComparePosition;const status=document.getElementById('editorStageStatus');if(status)status.textContent=editorCompare?'Drag the divider to compare original and edited':'Original preserved · Non-destructive editing';drawEditor()}
@@ -3402,7 +3418,7 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
  // A coarse spatial map estimates room illumination; the per-pixel pass then
  // separates underexposed interior midtones from bright architectural surfaces.
  // This is deterministic local processing, not semantic window recognition.
- if(editorLocalBalance && !editorNaturalCurve){
+ if(editorLocalBalance){
   // V0.38 adaptive interior development:
   // 1) Build a multi-scale illumination field from the globally corrected preview.
   // 2) Use a robust upper-mid percentile as the room reference (less sensitive to
@@ -3502,28 +3518,7 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
   }
   ctx.putImageData(image,0,0);
 
-  // V0.45 Natural Rental Curve: smooth luminance-only shadow lift inspired by
-  // the approved hand-tuned reference edit. No spatial room masks, no blurred
-  // illumination field and no edge-dependent correction, so transitions stay clean.
-  if(editorNaturalCurve){
-   const naturalImage=ctx.getImageData(0,0,width,height),nd=naturalImage.data;
-   const sigmoid=(x)=>1/(1+Math.exp(-x));
-   for(let q=0;q<nd.length;q+=4){
-    const r=nd[q],g=nd[q+1],b=nd[q+2];
-    const L=(.2126*r+.7152*g+.0722*b)/255;
-    const shadow=sigmoid((.43-L)/.075);
-    let target=L+.105*shadow*(1-L);
-    const hi=Math.max(0,Math.min(1,(target-.78)/.22));
-    target-=.055*Math.pow(hi,1.7);
-    target=Math.max(0,Math.min(1,target));
-    const scale=L>0.0001?target/L:1;
-    const warm=Math.pow(1-L,1.8);
-    nd[q]=Math.max(0,Math.min(255,(r*scale+2.55*warm)));
-    nd[q+1]=Math.max(0,Math.min(255,g*scale));
-    nd[q+2]=Math.max(0,Math.min(255,(b*scale-1.53*warm)));
-   }
-   ctx.putImageData(naturalImage,0,0);
-  }
+
 
   // V0.38 adaptive local contrast: a low-resolution illumination base separates
   // room-scale brightness from fine architectural detail. Midtones receive a
@@ -3561,6 +3556,28 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
   }
   ctx.putImageData(detailImage,0,0);
  }
+   // V0.45 Natural Rental Curve: smooth luminance-only shadow lift inspired by
+   // the approved hand-tuned reference edit. No spatial room masks, no blurred
+   // illumination field and no edge-dependent correction, so transitions stay clean.
+   if(editorNaturalCurve){
+    const naturalImage=ctx.getImageData(0,0,width,height),nd=naturalImage.data;
+    const sigmoid=(x)=>1/(1+Math.exp(-x));
+    for(let q=0;q<nd.length;q+=4){
+     const r=nd[q],g=nd[q+1],b=nd[q+2];
+     const L=(.2126*r+.7152*g+.0722*b)/255;
+     const shadow=sigmoid((.43-L)/.075);
+     let target=L+.105*shadow*(1-L);
+     const hi=Math.max(0,Math.min(1,(target-.78)/.22));
+     target-=.055*Math.pow(hi,1.7);
+     target=Math.max(0,Math.min(1,target));
+     const scale=L>0.0001?target/L:1;
+     const warm=Math.pow(1-L,1.8);
+     nd[q]=Math.max(0,Math.min(255,(r*scale+2.55*warm)));
+     nd[q+1]=Math.max(0,Math.min(255,g*scale));
+     nd[q+2]=Math.max(0,Math.min(255,(b*scale-1.53*warm)));
+    }
+    ctx.putImageData(naturalImage,0,0);
+   }
  if(editorLocalBalance){
   hist.fill(0);
   for(let i=0;i<d.length;i+=4){const l=Math.max(0,Math.min(255,.2126*d[i]+.7152*d[i+1]+.0722*d[i+2]));hist[Math.min(63,Math.floor(l/4))]++}
@@ -3691,72 +3708,135 @@ function applyEditorPreset(name){
  Object.entries({...defaults,...p}).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=v});
  drawEditor();captureEditorHistory();
 }
-function autoEnhanceEditor(){
- if(!editorImage){showToast('Open a photo before running Auto Enhance.','error');return}
- const started=performance.now(),max=720,scale=Math.min(1,max/Math.max(editorImage.naturalWidth,editorImage.naturalHeight));
- const c=document.createElement('canvas');c.width=Math.max(1,Math.round(editorImage.naturalWidth*scale));c.height=Math.max(1,Math.round(editorImage.naturalHeight*scale));
- const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(editorImage,0,0,c.width,c.height);
- const w=c.width,hg=c.height,data=x.getImageData(0,0,w,hg).data,lum=[],sat=[];
- const cols=8,rows=6,zones=Array.from({length:cols*rows},()=>({n:0,sum:0,bright:0,dark:0}));
- let n=0,clipped=0,neutralR=0,neutralG=0,neutralB=0,neutralN=0;
- const step=Math.max(1,Math.floor(Math.sqrt(w*hg/36000)));
- for(let yy=0;yy<hg;yy+=step)for(let xx=0;xx<w;xx+=step){
-  const i=(yy*w+xx)*4,r=data[i],g=data[i+1],b=data[i+2],L=.2126*r+.7152*g+.0722*b;
-  lum.push(L);n++;if(L>248)clipped++;
-  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),ch=mx-mn;sat.push(ch/Math.max(1,mx));
-  if(L>112&&L<218&&ch<Math.max(8,mx*.065)&&mx-mn<22){neutralR+=r;neutralG+=g;neutralB+=b;neutralN++}
-  const zx=Math.min(cols-1,Math.floor(xx/w*cols)),zy=Math.min(rows-1,Math.floor(yy/hg*rows)),z=zones[zy*cols+zx];
-  z.n++;z.sum+=L;if(L>218)z.bright++;if(L<65)z.dark++;
+function jrvsAnalysePropertyImage(image){
+ const started=performance.now();
+ const sourceWidth=image?.naturalWidth||image?.width||0,sourceHeight=image?.naturalHeight||image?.height||0;
+ if(!sourceWidth||!sourceHeight)throw new Error('This photo has no readable image dimensions.');
+ const scale=Math.min(1,900/Math.max(sourceWidth,sourceHeight)),canvas=document.createElement('canvas');
+ canvas.width=Math.max(1,Math.round(sourceWidth*scale));canvas.height=Math.max(1,Math.round(sourceHeight*scale));
+ const ctx=canvas.getContext('2d',{willReadFrequently:true});if(!ctx)throw new Error('Could not create an image-analysis surface.');
+ ctx.drawImage(image,0,0,canvas.width,canvas.height);
+ const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data,width=canvas.width,height=canvas.height,step=Math.max(1,Math.ceil(Math.sqrt(width*height/52000)));
+ const luminance=[],zones=Array.from({length:24},()=>({n:0,sum:0}));
+ let samples=0,clipped=0,crushed=0,saturationSum=0,neutralR=0,neutralG=0,neutralB=0,neutralCount=0;
+ for(let y=0;y<height;y+=step)for(let x=0;x<width;x+=step){
+  const i=(y*width+x)*4,r=pixels[i],g=pixels[i+1],b=pixels[i+2],l=.2126*r+.7152*g+.0722*b;
+  luminance.push(l);samples++;if(l>=246||Math.max(r,g,b)>=252)clipped++;if(l<=5)crushed++;
+  const hi=Math.max(r,g,b),chroma=hi-Math.min(r,g,b);saturationSum+=chroma/Math.max(1,hi);
+  if(l>96&&l<232&&chroma<=Math.max(14,hi*.09)){neutralR+=r;neutralG+=g;neutralB+=b;neutralCount++}
+  const zx=Math.min(5,Math.floor(x/width*6)),zy=Math.min(3,Math.floor(y/height*4)),zone=zones[zy*6+zx];zone.n++;zone.sum+=l;
  }
- if(!n){showToast('Could not analyse this image.','error');return}
- lum.sort((a,b)=>a-b);
- const pct=p=>lum[Math.min(lum.length-1,Math.max(0,Math.round((lum.length-1)*p)))];
- const p05=pct(.05),p10=pct(.10),p25=pct(.25),p50=pct(.50),p90=pct(.90),p95=pct(.95),p99=pct(.99);
- const means=zones.filter(z=>z.n).map(z=>z.sum/z.n),range=Math.max(...means)-Math.min(...means);
- const darkZones=zones.filter(z=>z.n&&z.sum/z.n<78).length,brightZones=zones.filter(z=>z.n&&z.sum/z.n>205).length;
- const mixed=darkZones>0&&brightZones>0&&range>65;
- const avgSat=sat.reduce((a,b)=>a+b,0)/sat.length,clipRate=clipped/n;
- const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
- // Global correction is deliberately restrained. Spatial shadow lifting is handled
- // by the local luminance field in createEditorRenderCanvas().
- const target=154;
- // V0.40: the previous target (137) produced a consistently under-bright
- // single-JPEG result against the approved original-editor benchmark. Lift the
- // midtone target while retaining highlight headroom and a restrained curve.
- let exposure=clamp(Math.log2(target/Math.max(1,p50)),-.04,.24); // V0.46.2: developed RAW previews should not receive a strong second global darkening pass.
- if(p95>232)exposure=Math.min(exposure,.14);
- if(p99>248)exposure=Math.min(exposure,.08);
- if(clipRate>.08)exposure=Math.min(exposure,.06);
- let highlights=clamp((p95-218)*-.78,-52,0);
- if(p99>246)highlights=Math.min(highlights,-22);
- if(clipRate>.025)highlights=Math.min(highlights,-28);
- if(clipRate>.08)highlights=Math.min(highlights,-42);
- let shadows=clamp((108-p10)*.30,5,34);
- if(mixed)shadows=Math.min(shadows,30);
- const contrast=clamp((178-(p90-p10))*.045,-2,5);
- const whites=clamp((242-p95)*.10,-4,7);
- const blacks=clamp((p05-18)*-.055,-3,1);
- let temperature=0,tint=0,wb='not enough neutral pixels';
- if(neutralN>Math.max(120,n*.035)){
-  const r=neutralR/neutralN,g=neutralG/neutralN,b=neutralB/neutralN,avg=(r+g+b)/3;
-  // Slightly stronger, still tightly capped neutral balancing. A minimum
-  // sample count prevents a coloured room from driving a large white-balance shift.
-  const confidence=clamp((neutralN/Math.max(1,n*.10)),.25,1);
-  temperature=clamp(-((r-b)/Math.max(1,avg))*62*confidence,-7,7);
-  tint=clamp(-((g-(r+b)/2)/Math.max(1,avg))*46*confidence,-4,4);wb='sampled neutral estimate';
+ if(!samples)throw new Error('The photo could not be sampled.');
+ luminance.sort((a,b)=>a-b);
+ const pct=p=>luminance[Math.min(luminance.length-1,Math.max(0,Math.round((luminance.length-1)*p)))];
+ const p05=pct(.05),p10=pct(.10),p25=pct(.25),p50=pct(.50),p68=pct(.68),p90=pct(.90),p95=pct(.95),p99=pct(.99);
+ const means=zones.filter(z=>z.n).map(z=>z.sum/z.n),spatialRange=means.length?Math.max(...means)-Math.min(...means):0;
+ const darkZones=zones.filter(z=>z.n&&z.sum/z.n<82).length,brightZones=zones.filter(z=>z.n&&z.sum/z.n>205).length;
+ const clipRate=clipped/samples,shadowRate=crushed/samples,averageSaturation=saturationSum/samples;
+ const mixedLighting=(darkZones>=2&&brightZones>=1&&spatialRange>54)||(p95>232&&p10<88&&spatialRange>42);
+ const neutralConfidence=Math.min(1,neutralCount/Math.max(180,samples*.045));
+ let temperature=0,tint=0,whiteBalance='No reliable neutral surface found';
+ if(neutralCount>Math.max(90,samples*.012)){
+  const r=neutralR/neutralCount,g=neutralG/neutralCount,b=neutralB/neutralCount,average=(r+g+b)/3;
+  temperature=Math.max(-11,Math.min(11,-((r-b)/Math.max(1,average))*52*neutralConfidence));
+  tint=Math.max(-7,Math.min(7,-((g-(r+b)/2)/Math.max(1,average))*36*neutralConfidence));
+  whiteBalance=neutralConfidence>.7?'Neutral colour sample · high confidence':'Neutral colour sample · cautious correction';
  }
- const vibrance=clamp((.19-avgSat)*22,-2,5);
- const values={exposure,brightness:0,contrast,highlights,shadows,whites,blacks,temperature,tint,saturation:0,warmth:0,vibrance,clarity:1.5,sharpening:5,vignette:0};
- Object.entries(values).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=String(Math.round(v*100)/100)});
- const preset=document.getElementById('editorPreset');if(preset)preset.value='none';
- editorLocalBalance=false;
- editorNaturalCurve=true;
- drawEditor();captureEditorHistory();
- const scene=mixed?'High dynamic range / mixed lighting':p50<90?'Low-light interior':p50>155?'Bright interior':'Balanced interior';
- const status=document.getElementById('editorStatus');
- if(status)status.textContent=`Rental analysis: ${scene} · ${darkZones} dark zones · ${brightZones} bright zones · adaptive local tone + highlight shoulder enabled · WB: ${wb} · ${Math.round(clipRate*100)}% clipped highlights · ${Math.round(performance.now()-started)} ms`;
- showToast('Rental Auto Enhance V0.45 applied: natural shadow curve with gentle highlight roll-off.','success');
+ const scene=p50<102?'Low-light':p95>232&&p10<90?'Backlit / high-contrast':p50>172?'Bright daylight':'Balanced light';
+ return {sourceWidth,sourceHeight,samples,p05,p10,p25,p50,p68,p90,p95,p99,spatialRange,darkZones,brightZones,mixedLighting,clipRate,shadowRate,averageSaturation,temperature,tint,neutralConfidence,whiteBalance,scene,analysisMs:Math.round(performance.now()-started)};
 }
+function jrvsPropertyFinishSettings(a,intent='natural',referenceMedian=null){
+ const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+ const target=clamp(Number.isFinite(referenceMedian)?referenceMedian:(intent==='bright'?151:intent==='window'?141:146),130,160);
+ let exposure=clamp(Math.log2(target/Math.max(1,a.p50)),-.5,.48);
+ if(a.p95>238)exposure=Math.min(exposure,.16);if(a.p99>250)exposure=Math.min(exposure,.08);if(a.clipRate>.06)exposure=Math.min(exposure,.04);
+ let highlights=clamp((a.p95-210)*-.55,-54,0);
+ if(a.p99>248)highlights=Math.min(highlights,-34);if(a.clipRate>.03)highlights=Math.min(highlights,-28);if(a.clipRate>.08)highlights=Math.min(highlights,-44);
+ let shadows=clamp((112-a.p10)*.23,0,27);if(a.mixedLighting)shadows=Math.min(shadows,24);
+ let contrast=clamp((112-(a.p90-a.p10))*.075,-6,5);
+ const whites=clamp((237-a.p95)*.11,-4,6),blacks=clamp((a.p05-20)*-.05,-3,1);
+ const vibrance=clamp((.205-a.averageSaturation)*19,-2,5),clarity=clamp((a.spatialRange-24)*.035,0,3.5);
+ const sharpening=a.shadowRate>.12?4:7;
+ if(intent==='bright'){exposure=clamp(exposure+.09,-.5,.5);shadows=clamp(shadows+3,0,30);contrast=clamp(contrast-1,-7,5)}
+ if(intent==='window'){if(a.p95>215)highlights=clamp(highlights-9,-60,0);exposure=Math.min(exposure,.13);shadows=clamp(shadows+4,0,29);contrast=clamp(contrast-1,-7,5)}
+ return {values:{exposure,brightness:0,contrast,highlights,shadows,whites,blacks,temperature:a.temperature,tint:a.tint,saturation:0,warmth:0,vibrance,clarity,sharpening,vignette:0},localBalance:!!a.mixedLighting,naturalCurve:true,targetMedian:target};
+}
+function jrvsRenderFinishReport(a){
+ const report=document.getElementById('jrvsFinishReport');if(!report)return;
+ if(!a){report.textContent='Ready to analyse this photo. The original will remain untouched.';return}
+ const intent=a.intent==='bright'?'Bright listing':a.intent==='window'?'Window-safe':'Natural listing';
+ const clip=a.clipRate>.08?'Significant highlight clipping already present':a.clipRate>.025?'Some bright detail is close to clipping':'Highlight headroom looks healthy';
+ const wb=a.neutralConfidence>.3?a.whiteBalance:'Colour correction kept conservative · no dependable neutral sample';
+ const recovery=a.mixedLighting?'Uneven lighting detected · local shadow recovery enabled':'Lighting is relatively even · natural tonal curve enabled';
+ report.textContent=intent+' · '+a.scene+' · '+clip+' · '+wb+' · '+recovery+' · '+a.analysisMs+' ms';
+}
+function jrvsApplyPropertyFinish(a,intent='natural',referenceMedian=null){
+ const result=jrvsPropertyFinishSettings(a,intent,referenceMedian);
+ Object.entries(result.values).forEach(([key,value])=>{
+  const input=document.getElementById(key);if(input)input.value=String(Math.round(value*100)/100);
+  const label=document.getElementById(key+'Val');if(label)label.textContent=value>0?'+'+String(Math.round(value*100)/100):String(Math.round(value*100)/100);
+  const number=input?.closest('.editor-control')?.querySelector('.editor-number');if(number)number.value=String(Math.round(value*100)/100);
+ });
+ const preset=document.getElementById('editorPreset');if(preset)preset.value='none';
+ editorLocalBalance=result.localBalance;editorNaturalCurve=result.naturalCurve;
+ editorLastAnalysis={...a,intent,targetMedian:result.targetMedian};jrvsRenderFinishReport(editorLastAnalysis);
+ return result;
+}
+function autoEnhanceEditor(){
+ if(!editorImage){showToast('Open a photo before running Property Finish.','error');return}
+ const started=performance.now();
+ try{
+  const intent=document.getElementById('jrvsFinishIntent')?.value||'natural',analysis=jrvsAnalysePropertyImage(editorImage);
+  jrvsApplyPropertyFinish(analysis,intent);drawEditor();captureEditorHistory();
+  const status=document.getElementById('editorStatus');
+  if(status)status.textContent='JRVS Property Finish · '+analysis.scene+' · Median light '+Math.round(analysis.p50)+'/255 · '+analysis.darkZones+' dark zones · '+analysis.brightZones+' bright zones · '+analysis.whiteBalance+' · '+Math.round(performance.now()-started)+' ms. Already-clipped detail cannot be recreated.';
+  showToast('Property Finish analysed this image and applied a reviewable edit. Original preserved.','success');
+ }catch(error){console.error('JRVS Property Finish failed',error);showToast('Could not analyse this photo: '+(error?.message||error),'error')}
+}
+async function smartFinishWholeProperty(){
+ if(!editorPhoto||!editorImage||editorBusy)return;
+ const source=editorSourcePhoto||editorPhoto;
+ const targets=photoRecords.filter(p=>String(p.jobId)===String(source.jobId)&&String(p.id)!==String(source.id)&&p.type==='Original'&&p.blob instanceof Blob);
+ if(!targets.length){showToast('No other original photos are available in this property.','info');return}
+ const accepted=await showConfirm('Analyse '+targets.length+' other original photos individually and create new edited copies? JRVS will use this photo as the brightness reference while protecting each image\\'s own highlights and colour. Originals and existing edits stay untouched.',{title:'Smart Finish · whole property',confirmText:'Finish property photos',danger:false});
+ if(!accepted)return;
+ editorBusy=true;const buttons=[...document.querySelectorAll('#editorBackdrop button')];buttons.forEach(b=>b.disabled=true);
+ const saved={photo:editorPhoto,sourcePhoto:editorSourcePhoto,image:editorImage,rotation:editorRotation,retouchStrokes:editorRetouchStrokes,retouchSource:editorRetouchSource,localBalance:editorLocalBalance,naturalCurve:editorNaturalCurve,lastAnalysis:editorLastAnalysis,settings:editorSettings(),crop:document.getElementById('cropRatio')?.value||'original',preset:document.getElementById('editorPreset')?.value||'none'};
+ let done=0,failed=0;
+ try{
+  const anchor=createEditorRenderCanvas(720);if(!anchor)throw new Error('The reference photo could not be rendered.');
+  const refAnalysis=jrvsAnalysePropertyImage(anchor.canvas),referenceMedian=Math.max(130,Math.min(160,refAnalysis.p50));
+  const intent=document.getElementById('jrvsFinishIntent')?.value||'natural',profile=document.getElementById('editorExportProfile')?.value||'agency';
+  const mime=profile==='png'?'image/png':'image/jpeg',quality=profile==='web'?.86:profile==='max'?.99:.94;
+  for(let i=0;i<targets.length;i++){
+   const target=targets[i];let url=null;
+   try{
+    const status=document.getElementById('editorStatus');if(status)status.textContent='Smart Finishing '+(i+1)+' of '+targets.length+' · '+target.name;
+    const sourceBlob=target.isRaw?(target.previewBlob instanceof Blob?target.previewBlob:await extractEmbeddedRawJpeg(target.blob,{halfSize:false,quality:.98})):target.blob;
+    url=URL.createObjectURL(sourceBlob);
+    const image=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error('Image could not be decoded'));img.src=url});
+    editorPhoto=target;editorSourcePhoto=target;editorImage=image;editorRotation=0;editorRetouchStrokes=[];editorRetouchSource=null;editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;
+    const crop=document.getElementById('cropRatio');if(crop)crop.value='original';
+    const analysis=jrvsAnalysePropertyImage(image);jrvsApplyPropertyFinish(analysis,intent,referenceMedian);drawEditor();
+    const blob=await createFullQualityEditorBlob(mime,quality);if(!blob)throw new Error('Full-resolution export failed.');
+    const recipe=captureEditorRecipe();
+    const record={id:jrvsNewId('photo'),jobId:target.jobId,jobName:target.jobName,name:target.name.replace(/\.[^.]+$/,'')+'_property-finish.'+(mime==='image/png'?'png':'jpg'),type:'Edited',size:blob.size,mime:blob.type,addedAt:new Date().toISOString(),status:'Edited',isCover:false,sourcePhotoId:target.id,editRecipe:recipe,editRecipeVersion:1,blob};
+    await photoRequest('readwrite','put',record);done++;
+   }catch(error){failed++;console.error('Smart Finish failed for '+target.name,error)}
+   finally{if(url)URL.revokeObjectURL(url)}
+  }
+  showToast('Property Finish created '+done+' edited copies'+(failed?' · '+failed+' photo(s) skipped':'')+'. Originals remain unchanged.',failed?'info':'success');
+ }catch(error){console.error('JRVS Smart Finish failed',error);showToast('Smart Finish stopped: '+(error?.message||error),'error')}
+ finally{
+  editorPhoto=saved.photo;editorSourcePhoto=saved.sourcePhoto;editorImage=saved.image;editorRotation=saved.rotation;editorRetouchStrokes=saved.retouchStrokes;editorRetouchSource=saved.retouchSource;editorLocalBalance=saved.localBalance;editorNaturalCurve=saved.naturalCurve;editorLastAnalysis=saved.lastAnalysis;
+  Object.entries(saved.settings).forEach(([key,value])=>{const input=document.getElementById(key);if(input)input.value=value;const label=document.getElementById(key+'Val');if(label)label.textContent=Number(value)>0?'+'+value:value;const number=input?.closest('.editor-control')?.querySelector('.editor-number');if(number)number.value=value});
+  const crop=document.getElementById('cropRatio');if(crop)crop.value=saved.crop;
+  const preset=document.getElementById('editorPreset');if(preset)preset.value=saved.preset;
+  jrvsRenderFinishReport(editorLastAnalysis);drawEditor();captureEditorHistory();
+  buttons.forEach(b=>b.disabled=false);editorBusy=false;await loadPhotos();
+ }
+}
+
 function editorSettings(){return Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value]))}
 async function batchApplyEditor(){
  if(!editorPhoto||!editorImage||editorBusy)return;
