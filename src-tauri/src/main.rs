@@ -429,6 +429,53 @@ fn desktop_delete_photo(app: AppHandle, photo_id: String) -> Result<(), String> 
 }
 
 #[tauri::command]
+fn desktop_update_photo_metadata(
+    app: AppHandle,
+    photo_id: String,
+    original_name: String,
+    mime_type: Option<String>,
+    metadata_json: String,
+) -> Result<(), String> {
+    if photo_id.trim().is_empty() {
+        return Err("A photo ID is required.".to_string());
+    }
+    let metadata: serde_json::Value = serde_json::from_str(&metadata_json)
+        .map_err(|e| format!("Photo metadata was invalid: {e}"))?;
+    let connection = open_database(&app)?;
+    let changed = connection
+        .execute(
+            "UPDATE managed_photos
+             SET original_name=?1, mime_type=?2, metadata_json=?3,
+                 updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+             WHERE photo_id=?4",
+            params![original_name, mime_type, metadata.to_string(), photo_id],
+        )
+        .map_err(|e| format!("Could not update managed photo metadata: {e}"))?;
+    if changed == 0 {
+        return Err("The managed photo copy is missing and must be copied again.".to_string());
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn desktop_clear_managed_photos(app: AppHandle) -> Result<(), String> {
+    let ids = {
+        let connection = open_database(&app)?;
+        let mut statement = connection
+            .prepare("SELECT photo_id FROM managed_photos ORDER BY photo_id")
+            .map_err(|e| e.to_string())?;
+        let rows = statement
+            .query_map([], |row| row.get::<_, String>(0))
+            .map_err(|e| e.to_string())?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?
+    };
+    for photo_id in ids {
+        desktop_delete_photo(app.clone(), photo_id)?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 async fn desktop_check_update(app: tauri::AppHandle) -> Result<Option<DesktopUpdateInfo>, String> {
     let update = app
         .updater()
@@ -520,6 +567,122 @@ fn storage_initialization_script(seed: &HashMap<String, String>) -> Result<Strin
   }};
   window.addEventListener('pagehide', () => {{ try {{ flush(); }} catch (_) {{}} }});
   document.addEventListener('visibilitychange', () => {{ if (document.visibilityState === 'hidden') {{ try {{ flush(); }} catch (_) {{}} }} }});
+
+  // Mirror committed photo-library writes into the native, app-managed library.
+  // The IndexedDB cache remains the editor's working store for compatibility.
+  let managedPhotoQueue = Promise.resolve();
+  let managedPhotoError = null;
+  const photoTransactionOps = new WeakMap();
+  const nativeCall = () => window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke;
+  const enqueueManagedPhoto = (operation) => {
+    managedPhotoQueue = managedPhotoQueue.then(operation).catch(error => {
+      managedPhotoError = String(error && error.message || error);
+      window.__JRVS_MANAGED_PHOTO_ERROR__ = managedPhotoError;
+      console.error('JRVS managed photo copy failed', error);
+    });
+  };
+  const queuePhotoTransaction = (transaction, operation) => {
+    let operations = photoTransactionOps.get(transaction);
+    if (!operations) {
+      operations = [];
+      photoTransactionOps.set(transaction, operations);
+      transaction.addEventListener('complete', () => operations.forEach(enqueueManagedPhoto), { once: true });
+    }
+    operations.push(operation);
+  };
+  const photoBlobBase64 = blob => new Promise((resolve, reject) => {
+    if (!(blob instanceof Blob)) { resolve(null); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = String(reader.result || '');
+      resolve(value.includes(',') ? value.slice(value.indexOf(',') + 1) : '');
+    };
+    reader.onerror = () => reject(reader.error || new Error('Could not read a photo file for managed storage.'));
+    reader.readAsDataURL(blob);
+  });
+  const cleanPhotoMetadata = photo => {
+    const metadata = { ...photo };
+    delete metadata.blob;
+    delete metadata.previewBlob;
+    for (const key of ['url', 'previewUrl', 'objectUrl', 'previewObjectUrl']) delete metadata[key];
+    return metadata;
+  };
+  const mirrorManagedPhoto = async photo => {
+    const call = nativeCall();
+    if (!call) throw new Error('JRVS native photo storage is unavailable.');
+    if (!photo || photo.id == null || !(photo.blob instanceof Blob) || photo.blob.size <= 0) {
+      throw new Error('A photo record is missing its original image data.');
+    }
+    const photoId = String(photo.id);
+    const originalName = String(photo.name || photo.originalName || photo.filename || ('photo-' + photoId));
+    const mimeType = photo.blob.type || photo.mimeType || null;
+    const metadataJson = JSON.stringify(cleanPhotoMetadata(photo));
+    const exists = await call('desktop_photo_exists', { photoId });
+    if (exists) {
+      await call('desktop_update_photo_metadata', { photoId, originalName, mimeType, metadataJson });
+      return;
+    }
+    const originalBase64 = await photoBlobBase64(photo.blob);
+    const previewBase64 = photo.previewBlob instanceof Blob ? await photoBlobBase64(photo.previewBlob) : null;
+    await call('desktop_store_photo', {
+      photoId, originalName, mimeType, metadataJson, originalBase64, previewBase64
+    });
+  };
+  window.__JRVS_MANAGED_PHOTO_FLUSH__ = async () => {
+    await managedPhotoQueue;
+    if (managedPhotoError) throw new Error(managedPhotoError);
+  };
+  if (window.IDBObjectStore && !window.IDBObjectStore.prototype.__jrvsManagedPhotoPatch) {
+    const storePrototype = window.IDBObjectStore.prototype;
+    const originalPut = storePrototype.put;
+    const originalAdd = storePrototype.add;
+    const originalDelete = storePrototype.delete;
+    const originalClear = storePrototype.clear;
+    const isPhotoStore = store => {
+      try { return store.name === 'photos' && store.transaction.db.name === 'jrvs-photo-library'; }
+      catch (_) { return false; }
+    };
+    const snapshot = value => {
+      try { return typeof structuredClone === 'function' ? structuredClone(value) : { ...value }; }
+      catch (_) { return { ...value }; }
+    };
+    storePrototype.put = function(value, ...args) {
+      const tracked = isPhotoStore(this);
+      const copy = tracked ? snapshot(value) : null;
+      const request = originalPut.call(this, value, ...args);
+      if (tracked && copy && copy.id != null) queuePhotoTransaction(this.transaction, () => mirrorManagedPhoto(copy));
+      return request;
+    };
+    storePrototype.add = function(value, ...args) {
+      const tracked = isPhotoStore(this);
+      const copy = tracked ? snapshot(value) : null;
+      const request = originalAdd.call(this, value, ...args);
+      if (tracked && copy && copy.id != null) queuePhotoTransaction(this.transaction, () => mirrorManagedPhoto(copy));
+      return request;
+    };
+    storePrototype.delete = function(key, ...args) {
+      const tracked = isPhotoStore(this);
+      const request = originalDelete.call(this, key, ...args);
+      if (tracked && (typeof key === 'string' || typeof key === 'number')) {
+        const photoId = String(key);
+        queuePhotoTransaction(this.transaction, async () => {
+          const call = nativeCall();
+          if (call) await call('desktop_delete_photo', { photoId });
+        });
+      }
+      return request;
+    };
+    storePrototype.clear = function(...args) {
+      const tracked = isPhotoStore(this);
+      const request = originalClear.apply(this, args);
+      if (tracked) queuePhotoTransaction(this.transaction, async () => {
+        const call = nativeCall();
+        if (call) await call('desktop_clear_managed_photos');
+      });
+      return request;
+    };
+    Object.defineProperty(storePrototype, '__jrvsManagedPhotoPatch', { value: true });
+  }
   window.__JRVS_NATIVE_STORAGE_READY__ = true;
 }})();"#
     ))
@@ -538,7 +701,9 @@ fn main() {
             desktop_import_legacy_workspace,
             desktop_store_photo,
             desktop_photo_exists,
+            desktop_update_photo_metadata,
             desktop_delete_photo,
+            desktop_clear_managed_photos,
             desktop_check_update,
             desktop_install_update
         ])
