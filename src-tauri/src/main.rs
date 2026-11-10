@@ -574,115 +574,115 @@ fn storage_initialization_script(seed: &HashMap<String, String>) -> Result<Strin
   let managedPhotoError = null;
   const photoTransactionOps = new WeakMap();
   const nativeCall = () => window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke;
-  const enqueueManagedPhoto = (operation) => {
-    managedPhotoQueue = managedPhotoQueue.then(operation).catch(error => {
+  const enqueueManagedPhoto = (operation) => {{
+    managedPhotoQueue = managedPhotoQueue.then(operation).catch(error => {{
       managedPhotoError = String(error && error.message || error);
       window.__JRVS_MANAGED_PHOTO_ERROR__ = managedPhotoError;
       console.error('JRVS managed photo copy failed', error);
-    });
-  };
-  const queuePhotoTransaction = (transaction, operation) => {
+    }});
+  }};
+  const queuePhotoTransaction = (transaction, operation) => {{
     let operations = photoTransactionOps.get(transaction);
-    if (!operations) {
+    if (!operations) {{
       operations = [];
       photoTransactionOps.set(transaction, operations);
-      transaction.addEventListener('complete', () => operations.forEach(enqueueManagedPhoto), { once: true });
-    }
+      transaction.addEventListener('complete', () => operations.forEach(enqueueManagedPhoto), {{ once: true }});
+    }}
     operations.push(operation);
-  };
-  const photoBlobBase64 = blob => new Promise((resolve, reject) => {
-    if (!(blob instanceof Blob)) { resolve(null); return; }
+  }};
+  const photoBlobBase64 = blob => new Promise((resolve, reject) => {{
+    if (!(blob instanceof Blob)) {{ resolve(null); return; }}
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = () => {{
       const value = String(reader.result || '');
       resolve(value.includes(',') ? value.slice(value.indexOf(',') + 1) : '');
-    };
+    }};
     reader.onerror = () => reject(reader.error || new Error('Could not read a photo file for managed storage.'));
     reader.readAsDataURL(blob);
-  });
-  const cleanPhotoMetadata = photo => {
-    const metadata = { ...photo };
+  }});
+  const cleanPhotoMetadata = photo => {{
+    const metadata = {{ ...photo }};
     delete metadata.blob;
     delete metadata.previewBlob;
     for (const key of ['url', 'previewUrl', 'objectUrl', 'previewObjectUrl']) delete metadata[key];
     return metadata;
-  };
-  const mirrorManagedPhoto = async photo => {
+  }};
+  const mirrorManagedPhoto = async photo => {{
     const call = nativeCall();
     if (!call) throw new Error('JRVS native photo storage is unavailable.');
-    if (!photo || photo.id == null || !(photo.blob instanceof Blob) || photo.blob.size <= 0) {
+    if (!photo || photo.id == null || !(photo.blob instanceof Blob) || photo.blob.size <= 0) {{
       throw new Error('A photo record is missing its original image data.');
-    }
+    }}
     const photoId = String(photo.id);
     const originalName = String(photo.name || photo.originalName || photo.filename || ('photo-' + photoId));
     const mimeType = photo.blob.type || photo.mimeType || null;
     const metadataJson = JSON.stringify(cleanPhotoMetadata(photo));
-    const exists = await call('desktop_photo_exists', { photoId });
-    if (exists) {
-      await call('desktop_update_photo_metadata', { photoId, originalName, mimeType, metadataJson });
+    const exists = await call('desktop_photo_exists', {{ photoId }});
+    if (exists) {{
+      await call('desktop_update_photo_metadata', {{ photoId, originalName, mimeType, metadataJson }});
       return;
-    }
+    }}
     const originalBase64 = await photoBlobBase64(photo.blob);
     const previewBase64 = photo.previewBlob instanceof Blob ? await photoBlobBase64(photo.previewBlob) : null;
-    await call('desktop_store_photo', {
+    await call('desktop_store_photo', {{
       photoId, originalName, mimeType, metadataJson, originalBase64, previewBase64
-    });
-  };
-  window.__JRVS_MANAGED_PHOTO_FLUSH__ = async () => {
+    }});
+  }};
+  window.__JRVS_MANAGED_PHOTO_FLUSH__ = async () => {{
     await managedPhotoQueue;
     if (managedPhotoError) throw new Error(managedPhotoError);
-  };
-  if (window.IDBObjectStore && !window.IDBObjectStore.prototype.__jrvsManagedPhotoPatch) {
+  }};
+  if (window.IDBObjectStore && !window.IDBObjectStore.prototype.__jrvsManagedPhotoPatch) {{
     const storePrototype = window.IDBObjectStore.prototype;
     const originalPut = storePrototype.put;
     const originalAdd = storePrototype.add;
     const originalDelete = storePrototype.delete;
     const originalClear = storePrototype.clear;
-    const isPhotoStore = store => {
-      try { return store.name === 'photos' && store.transaction.db.name === 'jrvs-photo-library'; }
-      catch (_) { return false; }
-    };
-    const snapshot = value => {
-      try { return typeof structuredClone === 'function' ? structuredClone(value) : { ...value }; }
-      catch (_) { return { ...value }; }
-    };
-    storePrototype.put = function(value, ...args) {
+    const isPhotoStore = store => {{
+      try {{ return store.name === 'photos' && store.transaction.db.name === 'jrvs-photo-library'; }}
+      catch (_) {{ return false; }}
+    }};
+    const snapshot = value => {{
+      try {{ return typeof structuredClone === 'function' ? structuredClone(value) : {{ ...value }}; }}
+      catch (_) {{ return {{ ...value }}; }}
+    }};
+    storePrototype.put = function(value, ...args) {{
       const tracked = isPhotoStore(this);
       const copy = tracked ? snapshot(value) : null;
       const request = originalPut.call(this, value, ...args);
       if (tracked && copy && copy.id != null) queuePhotoTransaction(this.transaction, () => mirrorManagedPhoto(copy));
       return request;
-    };
-    storePrototype.add = function(value, ...args) {
+    }};
+    storePrototype.add = function(value, ...args) {{
       const tracked = isPhotoStore(this);
       const copy = tracked ? snapshot(value) : null;
       const request = originalAdd.call(this, value, ...args);
       if (tracked && copy && copy.id != null) queuePhotoTransaction(this.transaction, () => mirrorManagedPhoto(copy));
       return request;
-    };
-    storePrototype.delete = function(key, ...args) {
+    }};
+    storePrototype.delete = function(key, ...args) {{
       const tracked = isPhotoStore(this);
       const request = originalDelete.call(this, key, ...args);
-      if (tracked && (typeof key === 'string' || typeof key === 'number')) {
+      if (tracked && (typeof key === 'string' || typeof key === 'number')) {{
         const photoId = String(key);
-        queuePhotoTransaction(this.transaction, async () => {
+        queuePhotoTransaction(this.transaction, async () => {{
           const call = nativeCall();
-          if (call) await call('desktop_delete_photo', { photoId });
-        });
-      }
+          if (call) await call('desktop_delete_photo', {{ photoId }});
+        }});
+      }}
       return request;
-    };
-    storePrototype.clear = function(...args) {
+    }};
+    storePrototype.clear = function(...args) {{
       const tracked = isPhotoStore(this);
       const request = originalClear.apply(this, args);
-      if (tracked) queuePhotoTransaction(this.transaction, async () => {
+      if (tracked) queuePhotoTransaction(this.transaction, async () => {{
         const call = nativeCall();
         if (call) await call('desktop_clear_managed_photos');
-      });
+      }});
       return request;
-    };
-    Object.defineProperty(storePrototype, '__jrvsManagedPhotoPatch', { value: true });
-  }
+    }};
+    Object.defineProperty(storePrototype, '__jrvsManagedPhotoPatch', {{ value: true }});
+  }}
   window.__JRVS_NATIVE_STORAGE_READY__ = true;
 }})();"#
     ))
