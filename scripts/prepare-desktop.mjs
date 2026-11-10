@@ -336,6 +336,51 @@ html.jrvs-desktop .recent-job-main small{display:block!important;color:#bdc4b5!i
 html.jrvs-desktop .recent-job-meta{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:6px!important;margin-top:7px!important;color:#c5d78e!important;font-size:8px!important}
 html.jrvs-desktop .recent-job-meta .pill{padding:3px 6px!important;background:#35432b!important;color:#d8e9a8!important}
 html.jrvs-desktop .desktop-empty{padding:23px 12px!important;border:1px dashed #3c4638!important;border-radius:10px!important;background:#1a201a!important;color:#a8b19f!important;font-size:11px!important}
+
+html.jrvs-desktop .desktop-notification-button{position:relative!important;width:40px!important;height:40px!important;flex:0 0 40px!important;display:grid!important;place-items:center!important;border:1px solid #384136!important;border-radius:11px!important;background:#1f251f!important;color:#e5ebd8!important}
+html.jrvs-desktop .desktop-notification-button:hover{background:#2a3327!important;border-color:#728650!important}
+html.jrvs-desktop .desktop-notification-button i{position:absolute!important;top:6px!important;right:6px!important;width:8px!important;height:8px!important;border:1px solid #1e251b!important;border-radius:50%!important;background:#b8d75b!important}
+html.jrvs-desktop .desktop-user-avatar{width:40px!important;height:40px!important;flex:0 0 40px!important;display:grid!important;place-items:center!important;border:1px solid #71804f!important;border-radius:50%!important;background:linear-gradient(145deg,#879b58,#53643a)!important;color:#f7f5e9!important;font-size:12px!important;font-weight:850!important;letter-spacing:.3px!important;box-shadow:0 3px 11px #0004!important}
+html.jrvs-desktop body.jrvs-dashboard-active .version.desktop-version-action{display:none!important}
+@media(max-width:1450px){
+ html.jrvs-desktop .shell{grid-template-columns:226px minmax(0,1fr)!important}
+ html.jrvs-desktop .shell>main{padding:20px 18px 24px!important}
+ html.jrvs-desktop #page-dashboard .desktop-dashboard-layout{grid-template-columns:minmax(0,1.9fr) minmax(225px,.95fr) minmax(245px,.9fr)!important;gap:11px!important}
+ html.jrvs-desktop .desktop-card{padding:13px!important}
+ html.jrvs-desktop .desktop-job-row,html.jrvs-desktop .desktop-jobs-head{grid-template-columns:66px 54px minmax(0,1.5fr) minmax(68px,.7fr) 78px!important;gap:6px!important}
+}
+@media(max-width:1180px){
+ html.jrvs-desktop #page-dashboard .desktop-dashboard-layout{grid-template-columns:minmax(0,1.4fr) minmax(230px,.9fr)!important;grid-template-areas:"upcoming quick" "recent recent" "calendar attention" "activity activity"!important}
+ html.jrvs-desktop #page-dashboard .desktop-right-column>section:nth-child(2){grid-area:calendar!important}
+ html.jrvs-desktop #page-dashboard .desktop-right-column>section:nth-child(3){grid-area:attention!important}
+ html.jrvs-desktop #page-dashboard .desktop-right-column>section:nth-child(4){grid-area:activity!important}
+ html.jrvs-desktop .recent-job-list{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+@media(max-width:900px){
+ html.jrvs-desktop .shell{grid-template-columns:1fr!important;grid-template-rows:auto minmax(0,1fr)!important}
+ html.jrvs-desktop .shell>aside{grid-column:1!important;grid-row:1!important;height:auto!important;min-height:0!important;padding:9px 12px!important;gap:8px!important}
+ html.jrvs-desktop .brand{display:none!important}
+ html.jrvs-desktop .shell>aside>div:first-of-type{width:100%!important}
+ html.jrvs-desktop .shell>aside nav{display:flex!important;overflow-x:auto!important;gap:5px!important}
+ html.jrvs-desktop .shell>aside .nav-btn{white-space:nowrap!important;min-height:39px!important;padding:0 10px!important;font-size:11px!important}
+ html.jrvs-desktop .desktop-storage-card{display:none!important}
+ html.jrvs-desktop .shell>main{grid-column:1!important;grid-row:2!important;padding:16px!important}
+}
+@media(max-width:760px){
+ html.jrvs-desktop .desktop-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ html.jrvs-desktop #page-dashboard .desktop-dashboard-layout{grid-template-columns:1fr!important;grid-template-areas:"upcoming" "quick" "calendar" "recent" "attention" "activity"!important}
+ html.jrvs-desktop .recent-job-list{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ html.jrvs-desktop .top-tools .global-search{min-width:0!important;width:min(54vw,330px)!important}
+ html.jrvs-desktop .top-tools .header-actions{display:none!important}
+ html.jrvs-desktop body.jrvs-dashboard-active .top-tools{right:16px!important;top:10px!important}
+ html.jrvs-desktop .desktop-dashboard-heading h2{font-size:22px!important}
+ html.jrvs-desktop .desktop-jobs-head{display:none!important}
+ html.jrvs-desktop .desktop-job-row{grid-template-columns:minmax(0,1fr) auto!important}
+ html.jrvs-desktop .desktop-job-time,html.jrvs-desktop .desktop-job-agent{display:none!important}
+ html.jrvs-desktop .desktop-job-property{grid-column:1!important}
+ html.jrvs-desktop .desktop-status-pill{grid-column:2!important;grid-row:1!important}
+}
+
 html.jrvs-desktop .desktop-version-action{white-space:nowrap!important}
 html.jrvs-desktop .panel,
 html.jrvs-desktop .stat,
