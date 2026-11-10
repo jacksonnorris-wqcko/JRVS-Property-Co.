@@ -1,0 +1,78 @@
+name: JRVS Desktop Release
+
+on:
+  push:
+    tags:
+      - "desktop-v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: jrvs-desktop-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-windows:
+    name: Build and publish signed Windows update
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: D:/a/jrvs
+    steps:
+      - name: Clone tagged source into Windows-safe directory
+        shell: pwsh
+        working-directory: D:/a
+        run: |
+          git clone --filter=blob:none --no-checkout "${{ github.server_url }}/${{ github.repository }}.git" "D:/a/jrvs"
+          git -C "D:/a/jrvs" fetch --depth 1 origin "${{ github.ref }}"
+          git -C "D:/a/jrvs" checkout --detach FETCH_HEAD
+          if ($LASTEXITCODE -ne 0) { throw "Repository checkout failed." }
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Prepare desktop frontend and icons
+        run: |
+          npm run desktop:prepare
+          npm run desktop:icons
+
+      - name: Verify updater signing secret
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
+            throw "Missing GitHub Actions secret TAURI_SIGNING_PRIVATE_KEY. Complete the one-time updater key setup in DESKTOP_SETUP.md."
+          }
+
+      - name: Build, sign and publish GitHub Release
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: D:/a/jrvs
+          tagName: ${{ github.ref_name }}
+          releaseName: JRVS Property Co. Desktop ${{ github.ref_name }}
+          releaseBody: |
+            JRVS Property Co. Desktop for Windows.
+
+            Install this release once. Future signed updates can be checked and installed from inside JRVS Desktop.
+          releaseDraft: false
+          prerelease: false
+          args: --config src-tauri/tauri.release.conf.json
+          updaterJsonPreferNsis: true
+          uploadUpdaterJson: true
