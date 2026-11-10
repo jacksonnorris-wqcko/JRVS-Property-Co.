@@ -1,0 +1,34 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "JRVS Property Co.",
+  "version": "0.48.0",
+  "identifier": "com.jrvspropertyco.desktop",
+  "build": {
+    "frontendDist": "../"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "JRVS Property Co.",
+        "width": 1440,
+        "height": 940,
+        "minWidth": 1120,
+        "minHeight": 720,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "category": "Business",
+    "shortDescription": "JRVS Property Co. business management",
+    "longDescription": "Local-first desktop business management for JRVS Property Co."
+  }
+}
