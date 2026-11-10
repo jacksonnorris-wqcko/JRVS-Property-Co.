@@ -435,14 +435,34 @@ fn desktop_update_photo_metadata(
     original_name: String,
     mime_type: Option<String>,
     metadata_json: String,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     if photo_id.trim().is_empty() {
         return Err("A photo ID is required.".to_string());
     }
     let metadata: serde_json::Value = serde_json::from_str(&metadata_json)
         .map_err(|e| format!("Photo metadata was invalid: {e}"))?;
     let connection = open_database(&app)?;
-    let changed = connection
+    let existing_json: Option<String> = connection
+        .query_row(
+            "SELECT metadata_json FROM managed_photos WHERE photo_id=?1",
+            params![photo_id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| e.to_string())?;
+    let Some(existing_json) = existing_json else {
+        return Ok(false);
+    };
+    let existing: serde_json::Value = serde_json::from_str(&existing_json)
+        .map_err(|e| format!("Stored managed photo metadata was invalid: {e}"))?;
+    let same_original = existing.get("__jrvsManagedOriginalSha256")
+        == metadata.get("__jrvsManagedOriginalSha256");
+    let same_preview = existing.get("__jrvsManagedPreviewSha256")
+        == metadata.get("__jrvsManagedPreviewSha256");
+    if !same_original || !same_preview {
+        return Ok(false);
+    }
+    connection
         .execute(
             "UPDATE managed_photos
              SET original_name=?1, mime_type=?2, metadata_json=?3,
@@ -451,10 +471,7 @@ fn desktop_update_photo_metadata(
             params![original_name, mime_type, metadata.to_string(), photo_id],
         )
         .map_err(|e| format!("Could not update managed photo metadata: {e}"))?;
-    if changed == 0 {
-        return Err("The managed photo copy is missing and must be copied again.".to_string());
-    }
-    Ok(())
+    Ok(true)
 }
 
 #[tauri::command]
@@ -607,6 +624,10 @@ fn storage_initialization_script(seed: &HashMap<String, String>) -> Result<Strin
     for (const key of ['url', 'previewUrl', 'objectUrl', 'previewObjectUrl']) delete metadata[key];
     return metadata;
   }};
+  const sha256BlobHex = async blob => {{
+    const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+    return Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, '0')).join('');
+  }};
   const mirrorManagedPhoto = async photo => {{
     const call = nativeCall();
     if (!call) throw new Error('JRVS native photo storage is unavailable.');
@@ -616,11 +637,14 @@ fn storage_initialization_script(seed: &HashMap<String, String>) -> Result<Strin
     const photoId = String(photo.id);
     const originalName = String(photo.name || photo.originalName || photo.filename || ('photo-' + photoId));
     const mimeType = photo.blob.type || photo.mimeType || null;
-    const metadataJson = JSON.stringify(cleanPhotoMetadata(photo));
+    const metadata = cleanPhotoMetadata(photo);
+    metadata.__jrvsManagedOriginalSha256 = await sha256BlobHex(photo.blob);
+    metadata.__jrvsManagedPreviewSha256 = photo.previewBlob instanceof Blob ? await sha256BlobHex(photo.previewBlob) : null;
+    const metadataJson = JSON.stringify(metadata);
     const exists = await call('desktop_photo_exists', {{ photoId }});
     if (exists) {{
-      await call('desktop_update_photo_metadata', {{ photoId, originalName, mimeType, metadataJson }});
-      return;
+      const unchanged = await call('desktop_update_photo_metadata', {{ photoId, originalName, mimeType, metadataJson }});
+      if (unchanged) return;
     }}
     const originalBase64 = await photoBlobBase64(photo.blob);
     const previewBase64 = photo.previewBlob instanceof Blob ? await photoBlobBase64(photo.previewBlob) : null;
