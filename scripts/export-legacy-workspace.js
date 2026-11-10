@@ -51,6 +51,8 @@
     for (const key of ['url', 'previewUrl', 'objectUrl', 'previewObjectUrl']) delete metadata[key];
     photoPayload.push({
       ...metadata,
+      blobMimeType: photo.blob.type || photo.mimeType || 'application/octet-stream',
+      previewMimeType: photo.previewBlob?.type || null,
       blobBase64: await blobToBase64(photo.blob),
       previewBase64: photo.previewBlob ? await blobToBase64(photo.previewBlob) : null
     });
