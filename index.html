@@ -1475,6 +1475,10 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
 @media(max-width:1250px){.shell{grid-template-columns:205px minmax(0,1fr)!important}.desktop-dashboard-layout{grid-template-columns:minmax(0,1.4fr) minmax(260px,.9fr)}.shell>main{padding:20px!important}.desktop-kpis{gap:8px}.desktop-kpi{padding:12px 10px;gap:8px}.desktop-kpi-icon{width:34px;height:34px}}
 @media(max-width:1050px){.desktop-dashboard-layout{grid-template-columns:1fr}.desktop-right-column{grid-template-columns:repeat(2,minmax(0,1fr))}.top-tools .global-search{min-width:180px}.desktop-statusbar p{max-width:38vw}}
 
+
+.desktop-version-action{cursor:pointer!important;font:inherit!important;padding:9px 12px!important;white-space:nowrap}.desktop-version-action:hover{border-color:#91a765!important;color:#e4efb9!important}
+.jrvs-update-backdrop{position:fixed;inset:0;z-index:4000;display:none;align-items:center;justify-content:center;padding:22px;background:#050705d9;backdrop-filter:blur(8px)}.jrvs-update-backdrop.show{display:flex}.jrvs-update-dialog{width:min(470px,100%);padding:26px;border:1px solid #556346;border-radius:18px;background:linear-gradient(150deg,#242c21,#151a15);box-shadow:0 28px 100px #000b;color:#f5f2e6}.jrvs-update-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}.jrvs-update-mark{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;background:#a9bf6c;color:#182012;font-size:20px}.jrvs-update-close{width:30px;height:30px;border:1px solid #46513b;border-radius:8px;background:#293126;color:#dbe4c9;font-size:17px}.jrvs-update-dialog h2{font-size:23px;line-height:1.15;letter-spacing:-.6px;margin:7px 0 8px;color:#f6f2e4}.jrvs-update-dialog p{font-size:12px;line-height:1.55;color:#aeb8a1;margin:0 0 16px}.jrvs-update-version{display:inline-flex;gap:7px;align-items:center;margin-bottom:12px;padding:6px 9px;border-radius:30px;background:#35422b;color:#d7e89e;font-size:10px;font-weight:800}.jrvs-update-notes{max-height:150px;overflow:auto;padding:12px;border:1px solid #3b4634;border-radius:10px;background:#111611;color:#c5cdb9;font-size:11px;line-height:1.5;white-space:pre-wrap}.jrvs-update-progress{display:none;margin-top:16px;padding:11px;border:1px solid #3d4a33;border-radius:10px;background:#20271d;color:#cfdda7;font-size:11px}.jrvs-update-progress.show{display:block}.jrvs-update-progress-track{height:5px;margin-top:9px;overflow:hidden;border-radius:8px;background:#3b4433}.jrvs-update-progress-track span{display:block;width:42%;height:100%;border-radius:8px;background:#c7df72;animation:jrvs-update-pulse 1.15s ease-in-out infinite alternate}@keyframes jrvs-update-pulse{from{transform:translateX(-18%)}to{transform:translateX(155%)}}.jrvs-update-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}.jrvs-update-actions button{min-width:112px}.jrvs-update-error{display:none;margin-top:12px;color:#ffb6a9;font-size:11px}.jrvs-update-error.show{display:block}
+
 </style>
 </head>
 <body>
@@ -1494,7 +1498,7 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
     <div class="desktop-storage-card"><div class="desktop-storage-icon">▣</div><div class="desktop-kicker">LOCAL WORKSPACE</div><strong>This PC</strong><p>Records currently stay in this app profile.</p><small>Managed photo folders and native backups are still being built.</small><span id="sideVersion">V0.48.0</span></div>
   </aside>
   <main>
-    <header class="top"><div><div class="eyebrow" id="pageEyebrow">JRVS PROPERTY CO.</div><h1 id="pageTitle">Dashboard</h1><p class="sub" id="pageSub">Your real estate photography business, organised.</p></div><div class="top-tools"><div class="global-search" id="globalSearchWrap"><span class="search-icon">⌕</span><input id="globalSearchInput" type="search" placeholder="Search jobs, clients, quotes..." autocomplete="off" aria-label="Search all JRVS records"><div class="global-search-results" id="globalSearchResults" hidden></div></div><div class="header-actions"><button class="header-action secondary jrvs-refresh-button" type="button" onclick="refreshApp()" title="Refresh JRVS and check for updates" aria-label="Refresh JRVS"><span class="refresh-symbol">↻</span><span class="refresh-label">Refresh</span></button><button class="header-action secondary" type="button" onclick="openModal('job')"><span>＋</span> New job</button><button class="header-action primary" type="button" onclick="openQuoteForm()"><span>＋</span> New quote</button><button class="header-action secondary" type="button" onclick="openModal('client')"><span>＋</span> New client</button></div><div class="version" id="versionBadge">● V0.3.0</div></div></header>
+    <header class="top"><div><div class="eyebrow" id="pageEyebrow">JRVS PROPERTY CO.</div><h1 id="pageTitle">Dashboard</h1><p class="sub" id="pageSub">Your real estate photography business, organised.</p></div><div class="top-tools"><div class="global-search" id="globalSearchWrap"><span class="search-icon">⌕</span><input id="globalSearchInput" type="search" placeholder="Search jobs, clients, quotes..." autocomplete="off" aria-label="Search all JRVS records"><div class="global-search-results" id="globalSearchResults" hidden></div></div><div class="header-actions"><button class="header-action secondary jrvs-refresh-button" type="button" onclick="refreshApp()" title="Refresh JRVS and check for updates" aria-label="Refresh JRVS"><span class="refresh-symbol">↻</span><span class="refresh-label">Refresh</span></button><button class="header-action secondary" type="button" onclick="openModal('job')"><span>＋</span> New job</button><button class="header-action primary" type="button" onclick="openQuoteForm()"><span>＋</span> New quote</button><button class="header-action secondary" type="button" onclick="openModal('client')"><span>＋</span> New client</button></div><button class="version desktop-version-action" id="versionBadge" type="button" onclick="jrvsCheckForUpdates(true)" title="Check for JRVS desktop updates">● Version V0.49.0 · Check updates</button></div></header>
     
     <section class="page active" id="page-dashboard">
       <div class="desktop-dashboard-heading"><div><div class="desktop-kicker">YOUR BUSINESS AT A GLANCE</div><h2 id="desktopGreeting">Good to see you, Jackson.</h2><p>Real estate photography workspace · Illawarra &amp; South Coast</p></div><div class="desktop-date-chip"><span>▦</span><strong id="desktopToday">Today</strong></div></div>
@@ -3945,6 +3949,68 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUp
   renderDesktopCalendar();
  };
  window.renderDesktopDashboard();
+})();
+</script>
+
+<div class="jrvs-update-backdrop" id="jrvsUpdateBackdrop" aria-hidden="true">
+  <section class="jrvs-update-dialog" role="dialog" aria-modal="true" aria-labelledby="jrvsUpdateTitle">
+    <div class="jrvs-update-top"><div class="jrvs-update-mark">↻</div><button class="jrvs-update-close" type="button" onclick="jrvsCloseUpdatePrompt()" aria-label="Close update dialog">×</button></div>
+    <div class="desktop-kicker">JRVS DESKTOP UPDATE</div>
+    <h2 id="jrvsUpdateTitle">A new version is ready</h2>
+    <p id="jrvsUpdateDescription">A signed JRVS update is available.</p>
+    <div class="jrvs-update-version" id="jrvsUpdateVersion">New version</div>
+    <div class="jrvs-update-notes" id="jrvsUpdateNotes">This update contains improvements to JRVS Property Co.</div>
+    <div class="jrvs-update-progress" id="jrvsUpdateProgress">Downloading and installing your update…
+      <div class="jrvs-update-progress-track"><span></span></div>
+    </div>
+    <div class="jrvs-update-error" id="jrvsUpdateError"></div>
+    <div class="jrvs-update-actions"><button class="secondary" type="button" id="jrvsUpdateLater" onclick="jrvsCloseUpdatePrompt()">Not now</button><button class="primary" type="button" id="jrvsUpdateInstall" onclick="jrvsInstallUpdate()">Update &amp; restart</button></div>
+  </section>
+</div>
+
+
+<script id="jrvs-desktop-updater">
+(function(){
+ const el=id=>document.getElementById(id);
+ const invoke=window.__TAURI__?.core?.invoke;
+ let pending=null,busy=false;
+ function showPrompt(update){
+  pending=update;el('jrvsUpdateVersion').textContent='Version '+update.version;
+  el('jrvsUpdateDescription').textContent='You are running '+update.currentVersion+'. Install the latest JRVS desktop version now.';
+  el('jrvsUpdateNotes').textContent=update.notes||'Performance improvements and refinements to JRVS Property Co.';
+  el('jrvsUpdateError').classList.remove('show');el('jrvsUpdateProgress').classList.remove('show');
+  el('jrvsUpdateInstall').disabled=false;el('jrvsUpdateInstall').textContent='Update & restart';
+  el('jrvsUpdateBackdrop').classList.add('show');el('jrvsUpdateBackdrop').setAttribute('aria-hidden','false');
+ }
+ window.jrvsCloseUpdatePrompt=function(){if(busy)return;el('jrvsUpdateBackdrop').classList.remove('show');el('jrvsUpdateBackdrop').setAttribute('aria-hidden','true')};
+ window.jrvsCheckForUpdates=async function(manual=false){
+  if(!window.__JRVS_DESKTOP__)return;
+  if(!window.__JRVS_DESKTOP_UPDATER_CONFIGURED__){if(manual)showToast('Automatic updates need their one-time signing-key setup before they can be enabled.','info');return}
+  if(typeof invoke!=='function'){if(manual)showToast('The JRVS update service is unavailable in this app session.','error');return}
+  if(busy)return;
+  try{
+   const update=await invoke('desktop_check_update');
+   if(update){showPrompt(update);return update}
+   if(manual)showToast('JRVS is already up to date.','success');
+   return null;
+  }catch(error){
+   console.error('JRVS desktop update check failed',error);
+   if(manual)showToast('Could not check for updates: '+String(error?.message||error),'error');
+   return null;
+  }
+ };
+ window.jrvsInstallUpdate=async function(){
+  if(!pending||busy)return;
+  busy=true;el('jrvsUpdateInstall').disabled=true;el('jrvsUpdateLater').disabled=true;
+  el('jrvsUpdateInstall').textContent='Installing…';el('jrvsUpdateProgress').classList.add('show');el('jrvsUpdateError').classList.remove('show');
+  try{
+   await invoke('desktop_install_update');
+  }catch(error){
+   busy=false;el('jrvsUpdateInstall').disabled=false;el('jrvsUpdateLater').disabled=false;el('jrvsUpdateInstall').textContent='Try again';
+   el('jrvsUpdateProgress').classList.remove('show');el('jrvsUpdateError').textContent='The update could not be installed: '+String(error?.message||error);el('jrvsUpdateError').classList.add('show');
+  }
+ };
+ if(window.__JRVS_DESKTOP__&&window.__JRVS_DESKTOP_UPDATER_CONFIGURED__)setTimeout(()=>window.jrvsCheckForUpdates(false),2200);
 })();
 </script>
 </body></html>
