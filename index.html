@@ -3296,7 +3296,7 @@ function restoreEditorRecipe(recipe){
  if(!recipe||![1,2,3].includes(recipe.schemaVersion))return false;
  editorLocalBalance=!!recipe.localBalance;
  editorNaturalCurve=!!recipe.naturalCurve;
- editorLastAnalysis=recipe.finishAnalysis?{...recipe.finishAnalysis,intent:recipe.finishIntent||recipe.finishAnalysis.intent||'natural'}:null;
+ editorLastAnalysis=recipe.finishAnalysis?{...recipe.finishAnalysis,p50:recipe.finishAnalysis.median,clipRate:recipe.finishAnalysis.highlightClipRate||0,analysisMs:0,intent:recipe.finishIntent||recipe.finishAnalysis.intent||'natural'}:null;
  const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value=recipe.finishIntent||'natural';
  jrvsRenderFinishReport(editorLastAnalysis);
  EDITOR_KEYS.forEach(k=>{const el=document.getElementById(k);if(el&&Number.isFinite(Number(recipe.values?.[k])))el.value=recipe.values[k]});
@@ -3372,7 +3372,7 @@ async function developEditorRawSource(){
 }
 function closeEditor(){if(editorFitObserver)editorFitObserver.disconnect();clearEditorFilmstripUrls();document.getElementById('editorBackdrop').classList.remove('show');if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=null;editorPhoto=null;editorSourcePhoto=null}
 function rotateEditor(deg){editorRotation=(editorRotation+deg+360)%360;drawEditor();captureEditorHistory()}
-function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';editorRotation=0;editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;jrvsRenderFinishReport(null);drawEditor();captureEditorHistory()}
+function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';editorRotation=0;editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value='natural';jrvsRenderFinishReport(null);drawEditor();captureEditorHistory()}
 function editorChanged(){
  // Coalesce rapid slider events into one preview render per animation frame.
  if(!editorPreviewFrame)editorPreviewFrame=requestAnimationFrame(()=>{editorPreviewFrame=0;drawEditor()});
