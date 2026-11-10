@@ -94,3 +94,32 @@
 - The app works offline, including RAW development.
 - A full backup can be restored and transferred to another Windows PC with verified integrity.
 - No cloud sync, authentication or cloud reset dependency remains in the final desktop edition.
+
+
+## Confirmed user decisions and detailed specifications
+
+- **Photo ownership confirmed:** copy all imported originals into the JRVS-managed library. Never move/delete the source files. Preserve RAW bytes, previews, edited outputs and edit recipes as separate assets.
+- The user has confirmed current app data/photos are test data on the home PC. This permits development/testing against test exports, but it does not remove the requirement for a verified export and restore process.
+- Detailed specifications now live in:
+  - `docs/desktop/LOCAL_DATA_MODEL.md`
+  - `docs/desktop/LEGACY_IMPORT_SPEC.md`
+  - `docs/desktop/PHOTO_LIBRARY_SPEC.md`
+  - `docs/desktop/BACKUP_FORMAT.md`
+
+### Additional V0.48.0 inventory detail
+
+- `jrvs-data` currently includes (at minimum) jobs, clients, quotes, invoices, income, expenses, packages, attentionCleared, numberSequences and deleted tombstones. Preserve the complete object, including unknown keys.
+- `jrvs-calendar` is a separate event array in localStorage.
+- IndexedDB `jrvs-photo-library` / `photos` stores records keyed by photo ID. The record can contain `blob`, optional `previewBlob`, `jobId`, `sourcePhotoId`, `editRecipe`, `editRecipeVersion`, original filename, MIME type, byte size, RAW/type/status fields, cover flag and timestamps.
+- The app uses stable JOB/QUO/INV numbering sequences. Desktop migration must preserve existing values and allocate new values transactionally.
+- Photo originals are immutable; edited outputs are separate photo records linked through `sourcePhotoId`. Existing flattened edited images must remain usable.
+- The current RAW implementation loads FlashRaw 0.1.0 dynamically from esm.sh. Desktop packaging must bundle and pin the dependency before offline RAW support can be claimed.
+
+### Next implementation order
+
+1. Complete the Tauri shell launch on the user's Windows development PC.
+2. Implement the read-only V0.48.0 export workflow and validate a real test archive from the home PC.
+3. Implement the versioned SQLite schema and staged import with complete payload preservation.
+4. Implement managed photo copy/verification and photo-path bridge.
+5. Implement full portable backup/restore and round-trip validation.
+6. Only then replace browser persistence and remove Supabase from the desktop edition.
