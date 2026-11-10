@@ -2,73 +2,57 @@
 
 ## Purpose
 
-Define a safe, repeatable migration from the existing browser/PWA app into the Windows desktop workspace. The current app stores business data in localStorage and photo metadata/blobs in IndexedDB. The desktop importer must not depend on direct access to a browser profile or attempt to read browser storage from Tauri.
+Define a safe migration from the existing browser/PWA app into the Windows desktop workspace. The browser app stores business data in localStorage and photo metadata/blobs in IndexedDB. The desktop importer must not depend on direct access to a browser profile or attempt to read browser storage from Tauri.
 
 ## Required source export
 
-Add a dedicated **Export for JRVS Desktop** workflow to a temporary V0.48-compatible migration build (or a standalone migration helper page) that produces one portable archive containing:
+The read-only helper `scripts/export-legacy-workspace.js` runs in the old JRVS browser tab's DevTools Console and downloads a portable gzip JSON export containing:
 
-- `manifest.json` with format version, app version, export timestamp, counts and checksums.
-- `business.json` containing the complete parsed `jrvs-data` object, not a reduced subset.
-- `calendar.json` containing the complete `jrvs-calendar` array.
-- `photos/metadata.json` containing every IndexedDB photo record with Blob fields replaced by archive-relative asset references.
-- `photos/original/<photo-id>.<ext>` containing each photo's `blob` bytes.
-- `photos/preview/<photo-id>.<ext>` containing optional `previewBlob` bytes.
-- Optional diagnostics listing malformed or unsupported records; diagnostics must never omit data silently.
+- `business`: the complete parsed `jrvs-data` object, not a reduced subset.
+- `calendar`: the complete `jrvs-calendar` array.
+- `photos`: every IndexedDB photo record with original and optional preview Blob bytes encoded as base64.
+- `manifest`: version 2 SHA-256 checksums and byte counts for business data, calendar data and each photo original/preview.
+- Source version and export timestamp metadata.
 
-The export operation is read-only. It must not clear, rewrite, rename or move any source browser records or photo files.
+The export is read-only. It does not clear, rewrite, rename or move source browser records or photo files. Version 1 exports remain supported by the desktop importer but do not include checksums.
 
 ## Photo ownership and copy policy
-
-The user has confirmed the current photos and business data are test data on the home PC. The desktop library policy is:
 
 1. Copy every source photo into the JRVS-managed library.
 2. Preserve the original source filename, MIME type, file size, original photo ID, job ID, addedAt, type/status, cover flag, sourcePhotoId and editRecipe metadata.
 3. Never move or delete the browser's IndexedDB Blob or any source file from its original folder.
-4. Keep original files immutable. Edited outputs are separate managed assets and must not overwrite source originals.
+4. Keep original files immutable. Edited outputs are separate photo records linked through sourcePhotoId; they must not overwrite source originals.
 5. If a filename already exists, use the photo ID as the stable storage filename; retain the original filename as metadata.
-6. Verify each copy with byte length and SHA-256 before committing its metadata row.
+6. Verify exported file hashes and byte lengths before replacing business/calendar records.
 7. Support interrupted copies: unreferenced partial files are safe to clean only after a later integrity scan confirms they are not referenced by SQLite.
 
 ## Import phases
 
 ### Phase A — Inspect
-- Open and validate the archive before changing the active workspace.
-- Validate manifest format version, required files, declared counts and archive paths.
-- Reject path traversal, absolute paths, duplicate photo IDs and unsupported compression/oversized entries.
-- Parse JSON and validate expected top-level shapes.
-- Compute hashes and byte counts for every photo asset.
-- Produce a preview summary: record counts, photo count/bytes, missing jobs, orphan photo references, duplicate IDs and numbering warnings.
 
-### Phase B — Stage
-- Copy photo assets into a temporary staging directory under the JRVS app data directory.
-- Verify every staged file against its declared SHA-256 and size.
-- Create a staging SQLite database and import all business/calendar/photo metadata into a transaction.
-- Preserve complete payload JSON, including unknown keys.
-- Verify relationships and numbering invariants.
+- Validate the supported format and top-level JSON shapes.
+- For version 2, validate the manifest, business/calendar SHA-256 checksums, declared photo count, unique photo IDs, original/preview byte lengths and per-file SHA-256 values.
+- Reject incomplete photo records before changing business/calendar records.
+- The UI displays a record/photo count summary and requires explicit confirmation before replacement.
 
-### Phase C — Commit
-- Only after staging passes validation, create a rollback backup of the current workspace.
-- Atomically promote the staged database and managed photo directory into the active workspace.
-- If the final rename/commit fails, retain the old workspace and report the failure.
-- Never silently merge imported data into an existing workspace. A restore/replace operation must show an explicit warning and require confirmation.
+### Phase B — Copy and commit
 
-### Phase D — Verify
-- Reopen the database from the final path.
-- Compare source and destination counts, IDs, full payloads and photo hashes.
-- Show a completion report with warnings and the location of the pre-import rollback backup.
+- The app downloads a full safety backup of the current desktop workspace.
+- Each photo is written to the IndexedDB working library. The native bridge mirrors the committed photo transaction into staged managed files and records the metadata in SQLite.
+- The importer waits for the native photo mirror queue to flush before it commits the business/calendar payload to the SQLite-backed workspace.
+- When the source export declares a complete photo library, photos absent from the import are removed from the active IndexedDB library and their managed copies are moved to trash.
+- The native importer keeps a JSON snapshot of existing SQLite key/value records before replacement.
 
-## Duplicate and orphan handling
+### Phase C — Verify
 
-- Duplicate IDs within the same collection are a hard validation error.
-- The same string ID in different record types is allowed.
-- Orphan photos whose jobId is absent must be retained in a recoverable state and reported; do not delete them.
-- Edited photos whose sourcePhotoId is missing must be retained and reported; keep their flattened rendered file available.
-- A missing photo binary is a hard error for a full-photo import. The user may explicitly choose a metadata-only recovery path, which must be labelled incomplete.
+- Reopen the app and confirm record, calendar and photo counts.
+- Check representative original JPEG/RAW files, previews, edited outputs and cover selections.
+- Confirm job/quote/invoice numbering continues from the imported sequences.
+- Keep the original browser workspace and the downloaded safety backup until this review passes.
 
-## Privacy and security
+## Known limitations
 
-- Do not export Supabase session tokens, passwords or auth state.
-- Do not include the Supabase publishable key in the desktop backup.
-- Treat imported filenames and JSON as untrusted input.
+- The current import is a guarded replacement flow, not a fully atomic multi-file workspace swap. The downloaded safety backup is the rollback path if a photo transaction or final replacement is interrupted.
+- Orphan photos and edited assets with missing sources must be retained for recovery.
+- The version 1 format has no per-file checksum; version 2 is preferred.
 - No network upload is part of this migration.
