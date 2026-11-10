@@ -1713,12 +1713,12 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
 </optgroup><optgroup label="Exterior · Professional">
 <option value="exterior">Exterior Clarity</option><option value="sunny">Sunny Exterior</option><option value="twilight">Twilight Mood</option>
 </optgroup></select><div class="jrvs-auto-enhance-card jrvs-property-finish-card">
- <div class="jrvs-auto-enhance-copy"><strong>JRVS Property Finish</strong><span>Reads the actual light and colour in each photo, then builds a restrained property-ready edit. Every image gets its own correction.</span></div>
+ <div class="jrvs-auto-enhance-copy"><strong>JRVS Property Finish</strong><span>Makes a small exposure and highlight adjustment only. No automatic colour shifts, contrast stacking or artificial shadow lifting.</span></div>
  <label class="jrvs-finish-intent-label" for="jrvsFinishIntent">FINISH APPROACH</label>
- <select id="jrvsFinishIntent" class="jrvs-finish-intent"><option value="natural">Natural listing · balanced and true-to-life</option><option value="bright">Bright listing · lighter, open feel</option><option value="window">Window-safe · protect bright highlights</option></select>
- <button class="secondary jrvs-auto-enhance-button" type="button" onclick="autoEnhanceEditor()">✦ Analyse &amp; apply Property Finish</button>
+ <select id="jrvsFinishIntent" class="jrvs-finish-intent"><option value="natural">Natural · minimal correction</option><option value="bright">Slightly brighter · gentle lift</option><option value="window">Window-safe · protect highlights</option></select>
+ <button class="secondary jrvs-auto-enhance-button" type="button" onclick="autoEnhanceEditor()">✦ Subtle Auto Enhance</button>
  <div class="jrvs-finish-report" id="jrvsFinishReport" aria-live="polite">Ready to analyse this photo. The original will remain untouched.</div>
- <div class="jrvs-auto-enhance-note">Local image analysis · Non-destructive edit recipe · Review before saving</div>
+ <div class="jrvs-auto-enhance-note">Exposure and highlight adjustments only · Original always preserved</div>
 </div></div>
 <details class="editor-section jrvs-quick-controls" open data-editor-group="basic">
 <summary>Quick light adjustments <span class="jrvs-section-hint">Exposure · contrast · tonal balance</span></summary>
@@ -3710,65 +3710,57 @@ function applyEditorPreset(name){
 }
 function jrvsAnalysePropertyImage(image){
  const started=performance.now();
- const sourceWidth=image?.naturalWidth||image?.width||0,sourceHeight=image?.naturalHeight||image?.height||0;
- if(!sourceWidth||!sourceHeight)throw new Error('This photo has no readable image dimensions.');
- const scale=Math.min(1,900/Math.max(sourceWidth,sourceHeight)),canvas=document.createElement('canvas');
- canvas.width=Math.max(1,Math.round(sourceWidth*scale));canvas.height=Math.max(1,Math.round(sourceHeight*scale));
- const ctx=canvas.getContext('2d',{willReadFrequently:true});if(!ctx)throw new Error('Could not create an image-analysis surface.');
+ const width0=image?.naturalWidth||image?.width||0,height0=image?.naturalHeight||image?.height||0;
+ if(!width0||!height0)throw new Error('This photo has no readable image dimensions.');
+ const scale=Math.min(1,700/Math.max(width0,height0)),canvas=document.createElement('canvas');
+ canvas.width=Math.max(1,Math.round(width0*scale));canvas.height=Math.max(1,Math.round(height0*scale));
+ const ctx=canvas.getContext('2d',{willReadFrequently:true});
+ if(!ctx)throw new Error('Could not create an image-analysis surface.');
  ctx.drawImage(image,0,0,canvas.width,canvas.height);
- const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data,width=canvas.width,height=canvas.height,step=Math.max(1,Math.ceil(Math.sqrt(width*height/52000)));
- const luminance=[],zones=Array.from({length:24},()=>({n:0,sum:0}));
- let samples=0,clipped=0,crushed=0,saturationSum=0,neutralR=0,neutralG=0,neutralB=0,neutralCount=0;
- for(let y=0;y<height;y+=step)for(let x=0;x<width;x+=step){
-  const i=(y*width+x)*4,r=pixels[i],g=pixels[i+1],b=pixels[i+2],l=.2126*r+.7152*g+.0722*b;
-  luminance.push(l);samples++;if(l>=246||Math.max(r,g,b)>=252)clipped++;if(l<=5)crushed++;
-  const hi=Math.max(r,g,b),chroma=hi-Math.min(r,g,b);saturationSum+=chroma/Math.max(1,hi);
-  if(l>96&&l<232&&chroma<=Math.max(14,hi*.09)){neutralR+=r;neutralG+=g;neutralB+=b;neutralCount++}
-  const zx=Math.min(5,Math.floor(x/width*6)),zy=Math.min(3,Math.floor(y/height*4)),zone=zones[zy*6+zx];zone.n++;zone.sum+=l;
+ const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+ const step=Math.max(1,Math.ceil(Math.sqrt(canvas.width*canvas.height/30000))),luminance=[];
+ let samples=0,clipped=0,crushed=0;
+ for(let y=0;y<canvas.height;y+=step)for(let x=0;x<canvas.width;x+=step){
+  const i=(y*canvas.width+x)*4,r=pixels[i],g=pixels[i+1],b=pixels[i+2];
+  const l=.2126*r+.7152*g+.0722*b;
+  luminance.push(l);samples++;
+  if(l>=246||Math.max(r,g,b)>=252)clipped++;
+  if(l<=5)crushed++;
  }
  if(!samples)throw new Error('The photo could not be sampled.');
  luminance.sort((a,b)=>a-b);
  const pct=p=>luminance[Math.min(luminance.length-1,Math.max(0,Math.round((luminance.length-1)*p)))];
- const p05=pct(.05),p10=pct(.10),p25=pct(.25),p50=pct(.50),p68=pct(.68),p90=pct(.90),p95=pct(.95),p99=pct(.99);
- const means=zones.filter(z=>z.n).map(z=>z.sum/z.n),spatialRange=means.length?Math.max(...means)-Math.min(...means):0;
- const darkZones=zones.filter(z=>z.n&&z.sum/z.n<82).length,brightZones=zones.filter(z=>z.n&&z.sum/z.n>205).length;
- const clipRate=clipped/samples,shadowRate=crushed/samples,averageSaturation=saturationSum/samples;
- const mixedLighting=(darkZones>=2&&brightZones>=1&&spatialRange>54)||(p95>232&&p10<88&&spatialRange>42);
- const neutralConfidence=Math.min(1,neutralCount/Math.max(180,samples*.045));
- let temperature=0,tint=0,whiteBalance='No reliable neutral surface found';
- if(neutralCount>Math.max(90,samples*.012)){
-  const r=neutralR/neutralCount,g=neutralG/neutralCount,b=neutralB/neutralCount,average=(r+g+b)/3;
-  temperature=Math.max(-11,Math.min(11,-((r-b)/Math.max(1,average))*52*neutralConfidence));
-  tint=Math.max(-7,Math.min(7,-((g-(r+b)/2)/Math.max(1,average))*36*neutralConfidence));
-  whiteBalance=neutralConfidence>.7?'Neutral colour sample · high confidence':'Neutral colour sample · cautious correction';
- }
- const scene=p50<102?'Low-light':p95>232&&p10<90?'Backlit / high-contrast':p50>172?'Bright daylight':'Balanced light';
- return {sourceWidth,sourceHeight,samples,p05,p10,p25,p50,p68,p90,p95,p99,spatialRange,darkZones,brightZones,mixedLighting,clipRate,shadowRate,averageSaturation,temperature,tint,neutralConfidence,whiteBalance,scene,analysisMs:Math.round(performance.now()-started)};
+ const p05=pct(.05),p10=pct(.10),p25=pct(.25),p50=pct(.50),p65=pct(.65),p90=pct(.90),p95=pct(.95),p99=pct(.99);
+ const clipRate=clipped/samples,shadowRate=crushed/samples;
+ const scene=p95>238&&p10<72?'High-contrast interior':p50<92?'Low-light interior':p50>166?'Bright interior':'Balanced interior';
+ return {sourceWidth:width0,sourceHeight:height0,samples,p05,p10,p25,p50,p65,p90,p95,p99,clipRate,shadowRate,scene,analysisMs:Math.round(performance.now()-started)};
 }
 function jrvsPropertyFinishSettings(a,intent='natural',referenceMedian=null){
  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
- const target=clamp(Number.isFinite(referenceMedian)?referenceMedian:(intent==='bright'?151:intent==='window'?141:146),130,160);
- let exposure=clamp(Math.log2(target/Math.max(1,a.p50)),-.5,.48);
- if(a.p95>238)exposure=Math.min(exposure,.16);if(a.p99>250)exposure=Math.min(exposure,.08);if(a.clipRate>.06)exposure=Math.min(exposure,.04);
- let highlights=clamp((a.p95-210)*-.55,-54,0);
- if(a.p99>248)highlights=Math.min(highlights,-34);if(a.clipRate>.03)highlights=Math.min(highlights,-28);if(a.clipRate>.08)highlights=Math.min(highlights,-44);
- let shadows=clamp((112-a.p10)*.23,0,27);if(a.mixedLighting)shadows=Math.min(shadows,24);
- let contrast=clamp((112-(a.p90-a.p10))*.075,-6,5);
- const whites=clamp((237-a.p95)*.11,-4,6),blacks=clamp((a.p05-20)*-.05,-3,1);
- const vibrance=clamp((.205-a.averageSaturation)*19,-2,5),clarity=clamp((a.spatialRange-24)*.035,0,3.5);
- const sharpening=a.shadowRate>.12?4:7;
- if(intent==='bright'){exposure=clamp(exposure+.09,-.5,.5);shadows=clamp(shadows+3,0,30);contrast=clamp(contrast-1,-7,5)}
- if(intent==='window'){if(a.p95>215)highlights=clamp(highlights-9,-60,0);exposure=Math.min(exposure,.13);shadows=clamp(shadows+4,0,29);contrast=clamp(contrast-1,-7,5)}
- return {values:{exposure,brightness:0,contrast,highlights,shadows,whites,blacks,temperature:a.temperature,tint:a.tint,saturation:0,warmth:0,vibrance,clarity,sharpening,vignette:0},localBalance:!!a.mixedLighting,naturalCurve:true,targetMedian:target};
+ // Keep the target deliberately modest. Property photography should retain
+ // believable room contrast rather than forcing every image towards a bright grey average.
+ const target=clamp(Number.isFinite(referenceMedian)?referenceMedian:(intent==='bright'?130:intent==='window'?118:124),112,136);
+ let exposure=clamp(Math.log2(target/Math.max(1,a.p50)),-.18,.16);
+ // Bright windows / clipped highlights sharply limit any positive exposure correction.
+ if(a.p95>238||a.clipRate>.045)exposure=Math.min(exposure,.055);
+ if(a.p99>252)exposure=Math.min(exposure,.025);
+ let highlights=clamp((a.p95-228)*-.38,-14,0);
+ if(a.clipRate>.08)highlights=Math.min(highlights,-18);
+ let shadows=clamp((48-a.p10)*.10,0,7);
+ let contrast=0;
+ if(intent==='bright')exposure=clamp(exposure+.035,-.18,.16);
+ if(intent==='window'){exposure=Math.min(exposure,.025);highlights=clamp(highlights-4,-20,0);shadows=Math.min(8,shadows+1)}
+ // No automatic white-balance, saturation, clarity, sharpening, local masks,
+ // natural curve, blacks/whites or vignette. Those are photographer decisions.
+ return {values:{exposure,brightness:0,contrast,highlights,shadows,whites:0,blacks:0,temperature:0,tint:0,saturation:0,warmth:0,vibrance:0,clarity:0,sharpening:0,vignette:0},localBalance:false,naturalCurve:false,targetMedian:target};
 }
 function jrvsRenderFinishReport(a){
- const report=document.getElementById('jrvsFinishReport');if(!report)return;
- if(!a){report.textContent='Ready to analyse this photo. The original will remain untouched.';return}
+ const report=document.getElementById('jrvsFinishReport');
+ if(!report)return;
+ if(!a){report.textContent='Ready to analyse this photo. Auto corrections are deliberately restrained; the original stays untouched.';return}
  const intent=a.intent==='bright'?'Bright listing':a.intent==='window'?'Window-safe':'Natural listing';
- const clip=a.clipRate>.08?'Significant highlight clipping already present':a.clipRate>.025?'Some bright detail is close to clipping':'Highlight headroom looks healthy';
- const wb=a.neutralConfidence>.3?a.whiteBalance:'Colour correction kept conservative · no dependable neutral sample';
- const recovery=a.mixedLighting?'Uneven lighting detected · local shadow recovery enabled':'Lighting is relatively even · natural tonal curve enabled';
- report.textContent=intent+' · '+a.scene+' · '+clip+' · '+wb+' · '+recovery+' · '+a.analysisMs+' ms';
+ const caution=a.clipRate>.06?'Some highlights are already clipped':a.p95>232?'Bright highlights detected · exposure lift limited':'Good highlight headroom';
+ report.textContent=intent+' · '+a.scene+' · '+caution+' · conservative light-only correction · '+a.analysisMs+' ms';
 }
 function jrvsApplyPropertyFinish(a,intent='natural',referenceMedian=null){
  const result=jrvsPropertyFinishSettings(a,intent,referenceMedian);
@@ -3778,8 +3770,10 @@ function jrvsApplyPropertyFinish(a,intent='natural',referenceMedian=null){
   const number=input?.closest('.editor-control')?.querySelector('.editor-number');if(number)number.value=String(Math.round(value*100)/100);
  });
  const preset=document.getElementById('editorPreset');if(preset)preset.value='none';
- editorLocalBalance=result.localBalance;editorNaturalCurve=result.naturalCurve;
- editorLastAnalysis={...a,intent,targetMedian:result.targetMedian};jrvsRenderFinishReport(editorLastAnalysis);
+ editorLocalBalance=false;
+ editorNaturalCurve=false;
+ editorLastAnalysis={...a,intent,targetMedian:result.targetMedian};
+ jrvsRenderFinishReport(editorLastAnalysis);
  return result;
 }
 function autoEnhanceEditor(){
@@ -3790,7 +3784,7 @@ function autoEnhanceEditor(){
   jrvsApplyPropertyFinish(analysis,intent);drawEditor();captureEditorHistory();
   const status=document.getElementById('editorStatus');
   if(status)status.textContent='JRVS Property Finish · '+analysis.scene+' · Median light '+Math.round(analysis.p50)+'/255 · '+analysis.darkZones+' dark zones · '+analysis.brightZones+' bright zones · '+analysis.whiteBalance+' · '+Math.round(performance.now()-started)+' ms. Already-clipped detail cannot be recreated.';
-  showToast('Property Finish analysed this image and applied a reviewable edit. Original preserved.','success');
+  showToast('Subtle Auto Enhance applied a small light correction. Original preserved.','success');
  }catch(error){console.error('JRVS Property Finish failed',error);showToast('Could not analyse this photo: '+(error?.message||error),'error')}
 }
 async function smartFinishWholeProperty(){
@@ -3805,7 +3799,7 @@ async function smartFinishWholeProperty(){
  let done=0,failed=0;
  try{
   const anchor=createEditorRenderCanvas(720);if(!anchor)throw new Error('The reference photo could not be rendered.');
-  const refAnalysis=jrvsAnalysePropertyImage(anchor.canvas),referenceMedian=Math.max(130,Math.min(160,refAnalysis.p50));
+  const refAnalysis=jrvsAnalysePropertyImage(anchor.canvas),referenceMedian=Math.max(116,Math.min(132,refAnalysis.p50));
   const intent=document.getElementById('jrvsFinishIntent')?.value||'natural',profile=document.getElementById('editorExportProfile')?.value||'agency';
   const mime=profile==='png'?'image/png':'image/jpeg',quality=profile==='web'?.86:profile==='max'?.99:.94;
   for(let i=0;i<targets.length;i++){

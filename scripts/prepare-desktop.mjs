@@ -561,6 +561,86 @@ html.jrvs-desktop .desktop-activity-empty{min-height:82px!important;display:flex
  html.jrvs-desktop .desktop-dashboard-heading h2{font-size:25px!important}
  html.jrvs-desktop .recent-job-list{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 }
+
+/* V0.53.1 — finish the dark photo-library treatment. */
+html.jrvs-desktop #page-photos .media-workspace,
+html.jrvs-desktop #page-photos .jrvs-gallery-head,
+html.jrvs-desktop #page-photos .jrvs-photo-card,
+html.jrvs-desktop #page-photos .jrvs-photo-card .photo-info,
+html.jrvs-desktop #page-photos .project-card,
+html.jrvs-desktop #page-photos .project-info,
+html.jrvs-desktop #page-photos .jrvs-gallery-stats,
+html.jrvs-desktop #page-photos .jrvs-gallery-actions,
+html.jrvs-desktop #page-photos .batch-tools{
+ background:#1b221c!important;
+ border-color:#3b4839!important;
+ color:#edf1e8!important;
+ box-shadow:0 8px 24px #0003!important;
+}
+html.jrvs-desktop #page-photos .media-toolbar{
+ background:#202920!important;border-color:#3c4939!important;color:#edf1e8!important;
+}
+html.jrvs-desktop #page-photos .media-guidance{
+ background:#252e24!important;border:1px solid #394637!important;border-radius:10px!important;
+ color:#c2ccb8!important;padding:13px!important;
+}
+html.jrvs-desktop #page-photos .media-guidance-icon{
+ background:#35452d!important;color:#d9e9ad!important;
+}
+html.jrvs-desktop #page-photos .media-field span,
+html.jrvs-desktop #page-photos .photo-status-field span,
+html.jrvs-desktop #page-photos .gallery-kicker{
+ color:#b5c88b!important;
+}
+html.jrvs-desktop #page-photos .media-field select,
+html.jrvs-desktop #page-photos .media-field input,
+html.jrvs-desktop #page-photos .photo-status-field select,
+html.jrvs-desktop #page-photos .jrvs-gallery-stats button,
+html.jrvs-desktop #page-photos .jrvs-finish-intent{
+ background:#111813!important;color:#edf1e8!important;border-color:#465341!important;
+}
+html.jrvs-desktop #page-photos .jrvs-gallery-title h3,
+html.jrvs-desktop #page-photos .jrvs-selection-label strong,
+html.jrvs-desktop #page-photos .jrvs-photo-title strong,
+html.jrvs-desktop #page-photos .project-info strong{
+ color:#f0f3e9!important;
+}
+html.jrvs-desktop #page-photos .jrvs-gallery-title p,
+html.jrvs-desktop #page-photos .jrvs-selection-label span,
+html.jrvs-desktop #page-photos .project-meta,
+html.jrvs-desktop #page-photos .photo-meta{
+ color:#aab6a1!important;
+}
+html.jrvs-desktop #page-photos .jrvs-gallery-stats button.active{
+ background:#35442d!important;border-color:#82985c!important;box-shadow:inset 0 0 0 1px #82985c!important;
+}
+html.jrvs-desktop #page-photos .jrvs-gallery-stats strong{color:#dce9b9!important}
+html.jrvs-desktop #page-photos .jrvs-gallery-stats span{color:#b8c3ae!important}
+html.jrvs-desktop #page-photos .jrvs-photo-card .photo-image-wrap,
+html.jrvs-desktop #page-photos .jrvs-photo-card .photo-thumb,
+html.jrvs-desktop #page-photos .project-placeholder{
+ background:#151c16!important;
+}
+html.jrvs-desktop #page-photos .jrvs-type-pill,
+html.jrvs-desktop #page-photos .photo-file-type{
+ background:#303c2c!important;color:#d7e5ba!important;border-color:#4c6040!important;
+}
+html.jrvs-desktop #page-photos .jrvs-type-pill.edited{
+ background:#263b2d!important;color:#bfe0b9!important;
+}
+html.jrvs-desktop #page-photos .jrvs-photo-select{
+ background:#222c22!important;color:#dfe8d4!important;border-color:#687a56!important;
+}
+html.jrvs-desktop #page-photos .jrvs-photo-select.selected{
+ background:#a9c66c!important;color:#172012!important;border-color:#c1d98c!important;
+}
+html.jrvs-desktop #page-photos .jrvs-action-buttons button:disabled{
+ background:#252d25!important;color:#74806f!important;border-color:#374237!important;opacity:.55!important;
+}
+html.jrvs-desktop #page-photos .batch-tools summary,
+html.jrvs-desktop #page-photos .batch-tools summary span{color:#e0e8d6!important}
+html.jrvs-desktop #page-photos .batch-tools-content{background:#1b221c!important;color:#edf1e8!important}
+
 </style>
 <script>
 window.__JRVS_DESKTOP__ = true;
