@@ -1939,7 +1939,7 @@ function showConfirm(message, options={}){
  return new Promise(resolve=>{appConfirmResolver=resolve;const finish=value=>{back.classList.remove('show');back.setAttribute('aria-hidden','true');document.removeEventListener('keydown',onKey);appConfirmResolver=null;resolve(value)};const onKey=e=>{if(e.key==='Escape')finish(false);if(e.key==='Enter')finish(true)};accept.onclick=()=>finish(true);cancel.onclick=()=>finish(false);back.onclick=e=>{if(e.target===back)finish(false)};document.addEventListener('keydown',onKey);cancel.focus()});
 }
 
-const APP_VERSION='0.43.0';
+const APP_VERSION='0.44.0';
 const pageInfo={calendar:['Business calendar','Your property jobs and appointments in one place.'],dashboard:['Dashboard',"A clear view of what's happening in your business."],jobs:['Jobs','Manage property photography work.'],clients:['Clients','Keep client contact details together.'],photos:['Photo library','Your property photography workspace.'],quotes:['Pricing & quotes','Build and manage your service quotations.'],finances:['Finances','Keep an eye on income and expenses.'],settings:['Settings','Application information and update status.']};
 let data={jobs:[],clients:[],quotes:[],income:[],attentionCleared:[]};
 try{data={...data,...JSON.parse(localStorage.getItem('jrvs-data')||'{}')}}catch(e){}
@@ -3176,19 +3176,21 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
     const region=localA*.62+localB*.38,i=(py*width+px)*4;
     const r=d[i],g=d[i+1],b=d[i+2],L=.2126*r+.7152*g+.0722*b;
     const deficit=Math.max(0,robustReference-region);
-    const roomGate=smooth(7,105,deficit);
-    const shadowGate=smooth(8,155,145-L);
-    const midtoneGate=1-smooth(174,232,L);
-    const blackGuard=smooth(3,27,L);
-    const highlightGuard=1-smooth(178,238,Math.max(L,region*.78));
-    const zoneConfidence=smooth(10,92,deficit);
-    // Dark-room recovery is stronger than V0.35, but capped and faded across
-    // bright surfaces. Deep blacks remain anchored to avoid grey furniture.
-    const recoveryStrength=0.88+Math.min(.16,fieldStd/420);
-    // V0.43: stronger room-scale lift for genuinely underexposed adjoining spaces.
-    // The expanded midtone gate and lower shadow threshold recover dark rooms
-    // without pushing near-black furniture or bright architectural surfaces.
-    let localLift=Math.min(78,deficit*recoveryStrength)*roomGate*shadowGate*midtoneGate*blackGuard*highlightGuard*zoneConfidence;
+    // V0.44: remove the over-conservative stack of overlapping confidence masks.
+    // The previous stack multiplied several partial gates together, reducing a
+    // useful room correction to only a few brightness levels in dark adjoining rooms.
+    // Use one room-deficit confidence curve, a broader shadow gate and a firm
+    // highlight guard instead. This is local luminance recovery, not semantic room detection.
+    const roomGate=smooth(3,78,deficit);
+    const shadowGate=smooth(4,142,158-L);
+    const midtoneGate=1-smooth(188,244,L);
+    const blackGuard=smooth(2,22,L);
+    const highlightGuard=1-smooth(184,242,Math.max(L,region*.84));
+    const zoneConfidence=smooth(4,62,deficit);
+    const recoveryStrength=1.34+Math.min(.22,fieldStd/300);
+    // Lift genuinely underexposed regions more decisively, while retaining
+    // protection for deep blacks, bright kitchen surfaces and isolated highlights.
+    let localLift=Math.min(96,deficit*recoveryStrength)*roomGate*shadowGate*midtoneGate*blackGuard*highlightGuard*zoneConfidence;
     // V0.40 adds a modest scene-wide midtone lift so the single embedded JPEG
     // does not remain globally muddy after local shadow recovery.
     const globalDim=smooth(95,155,160-percentile(.50));
@@ -3461,7 +3463,7 @@ function autoEnhanceEditor(){
  const scene=mixed?'High dynamic range / mixed lighting':p50<90?'Low-light interior':p50>155?'Bright interior':'Balanced interior';
  const status=document.getElementById('editorStatus');
  if(status)status.textContent=`Rental analysis: ${scene} · ${darkZones} dark zones · ${brightZones} bright zones · adaptive local tone + highlight shoulder enabled · WB: ${wb} · ${Math.round(clipRate*100)}% clipped highlights · ${Math.round(performance.now()-started)} ms`;
- showToast('Rental Auto Enhance V0.43 applied: stronger adjoining-room recovery with highlight protection.','success');
+ showToast('Rental Auto Enhance V0.44 applied: room-local shadow recovery with highlight protection.','success');
 }
 function editorSettings(){return Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value]))}
 async function batchApplyEditor(){
