@@ -1503,10 +1503,10 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
     <section class="page active" id="page-dashboard">
       <div class="desktop-dashboard-heading"><div><div class="desktop-kicker">YOUR BUSINESS AT A GLANCE</div><h2 id="desktopGreeting">Good to see you, Jackson.</h2><p>Real estate photography workspace · Illawarra &amp; South Coast</p></div><div class="desktop-date-chip"><span>▦</span><strong id="desktopToday">Today</strong></div></div>
       <div class="desktop-kpis">
-        <article class="desktop-kpi"><div class="desktop-kpi-icon">▦</div><div><span>ACTIVE JOBS</span><strong id="activeJobs">0</strong><small>Currently underway</small></div></article>
+        <article class="desktop-kpi"><div class="desktop-kpi-icon">▦</div><div><span>JOBS THIS WEEK</span><strong id="activeJobs">0</strong><small>Scheduled this week</small></div></article>
         <article class="desktop-kpi"><div class="desktop-kpi-icon">▧</div><div><span>PHOTOS EDITED</span><strong id="desktopEditedPhotos">0</strong><small>In your photo library</small></div></article>
         <article class="desktop-kpi"><div class="desktop-kpi-icon">＄</div><div><span>REVENUE · MTD</span><strong id="desktopRevenueMTD">$0</strong><small>Recorded this month</small></div></article>
-        <article class="desktop-kpi"><div class="desktop-kpi-icon">♙</div><div><span>CLIENTS</span><strong id="clientCount">0</strong><small>Saved client records</small></div></article>
+        <article class="desktop-kpi"><div class="desktop-kpi-icon">♙</div><div><span>ACTIVE PROPERTIES</span><strong id="clientCount">0</strong><small>Open property jobs</small></div></article>
       </div>
       <div class="desktop-dashboard-layout">
         <div class="desktop-main-column">
@@ -1516,11 +1516,11 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
         <aside class="desktop-right-column">
           <section class="desktop-card"><div class="desktop-card-head"><div><div class="desktop-kicker">SHORTCUTS</div><h3>Quick actions</h3></div></div><div class="desktop-quick-grid">
             <button type="button" class="desktop-quick-action featured" onclick="openModal('job')"><span>▣</span><b>New job</b></button>
-            <button type="button" class="desktop-quick-action" onclick="showPage('photos')"><span>▧</span><b>Photo studio</b></button>
+            <button type="button" class="desktop-quick-action" onclick="showPage('photos')"><span>▧</span><b>Edit photos</b></button>
             <button type="button" class="desktop-quick-action" onclick="showPage('photos');setTimeout(()=>document.getElementById('photoFiles')?.click(),120)"><span>⇧</span><b>Import photos</b></button>
             <button type="button" class="desktop-quick-action" onclick="openQuoteForm()"><span>▤</span><b>Create quote</b></button>
-            <button type="button" class="desktop-quick-action" onclick="showPage('quotes')"><span>▧</span><b>Quotes &amp; invoices</b></button>
-            <button type="button" class="desktop-quick-action" onclick="showPage('calendar');openCalendarEvent()"><span>＋</span><b>Add booking</b></button>
+            <button type="button" class="desktop-quick-action" onclick="openInvoiceCreator()"><span>▤</span><b>Create invoice</b></button>
+            <button type="button" class="desktop-quick-action" onclick="showPage('photos')"><span>▧</span><b>Open library</b></button>
           </div></section>
           <section class="desktop-card desktop-calendar-card"><div class="desktop-card-head"><div><div class="desktop-kicker">SCHEDULE</div><h3 id="desktopCalendarTitle">Calendar</h3></div><div class="desktop-calendar-nav"><button onclick="desktopShiftMonth(-1)" aria-label="Previous month">‹</button><button onclick="desktopShiftMonth(1)" aria-label="Next month">›</button></div></div><div class="desktop-calendar-grid" id="desktopMiniCalendar"></div><button class="desktop-outline-action" onclick="showPage('calendar')">Open calendar</button></section>
           <section class="desktop-card desktop-attention-card"><div class="desktop-card-head"><div><div class="desktop-kicker">FOLLOW UP</div><h3>Needs attention</h3></div><span class="desktop-count-pill" id="attentionCount">0</span></div><div id="attentionList" class="attention-list"></div></section>
@@ -4010,12 +4010,31 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUp
  window.desktopOpenCalendarDate=function(value){calendarCursor=new Date(value+'T12:00:00');calendarView='day';showPage('calendar');renderCalendar()};
  window.renderDesktopDashboard=function(){
   const now=new Date(),today=calDate(now),month=String(now.getFullYear())+'-'+String(now.getMonth()+1).padStart(2,'0'),greeting=byId('desktopGreeting');
-  if(greeting){const hour=now.getHours();greeting.textContent=(hour<12?'Good morning':hour<17?'Good afternoon':'Good evening')+', Jackson.'}
+  if(greeting){const hour=now.getHours();greeting.textContent=(hour<12?'Good morning':hour<17?'Good afternoon':'Good evening')+', Jackson 👋'}
   const dateEl=byId('desktopToday');if(dateEl)dateEl.textContent=now.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const weekStart=new Date(now);weekStart.setHours(0,0,0,0);weekStart.setDate(weekStart.getDate()-((weekStart.getDay()+6)%7));
+  const weekEnd=new Date(weekStart);weekEnd.setDate(weekEnd.getDate()+7);
+  const allJobs=(data.jobs||[]).slice();
+  const activeStatus=j=>!['delivered','cancelled','closed','archived'].includes(String(j.status||'').toLowerCase());
+  const jobsThisWeek=allJobs.filter(j=>{if(!j.date||!activeStatus(j))return false;const d=new Date(String(j.date).slice(0,10)+'T12:00:00');return !Number.isNaN(d.getTime())&&d>=weekStart&&d<weekEnd});
+  const activeProperties=allJobs.filter(activeStatus).length;
+  const weeklyEl=byId('activeJobs');if(weeklyEl)weeklyEl.textContent=jobsThisWeek.length.toLocaleString('en-AU');
+  const propertyEl=byId('clientCount');if(propertyEl)propertyEl.textContent=activeProperties.toLocaleString('en-AU');
   const edited=(photoRecords||[]).filter(p=>String(p.type||'').toLowerCase()==='edited').length,editedEl=byId('desktopEditedPhotos');if(editedEl)editedEl.textContent=edited.toLocaleString('en-AU');
   const revenue=(data.income||[]).filter(x=>String(x.date||'').slice(0,7)===month).reduce((sum,x)=>sum+(Number(x.amount)||0),0),revenueEl=byId('desktopRevenueMTD');if(revenueEl)revenueEl.textContent=moneyValue(revenue);
-  const jobs=(data.jobs||[]).slice().sort((a,b)=>String(a.date||'9999-99-99').localeCompare(String(b.date||'9999-99-99'))),upcoming=jobs.filter(j=>j.date&&String(j.date).slice(0,10)>=today&&String(j.status||'').toLowerCase()!=='delivered').slice(0,5),target=byId('desktopUpcomingJobs');
-  if(target)target.innerHTML=upcoming.length?upcoming.map(j=>{const st=String(j.status||'Enquiry'),cl=/pending|await/i.test(st)?'pending':/confirm|book/i.test(st)?'':'other';return '<button class="desktop-job-row" onclick="viewJob(\''+safe(j.id)+'\')"><span class="desktop-job-date">'+safe(dayLabel(j.date))+'</span><span class="desktop-job-main"><strong>'+safe(j.name||'Property job')+'</strong><small>'+safe(j.address||j.client||'Address not entered')+'</small></span><span class="desktop-status-pill '+cl+'">'+safe(st)+'</span></button>'}).join(''):'<div class="desktop-empty">No upcoming jobs yet. Create a job or add a booking to your calendar.</div>';
+  const jobs=allJobs.sort((a,b)=>String(a.date||'9999-99-99').localeCompare(String(b.date||'9999-99-99'))),upcoming=jobs.filter(j=>j.date&&String(j.date).slice(0,10)>=today&&activeStatus(j)).slice(0,5),target=byId('desktopUpcomingJobs');
+  if(target){
+   if(upcoming.length){
+    const events=typeof calendarAllEvents==='function'?calendarAllEvents():[];
+    const rows=upcoming.map(j=>{
+     const event=events.find(e=>String(e.jobId||e.sourceId||'')===String(j.id));
+     const time=j.startTime||j.time||event?.startTime||'—';
+     const status=String(j.status||'Enquiry'),tone=/pending|await/i.test(status)?'pending':/confirm|book/i.test(status)?'confirmed':'other';
+     return '<button type="button" class="desktop-job-row" onclick="viewJob(\\''+safe(j.id)+'\\')"><span class="desktop-job-date">'+safe(dayLabel(j.date))+'</span><span class="desktop-job-time">'+safe(time)+'</span><span class="desktop-job-property"><strong>'+safe(j.name||'Property job')+'</strong><small>'+safe(j.address||'Address not entered')+'</small></span><span class="desktop-job-agent">'+safe(j.agent||j.client||'—')+'</span><span class="desktop-status-pill '+tone+'">'+safe(status)+'</span></button>';
+    }).join('');
+    target.innerHTML='<div class="desktop-jobs-table"><div class="desktop-jobs-head"><span>Date</span><span>Time</span><span>Property / address</span><span>Agent</span><span>Status</span></div>'+rows+'</div>';
+   }else target.innerHTML='<div class="desktop-empty">No upcoming jobs yet. Create a job or add a booking to your calendar.</div>';
+  }
   const activity=[],add=(items,label,icon)=>(items||[]).forEach(item=>{const d=item.updatedAt||item.createdAt||item.date;if(d)activity.push({date:String(d),label:label(item),icon})});
   add(data.jobs,j=>'Job · '+(j.name||'New property'),'▣');add(data.quotes,q=>'Quote · '+(q.number||q.clientName||'Created'),'▤');add(data.invoices||[],v=>'Invoice · '+(v.number||v.clientName||'Created'),'▧');add(data.income,i=>'Payment · '+(i.description||moneyValue(i.amount)),'＄');activity.sort((a,b)=>b.date.localeCompare(a.date));
   const log=byId('desktopRecentActivity');if(log)log.innerHTML=activity.length?activity.slice(0,4).map(x=>'<div class="desktop-activity-row"><span class="desktop-activity-icon">'+x.icon+'</span><span class="desktop-activity-copy"><strong>'+safe(x.label)+'</strong><small>'+safe(x.date.length>10?new Date(x.date).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):dayLabel(x.date))+'</small></span></div>').join(''):'<div class="desktop-empty">Activity will appear here as you add jobs, quotes and payments.</div>';
