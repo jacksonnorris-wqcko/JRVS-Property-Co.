@@ -64,7 +64,8 @@
     source: 'JRVS Property Co. browser app',
     business,
     calendar,
-    photos: photoPayload
+    photos: photoPayload,
+    hasPhotoLibrary: true
   };
   const json = JSON.stringify(payload);
   if (!('CompressionStream' in window)) {
