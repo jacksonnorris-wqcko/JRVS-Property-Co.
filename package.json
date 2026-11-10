@@ -5,8 +5,9 @@
   "description": "Windows desktop shell for JRVS Property Co.",
   "scripts": {
     "tauri": "tauri",
-    "desktop:dev": "tauri dev",
-    "desktop:build": "tauri build"
+    "desktop:dev": "npm run desktop:prepare && tauri dev",
+    "desktop:build": "npm run desktop:prepare && tauri build",
+    "desktop:prepare": "node scripts/prepare-desktop.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0"
