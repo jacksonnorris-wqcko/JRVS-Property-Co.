@@ -1,6 +1,6 @@
 [package]
 name = "jrvs-property-co"
-version = "0.48.0"
+version = "0.49.0"
 description = "JRVS Property Co. desktop application"
 authors = ["JRVS Property Co."]
 edition = "2021"
@@ -10,6 +10,8 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
+tauri-plugin-updater = "2"
+serde = { version = "1", features = ["derive"] }
 
 [profile.release]
 codegen-units = 1
