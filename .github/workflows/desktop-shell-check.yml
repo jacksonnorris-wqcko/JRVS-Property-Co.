@@ -135,7 +135,45 @@ jobs:
           $version = [string]$tauri.version
           if ([string]::IsNullOrWhiteSpace($version)) { throw "Desktop version is missing from tauri.conf.json." }
           if ($package.version -ne $version) { throw "package.json version ($($package.version)) does not match Tauri version ($version)." }
-          if ($cargo -notmatch ('(?m)^version = "' + [regex]::Escape($version) + '"$')) { throw "Cargo.toml version does not match Tauri version ($version)." }
+          if ($cargo -notmatch ('(?m)^version = "' + [regex]::Escape($version) + '"\r? { throw "Cargo.toml version does not match Tauri version ($version)." }
+          $tag = "desktop-v$version"
+          git ls-remote --exit-code --tags origin "refs/tags/$tag" *> $null
+          if ($LASTEXITCODE -eq 0) { throw "Release tag $tag already exists. Bump the desktop version before publishing another update." }
+          "JRVS_DESKTOP_VERSION=$version" >> $env:GITHUB_ENV
+          "JRVS_DESKTOP_TAG=$tag" >> $env:GITHUB_ENV
+          Write-Host "Validated release candidate $tag"
+
+      - name: Verify updater signing secret
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
+            throw "Missing GitHub Actions secret TAURI_SIGNING_PRIVATE_KEY. No release was published."
+          }
+
+      - name: Build, sign and publish GitHub Release
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: D:/a/jrvs
+          tagName: ${{ env.JRVS_DESKTOP_TAG }}
+          releaseName: JRVS Property Co. Desktop ${{ env.JRVS_DESKTOP_VERSION }}
+          releaseBody: |
+            JRVS Property Co. Desktop for Windows.
+
+            This release passed the JRVS Windows desktop build and installer verification before publication.
+
+            JRVS Desktop checks for signed updates when it starts. When an update is available, open the in-app prompt and choose “Update & restart”. No installer download is needed for existing installations.
+          releaseDraft: false
+          prerelease: false
+          args: --config src-tauri/tauri.release.conf.json
+          updaterJsonPreferNsis: true
+          uploadUpdaterJson: true
+)) { throw "Cargo.toml version does not match Tauri version ($version)." }
           $tag = "desktop-v$version"
           git ls-remote --exit-code --tags origin "refs/tags/$tag" *> $null
           if ($LASTEXITCODE -eq 0) { throw "Release tag $tag already exists. Bump the desktop version before publishing another update." }
