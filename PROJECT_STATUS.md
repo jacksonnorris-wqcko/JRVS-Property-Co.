@@ -27,11 +27,11 @@ The desktop build now runs `npm run handover:check` before building. This valida
 - Repair commit: `2dd260d244c522a1545abb9a9103464e54c67e6d` removes the duplicated tail and extracts the Cargo version with a CRLF-safe expression.
 - Release-triggered CI run `43109112384` passed handover/version validation, Photo Studio regression checks, Windows installer build, installer output verification and artifact upload.
 - Signed publication then passed the Cargo/package/Tauri version checks and printed `Validated release candidate desktop-v0.54.0`, but the PowerShell step still exited 1. Root cause: `git ls-remote --exit-code` returns exit code 2 when the tag is correctly absent, and PowerShell retains that native exit code through the end of the step.
-- Next repair: capture the `git ls-remote` exit code, accept only 2 as the expected absent-tag result, and reset `$global:LASTEXITCODE = 0` before the step completes. Treat other non-zero values as a real lookup failure.
+- Workflow repair commit `687af11bc1d8befcd3e5346721a1bd83fbc9e4b7` captures the `git ls-remote` result, accepts only exit code 2 as the expected absent-tag result, and resets `$global:LASTEXITCODE = 0` before the PowerShell step completes. Unexpected lookup exit codes fail explicitly.
 - The signed-release workflow repeats the Windows build, verifies the three version declarations and the absence of an existing tag, checks the configured updater signing secret, then creates the signed GitHub Release and `latest.json`. Publication is gated on the Windows build succeeding.
 - Preserve the existing updater signing keys, V0.54.0 feature set, user data and all prior edit recipes. Do not modify `main`.
 
-**Immediate next action:** repair the expected missing-tag exit-code handling, run the Windows CI and gated signed release again, then verify the `desktop-v0.54.0` GitHub Release assets and `latest.json` before describing V0.54.0 as released.
+**Immediate next action:** run the signed V0.54.0 workflow from the repaired branch head. Confirm the tag lookup passes, the existing updater signing secret is accepted, and the GitHub Release contains the NSIS installer/signature plus `latest.json` before describing V0.54.0 as released.
 
 ## Current active work and next action
 
