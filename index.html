@@ -1719,7 +1719,7 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
 
 <div class="editor-backdrop" id="editorBackdrop"><div class="editor-shell">
 <div class="editor-top"><div><div class="eyebrow">JRVS PHOTO STUDIO</div><h2 id="editorTitle">Edit photograph</h2><div class="muted" id="editorSubtitle">Non-destructive edit · Original preserved</div></div><div class="editor-top-actions"><button class="secondary" type="button" onclick="editorUndo()" title="Undo (Ctrl+Z)">↶ Undo</button><button class="secondary" type="button" onclick="editorRedo()" title="Redo (Ctrl+Shift+Z)">↷ Redo</button><button class="secondary" type="button" onclick="toggleEditorCompare()">◐ Compare view</button><button class="secondary" type="button" id="editorRawDevelopBtn" onclick="developEditorRawSource()" style="display:none">Develop RAW</button><button class="primary" type="button" onclick="saveEditedPhoto()">Save copy</button><button class="secondary" onclick="closeEditor()">← Gallery</button></div></div>
-<div class="editor-layout"><div class="editor-stage-wrap"><div class="editor-stage-toolbar"><span id="editorViewLabel">FIT · FULL IMAGE</span><div><button type="button" class="secondary" onclick="editorZoom(-.15)">−</button><button type="button" class="secondary" onclick="editorZoom(0)">Fit</button><button type="button" class="secondary" onclick="editorZoom(.15)">+</button></div></div><div class="editor-stage" id="editorStage"><div id="retouchCursor" class="jrvs-retouch-cursor"></div><canvas id="editorCanvas" onpointerdown="editorRetouchPointerDown(event)" onpointermove="editorRetouchPointerMove(event)" onpointerup="editorRetouchPointerUp(event)" onpointercancel="editorRetouchPointerUp(event)"></canvas></div><div class="editor-compare-bar" id="editorCompareBar" hidden><span>ORIGINAL</span><input id="editorCompareRange" type="range" min="5" max="95" value="50" aria-label="Before and after split" oninput="editorComparePosition=Number(this.value);drawEditor()"><span>EDITED</span><button type="button" class="secondary" onclick="toggleEditorCompare(false)">Done</button></div><div class="editor-stage-footer"><span id="editorStageStatus">Original preserved · Non-destructive editing</span><span>Full-resolution export</span></div></div><aside class="editor-panel">
+<div class="editor-layout"><div class="editor-stage-wrap"><div class="editor-stage-toolbar"><span id="editorViewLabel">FIT · FULL IMAGE</span><div><button type="button" class="secondary" onclick="editorZoom(-.15)">−</button><button type="button" class="secondary" onclick="editorZoom(0)">Fit</button><button type="button" class="secondary" onclick="editorZoom(.15)">+</button></div></div><div class="editor-stage" id="editorStage"><div id="retouchCursor" class="jrvs-retouch-cursor"></div><canvas id="editorCanvas" onpointerdown="editorCanvasPointerDown(event)" onpointermove="editorCanvasPointerMove(event)" onpointerup="editorCanvasPointerUp(event)" onpointercancel="editorCanvasPointerUp(event)"></canvas></div><div class="editor-compare-bar" id="editorCompareBar" hidden><span>ORIGINAL</span><input id="editorCompareRange" type="range" min="5" max="95" value="50" aria-label="Before and after split" oninput="editorComparePosition=Number(this.value);drawEditor()"><span>EDITED</span><button type="button" class="secondary" onclick="toggleEditorCompare(false)">Done</button></div><div class="editor-stage-footer"><span id="editorStageStatus">Original preserved · Non-destructive editing</span><span>Full-resolution export</span></div></div><aside class="editor-panel">
 <div class="editor-panel-heading"><div><strong>Photo development</strong><div class="editor-help">Build the look first, refine details when needed.</div></div><span class="editor-live-dot">● LIVE</span></div><nav class="editor-tabs" aria-label="Editing workspace"><button type="button" class="active" data-editor-tab="basic" onclick="setEditorTab('basic')">Develop</button><button type="button" data-editor-tab="colour" onclick="setEditorTab('colour')">Colour</button><button type="button" data-editor-tab="detail" onclick="setEditorTab('detail')">Finish</button><button type="button" data-editor-tab="geometry" onclick="setEditorTab('geometry')">Geometry</button><button type="button" data-editor-tab="mask" onclick="setEditorTab('mask')">Masks</button><button type="button" data-editor-tab="export" onclick="setEditorTab('export')">Export</button><button type="button" data-editor-tab="retouch" onclick="setEditorTab('retouch')">Retouch</button></nav>
 <div class="editor-control"><label>Property presets</label><select id="editorPreset" onchange="applyEditorPreset(this.value)">
 <option value="none">No preset — original</option>
@@ -3283,7 +3283,7 @@ const EDITOR_PREVIEW_MAX=1600;
 
 // JRVS Photo Studio workspace controls (v0.9.0)
 let editorZoomLevel=1, editorActiveTab='basic';
-function setEditorTab(tab){editorActiveTab=tab;document.querySelectorAll('[data-editor-tab]').forEach(b=>b.classList.toggle('active',b.dataset.editorTab===tab));document.querySelectorAll('[data-editor-group]').forEach(el=>{el.hidden=el.dataset.editorGroup!==tab});}
+function setEditorTab(tab){editorActiveTab=tab;document.querySelectorAll('[data-editor-tab]').forEach(b=>b.classList.toggle('active',b.dataset.editorTab===tab));document.querySelectorAll('[data-editor-group]').forEach(el=>{el.hidden=el.dataset.editorGroup!==tab});if(tab!=='mask')setEditorLocalMaskMode('off');if(tab!=='retouch')setEditorRetouchMode('off');}
 function fitEditorCanvas(){
  const stage=document.getElementById('editorStage'),c=document.getElementById('editorCanvas');
  if(!stage||!c||!c.width||!c.height)return;
@@ -3304,6 +3304,7 @@ function editorZoom(delta){
 }
 let editorFitObserver=null;
 let editorRetouchMode='off',editorRetouchStrokes=[],editorRetouchSource=null,editorRetouchActive=null;
+let editorLocalMasks=[],editorLocalMaskSelectedId=null,editorLocalMaskMode='off',editorLocalMaskActive=null,editorLocalMaskBrushSize=76,editorLocalMaskFeather=.7,editorLocalMaskFlow=.75;
 const EDITOR_HSL_CHANNELS=[{id:'red',label:'Red',center:0},{id:'orange',label:'Orange',center:30},{id:'yellow',label:'Yellow',center:60},{id:'green',label:'Green',center:120},{id:'aqua',label:'Aqua',center:180},{id:'blue',label:'Blue',center:220},{id:'purple',label:'Purple',center:270},{id:'magenta',label:'Magenta',center:315}];
 let editorToneCurve=[64,128,192];
 let editorHsl=Object.fromEntries(EDITOR_HSL_CHANNELS.map(c=>[c.id,{hue:0,saturation:0,luminance:0}]));
@@ -3320,6 +3321,108 @@ function buildEditorHslControls(){
  const host=document.getElementById('editorHslChannels');if(!host||host.dataset.ready)return;host.dataset.ready='1';
  host.innerHTML=EDITOR_HSL_CHANNELS.map(ch=>{let html='<details class="editor-section jrvs-hsl-channel"><summary>'+ch.label+'</summary>';['hue','saturation','luminance'].forEach(prop=>{const title=prop==='hue'?'Hue':prop==='saturation'?'Saturation':'Luminance',id='jrvsHsl_'+ch.id+'_'+prop;html+='<div class="editor-control"><label>'+title+' <span id="'+id+'Val">0</span></label><input id="'+id+'" type="range" min="-100" max="100" value="0" oninput="editorHsl.'+ch.id+'.'+prop+'=+this.value;document.getElementById(&quot;'+id+'Val&quot;).textContent=this.value;editorChanged()"></div>'});return html+'</details>'}).join('');
 }
+function editorClamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||0))}
+function createEditorLocalMask(){
+ return {id:jrvsNewId('mask'),name:'Mask '+(editorLocalMasks.length+1),enabled:true,inverted:false,exposure:0,highlights:0,shadows:0,temperature:0,saturation:0,strokes:[]};
+}
+function normaliseEditorLocalMasks(masks){
+ if(!Array.isArray(masks))return [];
+ return masks.slice(0,12).map((mask,index)=>({
+  id:String(mask?.id||jrvsNewId('mask')),name:String(mask?.name||('Mask '+(index+1))).slice(0,40),
+  enabled:mask?.enabled!==false,inverted:!!mask?.inverted,
+  exposure:editorClamp(mask?.exposure,-2,2),highlights:editorClamp(mask?.highlights,-100,100),shadows:editorClamp(mask?.shadows,-100,100),
+  temperature:editorClamp(mask?.temperature,-100,100),saturation:editorClamp(mask?.saturation,-100,100),
+  strokes:(Array.isArray(mask?.strokes)?mask.strokes:[]).slice(0,500).map(stroke=>({
+   mode:stroke?.mode==='erase'?'erase':'paint',opacity:editorClamp(stroke?.opacity,.01,1),feather:editorClamp(stroke?.feather,0,1),
+   dabs:(Array.isArray(stroke?.dabs)?stroke.dabs:[]).slice(0,12000).map(dab=>({x:editorClamp(dab?.x,0,1),y:editorClamp(dab?.y,0,1),radius:editorClamp(dab?.radius,.001,.45)}))
+  }))
+ }));
+}
+function cloneEditorLocalMasks(){return JSON.parse(JSON.stringify(editorLocalMasks||[]))}
+function selectedEditorLocalMask(){return editorLocalMasks.find(mask=>mask.id===editorLocalMaskSelectedId)||null}
+function renderEditorLocalMaskList(){
+ const host=document.getElementById('editorLocalMaskList');if(!host)return;host.replaceChildren();
+ if(!editorLocalMasks.length){const note=document.createElement('div');note.className='editor-help';note.textContent='No masks yet. Add a brush mask to begin.';host.appendChild(note);return}
+ editorLocalMasks.forEach((mask,index)=>{
+  const row=document.createElement('button');row.type='button';row.className='jrvs-local-mask-row'+(mask.id===editorLocalMaskSelectedId?' active':'');
+  const label=document.createElement('span');label.textContent=mask.name;
+  const count=document.createElement('small');count.textContent=mask.enabled?(mask.strokes.length+' stroke'+(mask.strokes.length===1?'':'s')):'Disabled';
+  row.append(label,count);row.addEventListener('click',()=>selectEditorLocalMask(mask.id));host.appendChild(row);
+ });
+}
+function syncEditorLocalMaskControls(){
+ const mask=selectedEditorLocalMask(),map={localMaskEnabled:mask?.enabled!==false,localMaskInverted:!!mask?.inverted};
+ Object.entries(map).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.checked=value});
+ const sliders={localMaskExposure:mask?Math.round(mask.exposure*50):0,localMaskHighlights:mask?.highlights||0,localMaskShadows:mask?.shadows||0,localMaskTemperature:mask?.temperature||0,localMaskSaturation:mask?.saturation||0};
+ Object.entries(sliders).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.value=value});
+ const labels={localMaskExposureValue:(mask?.exposure||0).toFixed(2)+' EV',localMaskHighlightsValue:String(mask?.highlights||0),localMaskShadowsValue:String(mask?.shadows||0),localMaskTemperatureValue:String(mask?.temperature||0),localMaskSaturationValue:String(mask?.saturation||0)};
+ Object.entries(labels).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value});
+ ['localMaskEnabled','localMaskInverted','localMaskExposure','localMaskHighlights','localMaskShadows','localMaskTemperature','localMaskSaturation'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!mask});
+ const del=document.querySelector('.jrvs-local-mask-panel button[onclick="deleteSelectedEditorMask()"]');if(del)del.disabled=!mask;
+}
+function selectEditorLocalMask(id){
+ editorLocalMaskSelectedId=editorLocalMasks.some(mask=>mask.id===id)?id:null;renderEditorLocalMaskList();syncEditorLocalMaskControls();
+}
+function addEditorLocalMask(){
+ if(editorLocalMasks.length>=12){showToast('A photo can contain up to 12 local masks.','info');return}
+ const mask=createEditorLocalMask();editorLocalMasks.push(mask);editorLocalMaskSelectedId=mask.id;
+ renderEditorLocalMaskList();syncEditorLocalMaskControls();setEditorLocalMaskMode('paint');drawEditor();captureEditorHistory();
+}
+function deleteSelectedEditorMask(){
+ const mask=selectedEditorLocalMask();if(!mask)return;
+ editorLocalMasks=editorLocalMasks.filter(item=>item.id!==mask.id);editorLocalMaskSelectedId=editorLocalMasks[0]?.id||null;
+ renderEditorLocalMaskList();syncEditorLocalMaskControls();drawEditor();captureEditorHistory();
+}
+function clearSelectedEditorMask(){
+ const mask=selectedEditorLocalMask();if(!mask)return;mask.strokes=[];renderEditorLocalMaskList();drawEditor();captureEditorHistory();
+}
+function updateSelectedEditorMask(key,value){
+ const mask=selectedEditorLocalMask();if(!mask)return;
+ if(key==='enabled'||key==='inverted')mask[key]=!!value;
+ renderEditorLocalMaskList();drawEditor();captureEditorHistory();
+}
+function updateSelectedEditorMaskControl(key,value){
+ const mask=selectedEditorLocalMask();if(!mask)return;
+ mask[key]=key==='exposure'?editorClamp(value,-100,100)/50:editorClamp(value,-100,100);
+ const label=document.getElementById('localMask'+key[0].toUpperCase()+key.slice(1)+'Value');
+ if(label)label.textContent=key==='exposure'?mask.exposure.toFixed(2)+' EV':String(mask[key]);
+ editorChanged();clearTimeout(editorHistoryTimer);editorHistoryTimer=setTimeout(captureEditorHistory,250);
+}
+function setEditorLocalMaskMode(mode){
+ editorLocalMaskMode=mode;
+ document.querySelectorAll('[data-mask-mode]').forEach(button=>button.classList.toggle('active',button.dataset.maskMode===mode));
+ const canvas=document.getElementById('editorCanvas');if(canvas&&editorRetouchMode==='off')canvas.style.cursor=mode==='off'?'default':'crosshair';
+ const note=document.getElementById('editorLocalMaskInstructions');
+ if(note)note.textContent=mode==='off'?'Select a mask and choose Paint, then brush over the photo. Use Erase to subtract from the selected mask.':mode==='erase'?'Paint over an area to subtract it from this mask.':'Paint over the photo to add to the selected mask.';
+}
+function editorMaskPoint(event){
+ const canvas=document.getElementById('editorCanvas'),rect=canvas.getBoundingClientRect();
+ return {x:editorClamp((event.clientX-rect.left)/Math.max(1,rect.width),0,1),y:editorClamp((event.clientY-rect.top)/Math.max(1,rect.height),0,1),radius:editorLocalMaskBrushSize/Math.max(1,rect.width)};
+}
+function editorLocalMaskPointerDown(event){
+ if(editorLocalMaskMode==='off'||!selectedEditorLocalMask()||!editorImage||editorCompare)return false;
+ event.preventDefault();const point=editorMaskPoint(event),canvas=document.getElementById('editorCanvas');
+ if(canvas?.setPointerCapture)canvas.setPointerCapture(event.pointerId);
+ editorLocalMaskActive={maskId:editorLocalMaskSelectedId,mode:editorLocalMaskMode,dabs:[point],last:point,opacity:editorLocalMaskFlow,feather:editorLocalMaskFeather};
+ return true;
+}
+function editorLocalMaskPointerMove(event){
+ if(!editorLocalMaskActive)return false;
+ const point=editorMaskPoint(event),stroke=editorLocalMaskActive,dx=point.x-stroke.last.x,dy=point.y-stroke.last.y,dist=Math.hypot(dx,dy),steps=Math.max(1,Math.ceil(dist/Math.max(.001,point.radius*.2)));
+ for(let i=1;i<=steps;i++){const t=i/steps;stroke.dabs.push({x:stroke.last.x+dx*t,y:stroke.last.y+dy*t,radius:point.radius})}
+ stroke.last=point;scheduleRetouchPreview();return true;
+}
+function editorLocalMaskPointerUp(){
+ if(!editorLocalMaskActive)return false;
+ const stroke=editorLocalMaskActive;editorLocalMaskActive=null;
+ const mask=editorLocalMasks.find(item=>item.id===stroke.maskId);
+ if(mask){mask.strokes.push({mode:stroke.mode,opacity:stroke.opacity,feather:stroke.feather,dabs:stroke.dabs});renderEditorLocalMaskList();drawEditor();captureEditorHistory()}
+ return true;
+}
+function editorCanvasPointerDown(event){if(editorLocalMaskPointerDown(event))return;editorRetouchPointerDown(event)}
+function editorCanvasPointerMove(event){if(editorLocalMaskPointerMove(event))return;editorRetouchPointerMove(event)}
+function editorCanvasPointerUp(event){if(editorLocalMaskPointerUp())return;editorRetouchPointerUp(event)}
+
 function initEditorProControls(){
  const panel=document.querySelector('#editorBackdrop .editor-panel');if(!panel)return;buildEditorHslControls();if(panel.dataset.proReady)return;panel.dataset.proReady='1';
  panel.querySelectorAll('input[type=range]').forEach(range=>{const label=range.closest('.editor-control')?.querySelector('label');if(!label)return;const value=label.querySelector('span');if(!value)return;const num=document.createElement('input');num.type='number';num.className='editor-number';num.min=range.min;num.max=range.max;num.step=range.step||'1';num.value=range.value;num.setAttribute('aria-label',label.textContent.trim()+' exact value');num.addEventListener('change',()=>{const v=Math.max(Number(num.min),Math.min(Number(num.max),Number(num.value)||0));range.value=v;num.value=v;range.dispatchEvent(new Event('input',{bubbles:true}));editorChanged()});range.addEventListener('input',()=>{num.value=range.value});label.appendChild(num)});
