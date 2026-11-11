@@ -1,6 +1,6 @@
 [package]
 name = "jrvs-property-co"
-version = "0.54.1"
+version = "0.54.2"
 description = "JRVS Property Co. desktop application"
 authors = ["JRVS Property Co."]
 edition = "2021"

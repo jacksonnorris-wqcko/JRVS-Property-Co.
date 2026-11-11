@@ -5,7 +5,7 @@
 **Last reviewed:** 12 November 2026 (Australia/Sydney)  
 **Repository:** [jacksonnorris-wqcko/JRVS-Property-Co.](https://github.com/jacksonnorris-wqcko/JRVS-Property-Co.)  
 **Active desktop branch:** `desktop-transition`  
-**Current desktop version:** `0.54.1`  
+**Current desktop version:** `0.54.2`  
 **Stable browser/PWA branch:** `main` — keep it unchanged unless the user explicitly requests browser/PWA work.
 
 ## Start here — current position
@@ -19,7 +19,7 @@ The desktop branch is independently versioned. The desktop version is defined in
 
 The desktop build now runs `npm run handover:check` before building. This validates that `package.json`, `Cargo.toml` and Tauri configuration agree, that this handover records the current desktop version/branch, and that the new-chat and continuity instructions are present. The check is wired into `.github/workflows/desktop-shell-check.yml`.
 
-## V0.54.1 hotfix checkpoint — 12 November 2026
+## V0.54.1 RAW demosaic hotfix — released 12 November 2026
 
 - Active branch: `desktop-transition`; stable browser/PWA `main` remains untouched.
 - V0.54.0 was successfully published as `desktop-v0.54.0` on 12 November 2026 (UTC 11 November 22:33), with signed NSIS and MSI installers, both signature files, and `latest.json`. GitHub Actions run `43110797157` completed successfully.
@@ -29,9 +29,26 @@ The desktop build now runs `npm run handover:check` before building. This valida
 - Bump desktop version consistently to `0.54.1` in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`. Keep V0.54.0 tagged release immutable.
 - Existing photo source files, saved edits and recipe versions are unchanged. No data migration or destructive storage operation is involved.
 
-**Immediate next action:** run handover and Photo Studio regression checks, build the Windows installers, then publish the signed `desktop-v0.54.1` update. After publication, user must retry Develop RAW with a Canon EOS 600D CR2 and confirm full-resolution output/image quality. Do not claim CR2 runtime validation until user tests it.
+**Outcome:** V0.54.1 was published successfully as `desktop-v0.54.1` on 12 November 2026 (UTC 11 November 23:10). Signed NSIS/MSI installers, signature files and `latest.json` are present. CI run `43115929060` passed both the Windows build and the signed publication job.
+
+**User validation still required:** retry Develop RAW with a Canon EOS 600D CR2 and confirm full-resolution output/image quality. Do not claim CR2 runtime validation until user tests it.
+
+## V0.54.2 quotes and invoices preview fix — 12 November 2026
+
+- User testing in the installed Windows desktop app found a “Please allow pop-ups for this app to generate your PDF” message when using quote/invoice document output.
+- Root cause confirmed in `printBusinessDocument()`: it used `window.open('', '_blank')` to create a second top-level window. The quote and invoice records themselves are created locally; the blocked action is the separate PDF preview/print window.
+- Replace the popup with an in-app document preview panel using a local iframe. The user can review the quotation or invoice and select **Print / Save PDF** to open the Windows print dialog from the current app window.
+- Add an automated handover regression check requiring the in-app iframe preview and forbidding popup use within quote/invoice document generation.
+- Keep invoice numbering, quote links, document layout, logo, payment information, saved records and all user data unchanged. No data migration is required.
+- Bump desktop version to `0.54.2` in all three desktop version files; publish with the normal signed updater workflow.
+
+**Immediate next action:** run the handover check and Windows desktop build, verify the preview/print flow in the installed Tauri webview, and publish signed V0.54.2. User should test both quote and invoice preview and save-to-PDF after updating.
 
 ## Current active work and next action
+
+### Current app task — in-app quote and invoice PDF preview
+
+The quote/invoice document renderer now keeps its preview inside the main desktop window instead of calling `window.open()`. It presents a review panel and a **Print / Save PDF** control. The record creation, sequential numbering and document content remain unchanged. CI regression coverage checks for this desktop-specific behaviour.
 
 ### Application task — shared scrolling fix verified
 
@@ -64,16 +81,16 @@ The shared desktop scrolling fix was committed on 11 November 2026:
 - All five inline application JavaScript scripts parsed without syntax errors.
 - Direct helper checks passed for projective identity/corner/inverse mapping, lens bounds, mask feathering/normalisation limits and distinct Clone/Heal blends.
 - Windows CI run 42992339544 passed handover/version validation and Photo Studio regression checks, but its installer build was cancelled by subsequent commits. This release commit starts a fresh Windows build and signed updater job.
-- **Still not user-verified:** EOS 600D CR2 sensor development on the user's PC, complete offline workflows, large-file/image-quality tuning, or an installed-app in-place upgrade on the user's Windows profile. The V0.54.1 patch addresses a confirmed invalid demosaic option in the full-resolution path.
+- **Still not user-verified:** EOS 600D CR2 sensor development on the user's PC, complete offline workflows, large-file/image-quality tuning, or an installed-app in-place upgrade on the user's Windows profile. The V0.54.1 patch corrected the confirmed invalid demosaic option in the full-resolution path.
 
 **Known limits:** masks are manual, not semantic AI selections; lens correction is manual without camera profiles; Heal is sampled patch matching, not generative repair; the renderer remains an 8-bit sRGB canvas. No Lightroom or camera-quality parity claim.
 
-**V0.54.1 next action:** validate the supported demosaic options in CI and publish the signed patch update. Ask the user to retry full-resolution CR2 development once installed.
+**V0.54.1 status:** supported demosaic options passed CI and the signed patch is published. Full-resolution EOS 600D CR2 output still needs user validation.
 
 **Non-negotiables:** preserve source bytes, IDs, metadata, job links and existing edits; no destructive recipe migrations; keep Property Finish/Smart Finish and prior controls; develop only on `desktop-transition`; never touch `main`.
 ## Latest confirmed application functionality
 
-The desktop branch's latest documented feature release is **V0.54.0**; V0.54.1 is a RAW demosaic hotfix.
+The desktop branch's latest completed feature release is **V0.54.0**; V0.54.1 is the published RAW demosaic hotfix; V0.54.2 addresses desktop quote/invoice PDF preview.
 
 ### Photo editing
 - JRVS Property Finish replaces the earlier Rental Auto Enhance workflow.
@@ -162,4 +179,4 @@ These are not claims that the features are broken; they are verification areas t
 - First hotfix validation run `43113993364` passed handover/version checks and Photo Studio regression tests, then stalled in `Build Windows installers` from 11 November 2026 22:43:07 UTC; it remained in progress with no installer artifact in later checks.
 - The job is configured with a 45-minute timeout, but GitHub did not report a timeout or finish the job. A fresh ordinary push will use the workflow's replaceable check concurrency group to supersede the stalled runner.
 - Recovery run `43114715262` completed successfully: handover/version checks, Photo Studio regression checks, Windows installer build, installer verification and artifact upload all passed. The ordinary commit correctly skipped publication because it was not the intentional release commit.
-- Next, publish V0.54.1 through the separate signed release workflow. Existing V0.54.0 release and stable `main` remain untouched.
+- V0.54.1 was subsequently published successfully through the signed release workflow (run `43115929060`). The V0.54.2 desktop document-preview fix is the new active patch. Existing releases remain immutable and stable `main` remains untouched.

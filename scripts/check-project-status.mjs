@@ -63,3 +63,14 @@ if (!source.includes("const APP_VERSION='0.48.0';")) {
 }
 
 console.log(`JRVS handover check passed: desktop-transition, version ${desktopVersion}, project status and new-chat instructions are present.`);
+
+const documentPrintStart = source.indexOf('function printBusinessDocument(type,id){');
+const documentPrintEnd = source.indexOf('\nfunction convertQuoteToJob', documentPrintStart);
+if (documentPrintStart < 0 || documentPrintEnd < 0) throw new Error('Quote/invoice document preview function is missing.');
+const documentPrintSource = source.slice(documentPrintStart, documentPrintEnd);
+if (/window\.open\s*\(/.test(documentPrintSource) || documentPrintSource.includes('Please allow pop-ups')) {
+  throw new Error('Quote/invoice PDF generation must not depend on browser pop-ups.');
+}
+if (!source.includes('id="businessDocumentPreviewFrame"') || !source.includes('function printBusinessDocumentPreview()') || !source.includes('frame.srcdoc=html;') || !source.includes('frame.contentWindow.print()')) {
+  throw new Error('In-app quote/invoice print preview is incomplete.');
+}
