@@ -51,6 +51,9 @@ jobs:
       - name: Install frontend dependencies
         run: npm install
 
+      - name: Validate JRVS project handover and version state
+        run: npm run handover:check
+
       - name: Build Windows installers
         run: npm run desktop:build
 
