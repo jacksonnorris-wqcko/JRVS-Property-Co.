@@ -34,14 +34,30 @@ The shared desktop scrolling fix was committed on 11 November 2026:
 
 **User test result:** user reported "alright it works" after testing the build. Treat the shared scrolling issue as closed unless a specific page/control is later reported as still clipped.
 
-### Next major development — awaiting priority selection
+### Next major development — JRVS Photo Studio / Lightroom-class editing ambition
 
-The scrolling issue is closed. Before starting another major feature, agree the next scope with the user. Strong candidate areas are:
-1. End-to-end job workflow connecting enquiries/clients, quotes, booked jobs, photo delivery, invoices and payment status.
-2. Finance and quote/invoice integration, including accurate outstanding balances, payment tracking and business cash position.
-3. Production-readiness/data-safety work: legacy data migration audit, full backup/restore round trip, photo asset integrity and upgrade testing.
+**User priority confirmed:** focus major development effort on making JRVS Photo Studio an elite property-photography editor that can compete with Lightroom for the user's rental/real-estate workflow. Finance features are not the current priority. Do not start a finance overhaul unless the user changes this direction.
 
-Do not assume one of these has been selected until the user chooses or gives a new development instruction.
+**Immediate next action:** audit the current editor implementation (not just the historical roadmap) and produce a code-grounded capability/gap matrix. Identify the existing adjustment pipeline, edit recipe/history model, RAW decoder and offline dependencies, crop/geometry tools, masks, retouch tools, preview/full-resolution rendering path, batch processing, and export workflow. Then propose a staged plan and select the first build milestone with the user or from the strongest obvious gap.
+
+**Strategic direction:** aim to be best-in-class for property/interior photography rather than trying to reproduce every Lightroom feature at once. Prioritise reliable camera RAW development, precise tonal/colour controls, non-destructive editing, perspective/vertical correction, local masks (especially windows/interior exposure balancing), reliable clone/heal retouching, batch consistency, colour-managed export and responsive full-resolution rendering.
+
+**Known gaps from existing Photo Studio architecture notes (must verify against live code):**
+- Genuine CR2 sensor-data development was added experimentally through FlashRaw WebAssembly in V0.41.0; it was documented as requiring first-use network access from esm.sh. Validate real EOS 600D files, offline behaviour, colour/white balance/highlights and full-resolution output.
+- Current JRVS Property Finish is a restrained global/spatial-luminance workflow; luminance masks are not semantic window/subject masks.
+- Proper local adjustment masks, advanced perspective/lens correction and independent healing/clone algorithms are called out as future engine work in `PHOTO_STUDIO_ROADMAP.md`.
+- The recipe/render architecture plan calls for deterministic operation ordering, preview/full-resolution parity and non-destructive source + recipe + output storage. Confirm what is now implemented before changing it.
+
+**Constraints:** preserve original source photos and existing edits; retain photo IDs, edit recipes and job associations; avoid data-destructive recipe migrations; do not regress the current JRVS Property Finish workflow. Keep the existing JRVS branding. Finance and other business modules remain out of scope for this phase.
+
+**Suggested phased roadmap (subject to code audit):**
+1. Editing core and RAW reliability: validate decoder, colour handling, history/undo, recipe determinism, preview/export parity and offline availability.
+2. Professional develop tools: exposure, contrast, highlights, shadows, whites/blacks, curves, white balance, HSL/colour grading, sharpening, denoise and lens profiles.
+3. Property-specific local editing: brush, linear/radial gradients, mask refinement and window/interior balancing with non-destructive per-mask recipes.
+4. Geometry and retouch: crop/straighten, vertical/horizontal perspective correction, lens distortion, clone and healing.
+5. Pro workflow: presets, copy/paste settings, batch processing, compare/before-after, ratings/flags, export presets and efficient full-resolution queue.
+
+Do not claim Lightroom parity; describe the product goal as a focused, high-quality professional editor whose property-photography workflow can rival the tools agents and photographers rely on.
 
 ### Continuity-system task — established in this commit series
 
