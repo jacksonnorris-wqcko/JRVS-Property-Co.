@@ -3419,142 +3419,61 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
  // separates underexposed interior midtones from bright architectural surfaces.
  // This is deterministic local processing, not semantic window recognition.
  if(editorLocalBalance){
-  // V0.38 adaptive interior development:
-  // 1) Build a multi-scale illumination field from the globally corrected preview.
-  // 2) Use a robust upper-mid percentile as the room reference (less sensitive to
-  //    large dark furniture than a simple whole-frame mean).
-  // 3) Apply smooth spatial shadow recovery while retaining pixel-level texture,
-  //    chroma relationships and a gradual highlight shoulder.
-  const gw=192,gh=Math.max(64,Math.round(gw*height/Math.max(1,width)));
-  const map=document.createElement('canvas');map.width=gw;map.height=gh;
-  const mx=map.getContext('2d',{willReadFrequently:true});mx.drawImage(canvas,0,0,gw,gh);
-  const blurA=document.createElement('canvas');blurA.width=gw;blurA.height=gh;
-  const ax=blurA.getContext('2d',{willReadFrequently:true});
-  ax.filter='blur(5px)';ax.drawImage(map,0,0);ax.filter='none';
-  const blurB=document.createElement('canvas');blurB.width=gw;blurB.height=gh;
-  const bx=blurB.getContext('2d',{willReadFrequently:true});
-  bx.filter='blur(13px)';bx.drawImage(map,0,0);bx.filter='none';
-  const ad=ax.getImageData(0,0,gw,gh).data,bd=bx.getImageData(0,0,gw,gh).data;
-  const field=new Float32Array(gw*gh),coarse=new Float32Array(gw*gh),samples=[];
-  let sum=0,sumSq=0;
+  // JRVS Property Finish · adaptive interior balance.
+  // One blurred luminance map estimates room-scale exposure. Dark adjoining
+  // spaces receive a capped lift; already-bright pixels are protected. No
+  // stacked masks, aggressive local contrast or global grey wash.
+  const intent=editorLastAnalysis?.intent||'natural';
+  const mapW=Math.max(48,Math.round(width/16)),mapH=Math.max(40,Math.round(height/16));
+  const mapCanvas=document.createElement('canvas');mapCanvas.width=mapW;mapCanvas.height=mapH;
+  const mapCtx=mapCanvas.getContext('2d',{willReadFrequently:true});
+  mapCtx.drawImage(canvas,0,0,mapW,mapH);
+  const blurred=document.createElement('canvas');blurred.width=mapW;blurred.height=mapH;
+  const blurCtx=blurred.getContext('2d',{willReadFrequently:true});
+  blurCtx.filter='blur(5px)';blurCtx.drawImage(mapCanvas,0,0);blurCtx.filter='none';
+  const mapPixels=blurCtx.getImageData(0,0,mapW,mapH).data;
+  const field=new Float32Array(mapW*mapH),fieldSamples=[];
   for(let q=0;q<field.length;q++){
-   const k=q*4,la=.2126*ad[k]+.7152*ad[k+1]+.0722*ad[k+2],lb=.2126*bd[k]+.7152*bd[k+1]+.0722*bd[k+2];
-   field[q]=la;coarse[q]=lb;samples.push(la);sum+=la;sumSq+=la*la;
+   const k=q*4,value=.2126*mapPixels[k]+.7152*mapPixels[k+1]+.0722*mapPixels[k+2];
+   field[q]=value;fieldSamples.push(value);
   }
-  samples.sort((a,b)=>a-b);
-  const percentile=p=>samples[Math.min(samples.length-1,Math.max(0,Math.floor((samples.length-1)*p)))];
-  const fieldMean=sum/Math.max(1,field.length);
-  const fieldStd=Math.sqrt(Math.max(0,sumSq/Math.max(1,field.length)-fieldMean*fieldMean));
-  const robustReference=Math.max(fieldMean,percentile(.68));
-  const sceneRange=percentile(.90)-percentile(.15);
-  const smooth=(a,b,v)=>{const t=Math.max(0,Math.min(1,(v-a)/(b-a)));return t*t*(3-2*t)};
+  fieldSamples.sort((a,b)=>a-b);
+  const percentile=p=>fieldSamples[Math.min(fieldSamples.length-1,Math.max(0,Math.floor((fieldSamples.length-1)*p)))];
+  const smooth=(a,b,value)=>{const t=Math.max(0,Math.min(1,(value-a)/(b-a)));return t*t*(3-2*t)};
   const lerp=(a,b,t)=>a+(b-a)*t;
+  const requestedTarget=Number(editorLastAnalysis?.targetMedian);
+  const naturalTarget=percentile(.62),brightTarget=percentile(.68),windowTarget=percentile(.58);
+  const target=Math.max(intent==='bright'?brightTarget:intent==='window'?windowTarget:naturalTarget,Number.isFinite(requestedTarget)?requestedTarget:0);
+  const roomTarget=Math.max(116,Math.min(138,target));
+  const liftCap=intent==='bright'?38:intent==='window'?30:34;
+  const liftGain=intent==='bright'?.86:intent==='window'?.70:.78;
   for(let py=0;py<height;py++){
-   const gy=py/Math.max(1,height-1)*(gh-1),y0=Math.floor(gy),y1=Math.min(gh-1,y0+1),fy=gy-y0;
+   const gy=py/Math.max(1,height-1)*(mapH-1),y0=Math.floor(gy),y1=Math.min(mapH-1,y0+1),fy=gy-y0;
    for(let px=0;px<width;px++){
-    const gx=px/Math.max(1,width-1)*(gw-1),x0=Math.floor(gx),x1=Math.min(gw-1,x0+1),fx=gx-x0;
-    const idx00=y0*gw+x0,idx01=y0*gw+x1,idx10=y1*gw+x0,idx11=y1*gw+x1;
-    const localA=lerp(lerp(field[idx00],field[idx01],fx),lerp(field[idx10],field[idx11],fx),fy);
-    const localB=lerp(lerp(coarse[idx00],coarse[idx01],fx),lerp(coarse[idx10],coarse[idx11],fx),fy);
-    // Blend fine and broad illumination fields to avoid visible grid/halo transitions.
-    const region=localA*.62+localB*.38,i=(py*width+px)*4;
-    const r=d[i],g=d[i+1],b=d[i+2],L=.2126*r+.7152*g+.0722*b;
-    const deficit=Math.max(0,robustReference-region);
-    // V0.45: remove the over-conservative stack of overlapping confidence masks.
-    // The previous stack multiplied several partial gates together, reducing a
-    // useful room correction to only a few brightness levels in dark adjoining rooms.
-    // Use one room-deficit confidence curve, a broader shadow gate and a firm
-    // highlight guard instead. This is local luminance recovery, not semantic room detection.
-    const roomGate=smooth(3,78,deficit);
-    const shadowGate=smooth(4,142,158-L);
-    const midtoneGate=1-smooth(188,244,L);
-    const blackGuard=smooth(2,22,L);
-    const highlightGuard=1-smooth(184,242,Math.max(L,region*.84));
-    const zoneConfidence=smooth(4,62,deficit);
-    const recoveryStrength=1.34+Math.min(.22,fieldStd/300);
-    // Lift genuinely underexposed regions more decisively, while retaining
-    // protection for deep blacks, bright kitchen surfaces and isolated highlights.
-    let localLift=Math.min(96,deficit*recoveryStrength)*roomGate*shadowGate*midtoneGate*blackGuard*highlightGuard*zoneConfidence;
-    // V0.40 adds a modest scene-wide midtone lift so the single embedded JPEG
-    // does not remain globally muddy after local shadow recovery.
-    const globalDim=smooth(95,155,160-percentile(.50));
-    const baseLift=1.6*globalDim*smooth(18,142,142-L)*(1-smooth(190,240,L))*blackGuard;
-    // Preserve local texture: avoid flattening a pixel that is already darker than
-    // its neighbourhood by a large amount (often furniture edges or natural detail).
-    const localTexture=Math.max(0,region-L);
-    const textureGuard=1-smooth(38,105,localTexture)*.28;
-    let target=L+(localLift+baseLift)*textureGuard;
-    // V0.40: gentler region-aware highlight management. Bright regions receive a
-    // graduated shoulder, while isolated bright details in a darker room are
-    // treated more gently so lamps, reflections and pale objects retain shape.
-    const brightRegion=smooth(174,232,region);
-    const pixelHighlight=smooth(166,238,target);
-    const highlightConfidence=brightRegion*.72+pixelHighlight*.28;
-    const highlightStrength=.10+.24*highlightConfidence;
-    const shoulderStart=210+10*(1-brightRegion);
-    if(target>shoulderStart){
-     const excess=target-shoulderStart;
-     const compressed=shoulderStart+excess*(1-highlightStrength);
-     // A soft shoulder gradually increases compression towards near-white values.
-     const upper=smooth(232,253,target);
-     target=lerp(compressed,shoulderStart+Math.sqrt(Math.max(0,excess))*Math.sqrt(Math.max(0,255-shoulderStart))*0.58,upper*.16);
-    }
-    // Keep the very top end gentle; this reduces harsh white blocks but cannot
-    // recreate sensor detail already clipped in the RAW source.
-    if(target>246)target=246+(target-246)*.58;
-    target=Math.max(0,Math.min(255,target));
-    const dr=r-L,dg=g-L,db=b-L;
-    const maxDelta=Math.max(dr,dg,db),minDelta=Math.min(dr,dg,db);
-    let chroma=1;
-    if(maxDelta>0)chroma=Math.min(chroma,(255-target)/maxDelta);
-    if(minDelta<0)chroma=Math.min(chroma,target/-minDelta);
-    // Tiny chroma retention floor prevents neutral shadow recovery from turning
-    // saturated fabrics/objects grey; gamut clipping still takes priority.
-    chroma=Math.max(0,Math.min(1,chroma));
-    d[i]=Math.max(0,Math.min(255,target+dr*chroma));
-    d[i+1]=Math.max(0,Math.min(255,target+dg*chroma));
-    d[i+2]=Math.max(0,Math.min(255,target+db*chroma));
+    const gx=px/Math.max(1,width-1)*(mapW-1),x0=Math.floor(gx),x1=Math.min(mapW-1,x0+1),fx=gx-x0;
+    const f00=field[y0*mapW+x0],f01=field[y0*mapW+x1],f10=field[y1*mapW+x0],f11=field[y1*mapW+x1];
+    const region=lerp(lerp(f00,f01,fx),lerp(f10,f11,fx),fy);
+    const i=(py*width+px)*4,r=d[i],g=d[i+1],b=d[i+2],L=.2126*r+.7152*g+.0722*b;
+    const roomDeficit=Math.max(0,roomTarget-region);
+    const roomLift=Math.min(liftCap,roomDeficit*liftGain);
+    const shadowGate=1-smooth(118,218,L);
+    const blackGuard=smooth(3,24,L);
+    const highlightGuard=1-smooth(intent==='window'?210:218,250,Math.max(L,region*.92));
+    const lift=roomLift*shadowGate*blackGuard*highlightGuard;
+    let adjusted=L+lift;
+    // Gentle shoulder rolls off direct sun/white surfaces; it cannot recreate
+    // sensor detail already clipped in the RAW source.
+    const shoulderStart=intent==='window'?208:214;
+    const brightGate=smooth(shoulderStart-12,248,adjusted);
+    adjusted-=Math.max(0,adjusted-shoulderStart)*(intent==='window'?.28:.20)*brightGate;
+    adjusted=Math.max(0,Math.min(255,adjusted));
+    const scale=L>1?Math.min(intent==='window'?1.50:1.55,adjusted/L):1;
+    d[i]=Math.max(0,Math.min(255,r*scale));
+    d[i+1]=Math.max(0,Math.min(255,g*scale));
+    d[i+2]=Math.max(0,Math.min(255,b*scale));
    }
   }
   ctx.putImageData(image,0,0);
-
-
-
-  // V0.38 adaptive local contrast: a low-resolution illumination base separates
-  // room-scale brightness from fine architectural detail. Midtones receive a
-  // restrained detail lift; deep shadows and near-white surfaces are protected.
-  const detailW=192,detailH=Math.max(64,Math.round(detailW*height/Math.max(1,width)));
-  const detailMap=document.createElement('canvas');detailMap.width=detailW;detailMap.height=detailH;
-  const dctx=detailMap.getContext('2d',{willReadFrequently:true});
-  dctx.drawImage(canvas,0,0,detailW,detailH);
-  const blur=document.createElement('canvas');blur.width=detailW;blur.height=detailH;
-  const bctx=blur.getContext('2d',{willReadFrequently:true});
-  bctx.filter='blur(4px)';bctx.drawImage(detailMap,0,0);bctx.filter='none';
-  const baseData=bctx.getImageData(0,0,detailW,detailH).data;
-  const detailImage=ctx.getImageData(0,0,width,height),dd=detailImage.data;
-  const sample=(x,y)=>{
-   const xx=Math.max(0,Math.min(detailW-1,x)),yy=Math.max(0,Math.min(detailH-1,y)),k=(yy*detailW+xx)*4;
-   return .2126*baseData[k]+.7152*baseData[k+1]+.0722*baseData[k+2];
-  };
-  for(let py=0;py<height;py++){
-   const my=py/Math.max(1,height-1)*(detailH-1);
-   for(let px=0;px<width;px++){
-    const mx=px/Math.max(1,width-1)*(detailW-1),i=(py*width+px)*4;
-    const L=.2126*dd[i]+.7152*dd[i+1]+.0722*dd[i+2];
-    const x0=Math.floor(mx),y0=Math.floor(my),fx=mx-x0,fy=my-y0;
-    const a=sample(x0,y0),b=sample(x0+1,y0),c0=sample(x0,y0+1),e0=sample(x0+1,y0+1);
-    const localBase=(a*(1-fx)+b*fx)*(1-fy)+(c0*(1-fx)+e0*fx)*fy;
-    const midtone=smooth(24,76,L)*(1-smooth(190,242,L));
-    const detailStrength=.14*midtone;
-    const delta=Math.max(-18,Math.min(18,L-localBase));
-    const adjusted=L+delta*detailStrength;
-    const scale=adjusted/Math.max(1,L);
-    dd[i]=Math.max(0,Math.min(255,dd[i]*scale));
-    dd[i+1]=Math.max(0,Math.min(255,dd[i+1]*scale));
-    dd[i+2]=Math.max(0,Math.min(255,dd[i+2]*scale));
-   }
-  }
-  ctx.putImageData(detailImage,0,0);
  }
    // V0.45 Natural Rental Curve: smooth luminance-only shadow lift inspired by
    // the approved hand-tuned reference edit. No spatial room masks, no blurred
@@ -3752,7 +3671,7 @@ function jrvsPropertyFinishSettings(a,intent='natural',referenceMedian=null){
  if(intent==='window'){exposure=Math.min(exposure,.025);highlights=clamp(highlights-4,-20,0);shadows=Math.min(8,shadows+1)}
  // No automatic white-balance, saturation, clarity, sharpening, local masks,
  // natural curve, blacks/whites or vignette. Those are photographer decisions.
- return {values:{exposure,brightness:0,contrast,highlights,shadows,whites:0,blacks:0,temperature:0,tint:0,saturation:0,warmth:0,vibrance:0,clarity:0,sharpening:0,vignette:0},localBalance:false,naturalCurve:false,targetMedian:target};
+ return {values:{exposure,brightness:0,contrast,highlights,shadows,whites:0,blacks:0,temperature:0,tint:0,saturation:0,warmth:0,vibrance:0,clarity:0,sharpening:0,vignette:0},localBalance:true,naturalCurve:false,targetMedian:target};
 }
 function jrvsRenderFinishReport(a){
  const report=document.getElementById('jrvsFinishReport');
@@ -3760,7 +3679,7 @@ function jrvsRenderFinishReport(a){
  if(!a){report.textContent='Ready to analyse this photo. Auto corrections are deliberately restrained; the original stays untouched.';return}
  const intent=a.intent==='bright'?'Bright listing':a.intent==='window'?'Window-safe':'Natural listing';
  const caution=a.clipRate>.06?'Some highlights are already clipped':a.p95>232?'Bright highlights detected · exposure lift limited':'Good highlight headroom';
- report.textContent=intent+' · '+a.scene+' · '+caution+' · conservative light-only correction · '+a.analysisMs+' ms';
+ report.textContent=intent+' · '+a.scene+' · '+caution+' · adaptive room-shadow lift · bright surfaces protected · '+a.analysisMs+' ms';
 }
 function jrvsApplyPropertyFinish(a,intent='natural',referenceMedian=null){
  const result=jrvsPropertyFinishSettings(a,intent,referenceMedian);
@@ -3770,7 +3689,7 @@ function jrvsApplyPropertyFinish(a,intent='natural',referenceMedian=null){
   const number=input?.closest('.editor-control')?.querySelector('.editor-number');if(number)number.value=String(Math.round(value*100)/100);
  });
  const preset=document.getElementById('editorPreset');if(preset)preset.value='none';
- editorLocalBalance=false;
+ editorLocalBalance=true;
  editorNaturalCurve=false;
  editorLastAnalysis={...a,intent,targetMedian:result.targetMedian};
  jrvsRenderFinishReport(editorLastAnalysis);

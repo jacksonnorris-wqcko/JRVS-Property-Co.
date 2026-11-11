@@ -21,5 +21,6 @@
 
 ## Dashboard and desktop UI
 - Continued the V0.48 reference-design visual pass with stronger dashboard hierarchy, roomier KPI cards, a clearer jobs table and more legible quick actions.
+- Recent Properties now expands a single real property across the available panel width; multiple properties flow into responsive columns.
 - Added a structured Recent Properties first-run state with a direct New Job action.
 - Main browser/PWA branch remains untouched.

@@ -641,6 +641,40 @@ html.jrvs-desktop #page-photos .batch-tools summary,
 html.jrvs-desktop #page-photos .batch-tools summary span{color:#e0e8d6!important}
 html.jrvs-desktop #page-photos .batch-tools-content{background:#1b221c!important;color:#edf1e8!important}
 
+
+/* V0.53 dashboard: use the property workspace width intelligently. */
+html.jrvs-desktop #recentJobs:has(> .recent-job-card:nth-child(2)){
+ grid-template-columns:repeat(auto-fit,minmax(225px,1fr))!important;
+ align-items:stretch!important;
+}
+html.jrvs-desktop #recentJobs:has(> .recent-job-card:only-child){
+ display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+}
+html.jrvs-desktop #recentJobs:has(> .recent-job-card:only-child)>.recent-job-card{
+ display:grid!important;
+ grid-template-columns:minmax(190px,245px) minmax(0,1fr) 24px!important;
+ grid-template-rows:minmax(0,1fr)!important;
+ align-items:center!important;gap:17px!important;
+ min-height:145px!important;padding:12px!important;
+}
+html.jrvs-desktop #recentJobs:has(> .recent-job-card:only-child)>.recent-job-card>.recent-job-cover,
+html.jrvs-desktop #recentJobs:has(> .recent-job-card:only-child)>.recent-job-card>.recent-job-placeholder{
+ grid-column:1!important;grid-row:1!important;
+ width:100%!important;height:120px!important;min-height:120px!important;
+ border-radius:10px!important;background-size:cover!important;background-position:center!important;
+}
+html.jrvs-desktop #recentJobs:has(> .recent-job-card:only-child)>.recent-job-card>.recent-job-main{
+ grid-column:2!important;grid-row:1!important;display:flex!important;
+ flex-direction:column!important;justify-content:center!important;gap:7px!important;
+ min-width:0!important;padding:8px 0!important;
+}
+html.jrvs-desktop #recentJobs:has(> .recent-job-card:only-child)>.recent-job-card>.recent-job-main strong{font-size:15px!important}
+html.jrvs-desktop #recentJobs:has(> .recent-job-card:only-child)>.recent-job-card>.recent-job-main small{font-size:11px!important}
+html.jrvs-desktop #recentJobs:has(> .recent-job-card:only-child)>.recent-job-card>.recent-job-meta{font-size:10px!important;gap:10px!important}
+html.jrvs-desktop #recentJobs:has(> .recent-job-card:only-child)>.recent-job-card>.recent-job-arrow{
+ grid-column:3!important;grid-row:1!important;align-self:center!important;
+}
+
 </style>
 <script>
 window.__JRVS_DESKTOP__ = true;
