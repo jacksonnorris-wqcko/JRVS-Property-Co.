@@ -10,7 +10,8 @@
     "desktop:build": "npm run desktop:prepare && npm run desktop:icons && tauri build",
     "desktop:prepare": "node scripts/prepare-desktop.mjs",
     "desktop:icons": "tauri icon jrvs-app-512.png --output src-tauri/icons",
-    "desktop:build:update": "npm run desktop:prepare && npm run desktop:icons && tauri build --config src-tauri/tauri.release.conf.json"
+    "desktop:build:update": "npm run desktop:prepare && npm run desktop:icons && tauri build --config src-tauri/tauri.release.conf.json",
+    "photo:engine:check": "node scripts/check-photo-studio-engine.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0"
