@@ -3485,7 +3485,7 @@ async function openEditor(id){
  const p=photoRecords.find(x=>String(x.id)===String(id));if(!p)return;
  const linkedOriginal=(String(p.type||'').toLowerCase()==='edited'&&p.sourcePhotoId)?photoRecords.find(x=>String(x.id)===String(p.sourcePhotoId)):null;
  editorPhoto=p;editorSourcePhoto=linkedOriginal||p;editorRotation=0;editorRawDeveloped=false;
- ['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>{const el=document.getElementById(k);if(el)el.value=0});
+ ['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','lensDistortion','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>{const el=document.getElementById(k);if(el)el.value=0});
  editorHistory=[];editorHistoryIndex=-1;editorRetouchStrokes=[];editorRetouchSource=null;editorRetouchActive=null;editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;resetEditorAdvancedControls();const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value='natural';jrvsRenderFinishReport(null);setEditorRetouchMode('off');editorCompare=false;editorComparePosition=50;toggleEditorCompare(false);
  document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';document.getElementById('editorExportProfile').value='agency';document.getElementById('editorTitle').textContent=p.name;const rawDevelopBtn=document.getElementById('editorRawDevelopBtn');if(rawDevelopBtn)rawDevelopBtn.style.display=editorSourcePhoto.isRaw?'inline-flex':'none';
  const hasRecipe=!!(p.editRecipe&&linkedOriginal);
@@ -3531,13 +3531,13 @@ async function developEditorRawSource(){
 }
 function closeEditor(){if(editorFitObserver)editorFitObserver.disconnect();clearEditorFilmstripUrls();document.getElementById('editorBackdrop').classList.remove('show');if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=null;editorPhoto=null;editorSourcePhoto=null}
 function rotateEditor(deg){editorRotation=(editorRotation+deg+360)%360;drawEditor();captureEditorHistory()}
-function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';editorRotation=0;editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;resetEditorAdvancedControls();const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value='natural';jrvsRenderFinishReport(null);drawEditor();captureEditorHistory()}
+function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','lensDistortion','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';editorRotation=0;editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;resetEditorAdvancedControls();const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value='natural';jrvsRenderFinishReport(null);drawEditor();captureEditorHistory()}
 function editorChanged(){
  // Coalesce rapid slider events into one preview render per animation frame.
  if(!editorPreviewFrame)editorPreviewFrame=requestAnimationFrame(()=>{editorPreviewFrame=0;drawEditor()});
  clearTimeout(editorHistoryTimer);editorHistoryTimer=setTimeout(captureEditorHistory,250);
 }
-const EDITOR_KEYS=['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'];
+const EDITOR_KEYS=['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','lensDistortion','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'];
 function editorHslSnapshot(){return JSON.parse(JSON.stringify(editorHsl))}
 function syncEditorAdvancedControls(){['curveShadow','curveMid','curveHighlight'].forEach((id,i)=>{const el=document.getElementById(id),value=editorToneCurve[i];if(el)el.value=value;const label=document.getElementById(id+'Val');if(label)label.textContent=String(value);const num=el?.closest('.editor-control')?.querySelector('.editor-number');if(num)num.value=value});EDITOR_HSL_CHANNELS.forEach(ch=>['hue','saturation','luminance'].forEach(prop=>{const id='jrvsHsl_'+ch.id+'_'+prop,el=document.getElementById(id),value=editorHsl[ch.id]?.[prop]||0;if(el)el.value=value;const label=document.getElementById(id+'Val');if(label)label.textContent=String(value);const num=el?.closest('.editor-control')?.querySelector('.editor-number');if(num)num.value=value}));drawEditorToneCurve()}
 function resetEditorAdvancedControls(){editorToneCurve=[64,128,192];editorHsl=Object.fromEntries(EDITOR_HSL_CHANNELS.map(ch=>[ch.id,{hue:0,saturation:0,luminance:0}]));syncEditorAdvancedControls()}
@@ -3558,6 +3558,85 @@ function buildEditorHslAdjustmentLut(){
 function buildEditorToneCurveLut(){const xs=[0,64/255,128/255,192/255,1],ys=[0,...editorToneCurve.map(v=>Math.max(0,Math.min(255,Number(v)||0))/255),1],d=[];for(let i=0;i<4;i++)d.push((ys[i+1]-ys[i])/(xs[i+1]-xs[i]));const m=[d[0]];for(let i=1;i<4;i++)m.push(d[i-1]*d[i]<=0?0:(2*d[i-1]*d[i])/(d[i-1]+d[i]));m.push(d[3]);const lut=new Uint8ClampedArray(256);for(let n=0;n<256;n++){const x=n/255;let i=0;while(i<3&&x>xs[i+1])i++;const width=xs[i+1]-xs[i],t=(x-xs[i])/width,t2=t*t,t3=t2*t,y=(2*t3-3*t2+1)*ys[i]+(t3-2*t2+t)*width*m[i]+(-2*t3+3*t2)*ys[i+1]+(t3-t2)*width*m[i+1];lut[n]=Math.max(0,Math.min(255,Math.round(y*255)))}return lut}
 function drawEditorToneCurve(){const c=document.getElementById('editorToneCurveCanvas');if(!c)return;const x=c.getContext('2d'),w=c.width,h=c.height,p=13;x.clearRect(0,0,w,h);x.fillStyle='#101712';x.fillRect(0,0,w,h);x.strokeStyle='#394637';x.lineWidth=1;for(let i=0;i<=4;i++){const q=p+(w-p*2)*i/4;x.beginPath();x.moveTo(q,p);x.lineTo(q,h-p);x.stroke();const y=p+(h-p*2)*i/4;x.beginPath();x.moveTo(p,y);x.lineTo(w-p,y);x.stroke()}x.setLineDash([4,4]);x.strokeStyle='#65715f';x.beginPath();x.moveTo(p,h-p);x.lineTo(w-p,p);x.stroke();x.setLineDash([]);const lut=buildEditorToneCurveLut();x.strokeStyle='#c0d965';x.lineWidth=2.5;x.beginPath();for(let k=0;k<=100;k++){const xv=k/100,val=lut[Math.round(xv*255)]/255,px=p+xv*(w-p*2),py=h-p-val*(h-p*2);if(k===0)x.moveTo(px,py);else x.lineTo(px,py)}x.stroke();editorToneCurve.forEach((v,i)=>{const px=p+([64,128,192][i]/255)*(w-p*2),py=h-p-(v/255)*(h-p*2);x.beginPath();x.arc(px,py,5,0,Math.PI*2);x.fillStyle='#c0d965';x.fill();x.strokeStyle='#f7f1df';x.lineWidth=1.4;x.stroke()})}
 function resetEditorToneCurve(){editorToneCurve=[64,128,192];syncEditorAdvancedControls();editorChanged();captureEditorHistory()}
+function editorClamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||0))}
+function editorBuildGeometryQuad(vertical,horizontal){
+ const v=editorClamp(vertical/15*.10,-.10,.10),h=editorClamp(horizontal/15*.10,-.10,.10);
+ return [{x:v,y:h},{x:1-v,y:-h},{x:1+v,y:1-h},{x:-v,y:1+h}];
+}
+function editorProjectiveMap(u,v,quad){
+ const [p0,p1,p2,p3]=quad,dx1=p1.x-p2.x,dx2=p3.x-p2.x,dx3=p0.x-p1.x+p2.x-p3.x;
+ const dy1=p1.y-p2.y,dy2=p3.y-p2.y,dy3=p0.y-p1.y+p2.y-p3.y;
+ const denominator=dx1*dy2-dx2*dy1;let g=0,h=0;
+ if(Math.abs(dx3)>1e-10||Math.abs(dy3)>1e-10){if(Math.abs(denominator)<1e-12)return {x:u,y:v};g=(dx3*dy2-dx2*dy3)/denominator;h=(dx1*dy3-dx3*dy1)/denominator}
+ const a=p1.x-p0.x+g*p1.x,b=p3.x-p0.x+h*p3.x,c=p0.x;
+ const d=p1.y-p0.y+g*p1.y,e=p3.y-p0.y+h*p3.y,f=p0.y;
+ const divisor=g*u+h*v+1;if(Math.abs(divisor)<1e-12)return {x:u,y:v};
+ return {x:(a*u+b*v+c)/divisor,y:(d*u+e*v+f)/divisor};
+}
+function editorMapGeometryPoint(u,v,vertical,horizontal,lens){
+ const k=editorClamp(lens,-100,100)/100*.18,dx=u-.5,dy=v-.5,r2=dx*dx+dy*dy,factor=1+k*r2;
+ return editorProjectiveMap(.5+dx*factor,.5+dy*factor,editorBuildGeometryQuad(vertical,horizontal));
+}
+function editorMaskFalloff(distance,radius,feather){
+ if(radius<=0||distance>=radius)return 0;const inner=radius*(1-editorClamp(feather,0,1));if(distance<=inner)return 1;
+ const t=editorClamp((distance-inner)/Math.max(1e-9,radius-inner),0,1);return 1-(t*t*(3-2*t));
+}
+function buildEditorLocalMaskCanvas(mask,width,height){
+ const surface=document.createElement('canvas');surface.width=width;surface.height=height;
+ const maskCtx=surface.getContext('2d',{willReadFrequently:true});
+ (mask.strokes||[]).forEach(stroke=>{
+  maskCtx.save();maskCtx.globalCompositeOperation=stroke.mode==='erase'?'destination-out':'source-over';
+  (stroke.dabs||[]).forEach(dab=>{
+   const x=dab.x*width,y=dab.y*height,r=Math.max(1,dab.radius*width),feather=editorClamp(stroke.feather,0,1),flow=editorClamp(stroke.opacity,.01,1);
+   maskCtx.beginPath();maskCtx.arc(x,y,r,0,Math.PI*2);
+   if(feather<=.001){maskCtx.fillStyle='rgba(255,255,255,'+flow+')';maskCtx.fill();return}
+   const inner=r*(1-feather),gradient=maskCtx.createRadialGradient(x,y,inner,x,y,r);
+   [0,.25,.5,.75,1].forEach(t=>{const alpha=flow*editorMaskFalloff(inner+(r-inner)*t,r,feather);gradient.addColorStop(t,'rgba(255,255,255,'+alpha+')')});
+   maskCtx.fillStyle=gradient;maskCtx.fill();
+  });
+  maskCtx.restore();
+ });
+ return surface;
+}
+function applyEditorLocalMasks(ctx,width,height){
+ const masks=editorLocalMasks.filter(mask=>mask.enabled!==false&&mask.strokes?.length);if(!masks.length)return;
+ const image=ctx.getImageData(0,0,width,height),data=image.data;
+ masks.forEach(mask=>{
+  const surface=buildEditorLocalMaskCanvas(mask,width,height),alpha=surface.getContext('2d',{willReadFrequently:true}).getImageData(0,0,width,height).data;
+  const exposure=Number(mask.exposure)||0,highlights=Number(mask.highlights)||0,shadows=Number(mask.shadows)||0,temperature=Number(mask.temperature)||0,saturation=Number(mask.saturation)||0;
+  for(let i=0;i<data.length;i+=4){
+   let amount=alpha[i+3]/255;if(mask.inverted)amount=1-amount;if(amount<=.001)continue;
+   let r=data[i],g=data[i+1],b=data[i+2],lum=.2126*r+.7152*g+.0722*b;
+   const tone=(shadows*(1-lum/255)*.28+highlights*(lum/255)*.22)*amount,exp=Math.pow(2,exposure*amount);
+   r=(r+tone+temperature*.22*amount)*exp;g=(g+tone)*exp;b=(b+tone-temperature*.22*amount)*exp;
+   if(saturation){const hsl=jrvsRgbToHsl(r,g,b),rgb=jrvsHslToRgb(hsl.h,hsl.s*(1+saturation/100*amount),hsl.l);r=rgb[0];g=rgb[1];b=rgb[2]}
+   data[i]=editorClamp(r,0,255);data[i+1]=editorClamp(g,0,255);data[i+2]=editorClamp(b,0,255);
+  }
+ });
+ ctx.putImageData(image,0,0);
+}
+function resetEditorGeometry(){
+ ['perspectiveV','perspectiveH','lensDistortion'].forEach(id=>{const input=document.getElementById(id);if(input)input.value=0});
+ drawEditor();captureEditorHistory();
+}
+function editorApplyGeometryWarp(sourceCanvas,destinationCanvas,vertical,horizontal,lens){
+ const sw=sourceCanvas.width,sh=sourceCanvas.height,dw=destinationCanvas.width,dh=destinationCanvas.height;
+ const sourceCtx=sourceCanvas.getContext('2d',{willReadFrequently:true}),destCtx=destinationCanvas.getContext('2d',{willReadFrequently:true});
+ const cropW=Math.min(sw,sh*dw/dh),cropH=Math.min(sh,sw*dh/dw),left=(sw-cropW)/2,top=(sh-cropH)/2;
+ if(!vertical&&!horizontal&&!lens){destCtx.drawImage(sourceCanvas,left,top,cropW,cropH,0,0,dw,dh);return}
+ const source=sourceCtx.getImageData(0,0,sw,sh).data,output=destCtx.createImageData(dw,dh),out=output.data,quad=editorBuildGeometryQuad(vertical,horizontal),k=editorClamp(lens,-100,100)/100*.18;
+ for(let y=0;y<dh;y++){
+  const v=dh>1?y/(dh-1):.5,ny=(v-.5)*2;
+  for(let x=0;x<dw;x++){
+   const u=dw>1?x/(dw-1):.5,nx=(u-.5)*2,r2=nx*nx+ny*ny,factor=1+k*r2,ru=.5+nx*.5*factor,rv=.5+ny*.5*factor;
+   const mapped=editorProjectiveMap(ru,rv,quad),sx=editorClamp(left+mapped.x*cropW,0,sw-1),sy=editorClamp(top+mapped.y*cropH,0,sh-1);
+   const x0=Math.floor(sx),y0=Math.floor(sy),x1=Math.min(sw-1,x0+1),y1=Math.min(sh-1,y0+1),fx=sx-x0,fy=sy-y0,dst=(y*dw+x)*4;
+   for(let c=0;c<4;c++){const p00=source[(y0*sw+x0)*4+c],p10=source[(y0*sw+x1)*4+c],p01=source[(y1*sw+x0)*4+c],p11=source[(y1*sw+x1)*4+c],a=p00+(p10-p00)*fx,b=p01+(p11-p01)*fx;out[dst+c]=a+(b-a)*fy}
+  }
+ }
+ destCtx.putImageData(output,0,0);
+}
+
 function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustments=true){
  if(!editorImage||!editorPhoto)return null;
  const sw0=editorImage.naturalWidth,sh0=editorImage.naturalHeight;
@@ -3570,9 +3649,8 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
  const ctx=canvas.getContext('2d',{willReadFrequently:true});
  const temp=document.createElement('canvas');temp.width=swapped?sh:sw;temp.height=swapped?sw:sh;
  const t=temp.getContext('2d');t.translate(temp.width/2,temp.height/2);t.rotate(rot);t.drawImage(editorImage,-sw/2,-sh/2,sw,sh);
- const pv=+document.getElementById('perspectiveV').value,ph=+document.getElementById('perspectiveH').value;
- ctx.save();ctx.translate(canvas.width/2,canvas.height/2);ctx.transform(1,ph/100,-pv/100,1,0,0);
- ctx.drawImage(temp,(temp.width-rw)/2-canvas.width/2,(temp.height-rh)/2-canvas.height/2,rw,rh);ctx.restore();
+ const pv=+document.getElementById('perspectiveV').value,ph=+document.getElementById('perspectiveH').value,distortion=+document.getElementById('lensDistortion').value;
+ editorApplyGeometryWarp(temp,canvas,pv,ph,distortion);
  if(!applyAdjustments)return {canvas,hist:new Uint32Array(64)};
  const image=ctx.getImageData(0,0,canvas.width,canvas.height),d=image.data;
  const v=Object.fromEntries(EDITOR_KEYS.map(k=>[k,+document.getElementById(k).value]));
@@ -3669,6 +3747,7 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
     }
     ctx.putImageData(naturalImage,0,0);
    }
+ applyEditorLocalMasks(ctx,width,height);
  if(editorLocalBalance){
   hist.fill(0);
   for(let i=0;i<d.length;i+=4){const l=Math.max(0,Math.min(255,.2126*d[i]+.7152*d[i+1]+.0722*d[i+2]));hist[Math.min(63,Math.floor(l/4))]++}
@@ -3795,7 +3874,7 @@ function applyEditorPreset(name){
   twilight:{brightness:-5,contrast:15,saturation:4,warmth:3,highlights:-36,shadows:12,exposure:-0.12,whites:3,blacks:-16,temperature:-3,tint:1,vibrance:7,clarity:10,sharpening:16,vignette:7}
  };
  const p=presets[name]||presets.none;
- const defaults={brightness:0,contrast:0,saturation:0,warmth:0,highlights:0,shadows:0,perspectiveV:0,perspectiveH:0,exposure:0,whites:0,blacks:0,temperature:0,tint:0,vibrance:0,clarity:0,sharpening:0,vignette:0};
+ const defaults={brightness:0,contrast:0,saturation:0,warmth:0,highlights:0,shadows:0,perspectiveV:0,perspectiveH:0,lensDistortion:0,exposure:0,whites:0,blacks:0,temperature:0,tint:0,vibrance:0,clarity:0,sharpening:0,vignette:0};
  Object.entries({...defaults,...p}).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=v});
  resetEditorAdvancedControls();drawEditor();captureEditorHistory();
 }
