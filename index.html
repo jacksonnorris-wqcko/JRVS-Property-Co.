@@ -3355,7 +3355,7 @@ function syncEditorLocalMaskControls(){
  const mask=selectedEditorLocalMask(),map={localMaskEnabled:mask?.enabled!==false,localMaskInverted:!!mask?.inverted};
  Object.entries(map).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.checked=value});
  const sliders={localMaskExposure:mask?Math.round(mask.exposure*50):0,localMaskHighlights:mask?.highlights||0,localMaskShadows:mask?.shadows||0,localMaskTemperature:mask?.temperature||0,localMaskSaturation:mask?.saturation||0};
- Object.entries(sliders).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.value=value});
+ Object.entries(sliders).forEach(([id,value])=>{const el=document.getElementById(id);if(el){el.value=value;const numeric=el.closest('.editor-control')?.querySelector('.editor-number');if(numeric)numeric.value=value}});
  const labels={localMaskExposureValue:(mask?.exposure||0).toFixed(2)+' EV',localMaskHighlightsValue:String(mask?.highlights||0),localMaskShadowsValue:String(mask?.shadows||0),localMaskTemperatureValue:String(mask?.temperature||0),localMaskSaturationValue:String(mask?.saturation||0)};
  Object.entries(labels).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value});
  ['localMaskEnabled','localMaskInverted','localMaskExposure','localMaskHighlights','localMaskShadows','localMaskTemperature','localMaskSaturation'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!mask;const numeric=el?.closest('.editor-control')?.querySelector('.editor-number');if(numeric)numeric.disabled=!mask});
@@ -3410,14 +3410,14 @@ function editorLocalMaskPointerDown(event){
 function editorLocalMaskPointerMove(event){
  if(!editorLocalMaskActive)return false;
  const point=editorMaskPoint(event),stroke=editorLocalMaskActive,dx=point.x-stroke.last.x,dy=point.y-stroke.last.y,dist=Math.hypot(dx,dy),steps=Math.max(1,Math.ceil(dist/Math.max(.001,point.radius*.2)));
- for(let i=1;i<=steps;i++){const t=i/steps;stroke.dabs.push({x:stroke.last.x+dx*t,y:stroke.last.y+dy*t,radius:point.radius})}
+ for(let i=1;i<=steps&&stroke.dabs.length<12000;i++){const t=i/steps;stroke.dabs.push({x:stroke.last.x+dx*t,y:stroke.last.y+dy*t,radius:point.radius})}
  stroke.last=point;scheduleRetouchPreview();return true;
 }
 function editorLocalMaskPointerUp(){
  if(!editorLocalMaskActive)return false;
  const stroke=editorLocalMaskActive;editorLocalMaskActive=null;
  const mask=editorLocalMasks.find(item=>item.id===stroke.maskId);
- if(mask){mask.strokes.push({mode:stroke.mode,opacity:stroke.opacity,feather:stroke.feather,dabs:stroke.dabs});renderEditorLocalMaskList();drawEditor();captureEditorHistory()}
+ if(mask){if(mask.strokes.length>=500){showToast('This mask has reached the 500-stroke limit.','info')}else{mask.strokes.push({mode:stroke.mode,opacity:stroke.opacity,feather:stroke.feather,dabs:stroke.dabs.slice(0,12000)});renderEditorLocalMaskList();drawEditor();captureEditorHistory()}}
  return true;
 }
 function editorCanvasPointerDown(event){if(editorLocalMaskPointerDown(event))return;editorRetouchPointerDown(event)}
@@ -3598,8 +3598,8 @@ function editorApplyHomography(matrix,x,y){
 function editorProjectiveMap(u,v,quad){return editorApplyHomography(editorBuildHomography(quad),u,v)}
 function editorProjectiveInverseMap(u,v,inverse){return editorApplyHomography(inverse,u,v)}
 function editorMapGeometryPoint(u,v,vertical,horizontal,lens){
- const k=editorClamp(lens,-100,100)/100*.18,dx=u-.5,dy=v-.5,r2=dx*dx+dy*dy,factor=1+k*r2;
- const warpedU=editorClamp(.5+dx*factor,0,1),warpedV=editorClamp(.5+dy*factor,0,1);
+ const k=editorClamp(lens,-100,100)/100*.35,dx=(u-.5)*2,dy=(v-.5)*2,r2=(dx*dx+dy*dy)*.25,maxFactor=k>0?1+k*.5:1,factor=(1+k*r2)/maxFactor;
+ const warpedU=editorClamp(.5+dx*.5*factor,0,1),warpedV=editorClamp(.5+dy*.5*factor,0,1);
  return editorProjectiveMap(warpedU,warpedV,editorBuildGeometryQuad(vertical,horizontal));
 }
 function editorMaskFalloff(distance,radius,feather){
