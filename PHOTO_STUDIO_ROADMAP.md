@@ -116,3 +116,31 @@ V0.34.1 is primarily a workbench/interface milestone. It does not claim to provi
 3. Compare before/after and inspect clipping, white balance, colour and detail at 100% zoom; record camera model, file dimensions and observed decoder metadata.
 4. Once RAW foundations are confirmed, develop the next control tier: proper RGB/parametric curve editing, split colour grading and more exact HSL selection, with recipe/history tests.
 5. Profile the image pipeline and move expensive work to a worker/offscreen path before expanding to masks and larger RAW workloads.
+
+---
+
+# JRVS Photo Studio — Phase 3, Phase 4 and Phase 5 (V0.54.0 target)
+
+## Phase 3 — Local adjustment masks
+- Add independent brush masks with additive and subtractive strokes, feather/edge softness, flow and enabled/disabled state.
+- Each mask holds its own local exposure, highlight, shadow, temperature and saturation adjustments.
+- Store masks in versioned non-destructive recipes; preserve v1–v4 compatibility and include mask data in history/undo.
+- Render masks in the same deterministic adjustment path for preview and full-resolution export.
+- Masks are manual luminance/brush regions only; do not describe them as semantic room/window/object AI masks.
+
+## Phase 4 — Architectural geometry and lens correction
+- Replace the current affine shear approximation with a projective homography for vertical and horizontal keystone correction.
+- Add a manual radial lens distortion correction control.
+- Preserve rotation and crop dimensions; neutral geometry must be identical to the current source render.
+- Share geometry mapping between preview and full-resolution output. Do not claim automatic lens-profile calibration.
+
+## Phase 5 — Clone and healing retouch
+- Preserve Clone source selection and brush/edge controls.
+- Clone paints directly from the selected source region.
+- Heal uses the sampled source's high-frequency detail with local destination/source colour and luminance matching, feathered at the brush edge.
+- Keep strokes non-destructive and editable in recipes/history. This is sampled patch healing, not AI/content-aware reconstruction.
+
+## V0.54.0 release acceptance
+- Automated checks cover mask feathering and local-adjustment limits, projective geometry corner/identity mapping, radial lens neutral identity, distinct clone/heal blend behaviour, and legacy/current recipe compatibility.
+- All inline app scripts parse; desktop prepare completes with local RAW assets; Windows CI compiles and verifies NSIS/MSI installers; signed updater publish succeeds using the existing updater key.
+- No claim of EOS 600D CR2 validation or full camera-quality parity unless tested with the user's actual files.
