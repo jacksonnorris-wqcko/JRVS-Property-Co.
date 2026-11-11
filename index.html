@@ -2839,10 +2839,10 @@ async function applyBatchPresetToSelection(){
   const preset=document.getElementById('batchPreset')?.value||'natural',presetLabel=document.querySelector('#batchPreset option:checked')?.textContent||preset;
   const accepted=await showConfirm(`Apply ${presetLabel} to ${targets.length} selected original photos? New edited copies will be created; originals stay untouched.`,{title:'Apply batch edit',confirmText:'Apply to photos',danger:false});
   if(!accepted)return;
-  const saved={photo:editorPhoto,image:editorImage,rotation:editorRotation,values:editorSettings(),crop:document.getElementById('cropRatio')?.value||'original',preset:document.getElementById('editorPreset')?.value||'none'};
+  const saved={photo:editorPhoto,image:editorImage,rotation:editorRotation,values:editorSettings(),crop:document.getElementById('cropRatio')?.value||'original',preset:document.getElementById('editorPreset')?.value||'none',toneCurve:[...editorToneCurve],hsl:editorHslSnapshot()};
   let done=0,failed=0;const errors=[];
   try{
-   const settings=editorSettingsFromPreset(preset);
+   const settings=editorSettingsFromPreset(preset);resetEditorAdvancedControls();
    for(let i=0;i<targets.length;i++){
     const target=targets[i];let url=null;if(progress)progress.textContent=`Applying ${presetLabel} · ${i+1} of ${targets.length}: ${target.name}`;
     try{
@@ -2874,6 +2874,7 @@ async function applyBatchPresetToSelection(){
    EDITOR_KEYS.forEach(key=>{const control=document.getElementById(key);if(control)control.value=saved.values[key]??0});
    const crop=document.getElementById('cropRatio');if(crop)crop.value=saved.crop;
    const presetControl=document.getElementById('editorPreset');if(presetControl)presetControl.value=saved.preset;
+   editorToneCurve=[...saved.toneCurve];editorHsl=saved.hsl;syncEditorAdvancedControls();
    if(saved.image&&saved.photo)drawEditor();
   }
  }catch(error){console.error('JRVS batch operation failed',error);if(progress)progress.textContent=`Batch edit failed: ${error?.message||'Unknown error'}`;showToast(`Batch edit failed: ${error?.message||'Unknown error'}`,'error')}
