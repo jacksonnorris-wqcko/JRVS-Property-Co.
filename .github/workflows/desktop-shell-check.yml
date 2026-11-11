@@ -140,7 +140,11 @@ jobs:
           if ($cargoVersion -ne $version) { throw "Cargo.toml version ($cargoVersion) does not match Tauri version ($version)." }
           $tag = "desktop-v$version"
           git ls-remote --exit-code --tags origin "refs/tags/$tag" *> $null
-          if ($LASTEXITCODE -eq 0) { throw "Release tag $tag already exists. Bump the desktop version before publishing another update." }
+          $tagLookupExit = $LASTEXITCODE
+          if ($tagLookupExit -eq 0) { throw "Release tag $tag already exists. Bump the desktop version before publishing another update." }
+          if ($tagLookupExit -ne 2) { throw "Could not verify whether release tag $tag exists (git ls-remote exit $tagLookupExit)." }
+          # Git returns 2 for an absent ref with --exit-code; clear it so PowerShell does not fail this successful validation step.
+          $global:LASTEXITCODE = 0
           "JRVS_DESKTOP_VERSION=$version" >> $env:GITHUB_ENV
           "JRVS_DESKTOP_TAG=$tag" >> $env:GITHUB_ENV
           Write-Host "Validated release candidate $tag"
