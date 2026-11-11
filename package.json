@@ -5,6 +5,7 @@
   "description": "Windows desktop shell for JRVS Property Co.",
   "scripts": {
     "tauri": "tauri",
+    "handover:check": "node scripts/check-project-status.mjs",
     "desktop:dev": "npm run desktop:prepare && npm run desktop:icons && tauri dev",
     "desktop:build": "npm run desktop:prepare && npm run desktop:icons && tauri build",
     "desktop:prepare": "node scripts/prepare-desktop.mjs",
