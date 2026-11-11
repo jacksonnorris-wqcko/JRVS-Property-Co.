@@ -78,11 +78,37 @@ transformedQuad.forEach((corner,index)=>{
 });
 const neutralLens=geometry.editorMapGeometryPoint(.25,.75,0,0,0);
 assert.ok(Math.abs(neutralLens.x-.25)<1e-9 && Math.abs(neutralLens.y-.75)<1e-9);
+for (const strength of [-100,100]) {
+  for (const [x,y] of [[0,0],[1,.5],[.5,1],[1,1],[.2,.75]]) {
+    const mapped=geometry.editorMapGeometryPoint(x,y,0,0,strength);
+    assert.ok(Number.isFinite(mapped.x)&&Number.isFinite(mapped.y)&&mapped.x>=0&&mapped.x<=1&&mapped.y>=0&&mapped.y<=1,
+      `Lens correction sampled outside the image at ${x},${y}, strength ${strength}`);
+  }
+}
 assert.equal(geometry.editorMaskFalloff(0,10,.5),1);
 assert.equal(geometry.editorMaskFalloff(5,10,.5),1);
 assert.ok(Math.abs(geometry.editorMaskFalloff(7.5,10,.5)-.5)<1e-9);
 assert.equal(geometry.editorMaskFalloff(10,10,.5),0);
 assert.equal(geometry.editorMaskFalloff(5,10,0),1);
+
+// Mask recipes are bounded on restore and clamp unsupported values safely.
+const normaliseMaskSource=extract(html,'function normaliseEditorLocalMasks','function cloneEditorLocalMasks','mask recipe normalisation');
+const normaliseMasks=new Function('editorClamp','jrvsNewId',`${normaliseMaskSource}
+return normaliseEditorLocalMasks;
+`)(clamp, prefix => prefix+'-test');
+const overLimitMask=normaliseMasks([{
+  id:'mask-test',name:'Test mask',exposure:20,highlights:-150,shadows:25,
+  strokes:Array.from({length:501},(_,index)=>({mode:index===0?'erase':'paint',opacity:2,feather:2,
+    dabs:Array.from({length:index===0?12001:1},()=>({x:1.5,y:-.5,radius:1}))}))
+}])[0];
+assert.equal(overLimitMask.exposure,2);
+assert.equal(overLimitMask.highlights,-100);
+assert.equal(overLimitMask.strokes.length,500);
+assert.equal(overLimitMask.strokes[0].mode,'erase');
+assert.equal(overLimitMask.strokes[0].dabs.length,12000);
+assert.equal(overLimitMask.strokes[0].dabs[0].x,1);
+assert.equal(overLimitMask.strokes[0].dabs[0].y,0);
+assert.equal(overLimitMask.strokes[0].dabs[0].radius,.45);
 
 // Clone and Heal must produce different blends for different source/destination colour fields.
 const retouchHelpers=extract(html,'function editorRetouchBlendPixel','function applyEditorRetouchStrokes','clone/heal blending');
@@ -107,9 +133,14 @@ requireText(html,'schemaVersion:5','current recipe schema');
 requireText(html,'![1,2,3,4,5].includes(recipe.schemaVersion)','legacy recipe versions remain supported');
 requireText(html,'localMasks:cloneEditorLocalMasks()','masks persist in the non-destructive recipe');
 requireText(html,'normaliseEditorLocalMasks(recipe.localMasks)','masks restore from recipe');
+requireText(html,'mask.strokes.length>=500','mask stroke limit is enforced during painting');
+requireText(html,'stroke.dabs.length<12000','mask dab limit is enforced during painting');
 requireText(html,'toneCurve:[...editorToneCurve]','tone curve persists');
 requireText(html,'hsl:JSON.parse(JSON.stringify(editorHsl))','HSL persists');
 requireText(html,'editorApplyGeometryWarp(temp,canvas,pv,ph,distortion)','geometry is shared by preview and full export');
+requireText(html,'editorApplyHomography(homography,warpedU,warpedV)','render maps output pixels through the precomputed destination-to-source homography');
+requireText(html,'maxRadialFactor=k>0?1+k*.5:1','manual lens distortion avoids sampling beyond the image bounds');
+requireText(html,'const finalPixels=ctx.getImageData(0,0,width,height).data','histogram is calculated from the final composite');
 requireText(html,'applyEditorLocalMasks(ctx,width,height)','local masks are in the shared renderer');
 requireText(html,'applyEditorRetouchStrokes(ctx,width,height,retouchGroups)','retouch is in the shared renderer');
 requireText(html,'editorRetouchActive?[...editorRetouchStrokes,editorRetouchActive]:editorRetouchStrokes','live Clone/Heal stroke preview is included in the render');
@@ -121,4 +152,4 @@ requireText(html,'editorLocalMasks=[];editorLocalMaskSelectedId=null;editorLocal
 requireText(html,'rawDeveloped:!!editorRawDeveloped','RAW development state remains saved');
 requireText(html,'![1,2,3,4,5].includes(recipe.schemaVersion)','older saved edit recipes remain loadable');
 
-console.log('Photo Studio regression checks passed: colour/HSL, tone curve, projective geometry, neutral lens, mask feathering, separate clone/heal blends, v5 recipes and workflow integration.');
+console.log('Photo Studio regression checks passed: colour/HSL, tone curve, projective geometry, bounded lens warp, mask feathering/recipe limits, separate clone/heal blends, v5 recipes and workflow integration.');
