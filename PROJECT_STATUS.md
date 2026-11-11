@@ -19,17 +19,17 @@ The desktop branch is independently versioned. The desktop version is defined in
 
 The desktop build now runs `npm run handover:check` before building. This validates that `package.json`, `Cargo.toml` and Tauri configuration agree, that this handover records the current desktop version/branch, and that the new-chat and continuity instructions are present. The check is wired into `.github/workflows/desktop-shell-check.yml`.
 
-## V0.54.0 release repair checkpoint — 12 November 2026
+## V0.54.0 release checkpoint — 12 November 2026
 
-- Active branch at checkpoint: `desktop-transition`; stable `main` remains untouched.
-- Desktop version remains `0.54.0`; release tag `desktop-v0.54.0` does not yet exist.
-- Windows build and Photo Studio regression checks passed on run `42994566938`, and temporary installer artifacts were uploaded.
-- Signed publication failed at the Cargo version validation step because the PowerShell check did not accept Windows CRLF line endings.
-- Follow-on commits `c6fd7f2` and `7b4c111` attempted to repair the check, but left a duplicated orphaned publish-job block at the end of `.github/workflows/desktop-shell-check.yml`. Runs `42995642919` and `42996028120` ended without jobs and no release was created.
-- Repair plan: remove the duplicate trailing block and extract the Cargo version with a CRLF-safe expression; run a normal Windows build first, then make the intentional `[release]` commit only after that check passes.
-- Preserve the existing updater signing key, V0.54.0 code, and all application data. Do not change `main`.
+- Active branch: `desktop-transition`; stable browser/PWA `main` remains untouched.
+- Desktop release candidate: `0.54.0`. The `desktop-v0.54.0` tag was checked immediately before the release trigger and did not exist.
+- Root cause of prior failed signed publication: the Cargo version check was brittle against Windows CRLF line endings. The follow-on workflow edit also left a duplicated orphaned publish block, preventing valid job scheduling.
+- Repair commit: `2dd260d244c522a1545abb9a9103464e54c67e6d` removes the duplicated tail and extracts the Cargo version with a CRLF-safe expression.
+- Pre-release CI run `43108818617` on the repair commit passed dependency installation, handover/version validation and Photo Studio engine regression checks. Its independent Windows installer packaging step was still in progress at the time the signed release commit was triggered.
+- The signed-release workflow repeats the Windows build, verifies the three version declarations and the absence of an existing tag, checks the configured updater signing secret, then creates the signed GitHub Release and `latest.json`. Publication is gated on the Windows build succeeding.
+- Preserve the existing updater signing keys, V0.54.0 feature set, user data and all prior edit recipes. Do not modify `main`.
 
-**Immediate next action:** repair the workflow YAML, verify it on a non-release push, then publish V0.54.0 through the signed release gate.
+**Immediate next action:** verify the release-triggered Windows build and signed publication. Confirm the `desktop-v0.54.0` GitHub Release contains the Windows installer, signature and `latest.json` before describing V0.54.0 as released.
 
 ## Current active work and next action
 
