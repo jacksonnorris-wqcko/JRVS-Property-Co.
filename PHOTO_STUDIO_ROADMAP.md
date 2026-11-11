@@ -144,3 +144,23 @@ V0.34.1 is primarily a workbench/interface milestone. It does not claim to provi
 - Automated checks cover mask feathering and local-adjustment limits, projective geometry corner/identity mapping, radial lens neutral identity, distinct clone/heal blend behaviour, and legacy/current recipe compatibility.
 - All inline app scripts parse; desktop prepare completes with local RAW assets; Windows CI compiles and verifies NSIS/MSI installers; signed updater publish succeeds using the existing updater key.
 - No claim of EOS 600D CR2 validation or full camera-quality parity unless tested with the user's actual files.
+
+
+---
+
+# JRVS Photo Studio — V0.54.0 Phase 3–5 implementation
+
+## Delivered in source
+- **Local masks:** dedicated workspace, 12-mask limit, paint/erase strokes, brush size, flow, feather, enable/disable/invert, local exposure/highlights/shadows/temperature/saturation, overlay and live brush outline.
+- **Recipe/history:** mask data stored in recipe schema v5, older v1–v4 remain supported, masks in undo/redo, restore-time bounds on count/strokes/dabs/adjustments.
+- **Geometry:** projective homography, manual radial lens correction, shared preview/export render path, neutral crop identity. No automatic camera lens profile.
+- **Retouch:** separate sampled Clone and colour/luminance-matched Heal, recipe-backed and non-destructive. No AI/content-aware reconstruction.
+- **Batch safety:** per-photo masks/retouch isolated for generic presets; current editor state restored. Exact-look outputs preserve editable recipes.
+- **Performance:** homography precomputed once per render, bounded radial sampling, clone skips heal-only mean sampling.
+
+## V0.54.0 verification and limits
+- Five inline application scripts parse without syntax errors.
+- Direct helper checks passed for geometry identity/corners/inverse, radial bounds, mask feather/normalisation, and distinct Clone/Heal blends.
+- Windows CI covers Phase 1–2 colour/curve and Phase 3–5 geometry/mask/retouch regression checks.
+- The final Windows build, signed updater publication, installed app behaviour and real-camera tests must be recorded separately in `PROJECT_STATUS.md`.
+- Masks remain manual; lens correction has no profile; Heal is not generative; rendering remains 8-bit sRGB; EOS 600D CR2 quality/offline behaviour and in-place upgrade require on-PC validation.

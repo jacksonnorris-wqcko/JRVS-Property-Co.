@@ -50,6 +50,14 @@ if (!continuity.includes('Before substantial work') || !continuity.includes('che
 if (!prepare.includes('desktopPackage.version') || !prepare.includes('${desktopVersion}')) {
   throw new Error('Desktop preparation must inject its visible app version from package.json.');
 }
+
+if (!prepare.includes(`appVersion:'${desktopVersion}'`)) {
+  throw new Error(`Desktop backup payload version must match ${desktopVersion}.`);
+}
+const releaseNotes = await read(`RELEASE_NOTES_V${desktopVersion}.md`);
+if (!releaseNotes.includes(`V${desktopVersion} Release Notes`)) {
+  throw new Error(`Release notes for desktop version ${desktopVersion} are missing or stale.`);
+}
 if (!source.includes("const APP_VERSION='0.48.0';")) {
   throw new Error('The expected stable PWA source-version anchor is missing; review desktop version injection before changing the build.');
 }

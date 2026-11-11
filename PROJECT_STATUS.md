@@ -5,7 +5,7 @@
 **Last reviewed:** 11 November 2026 (Australia/Sydney)  
 **Repository:** [jacksonnorris-wqcko/JRVS-Property-Co.](https://github.com/jacksonnorris-wqcko/JRVS-Property-Co.)  
 **Active desktop branch:** `desktop-transition`  
-**Current desktop version:** `0.53.0`  
+**Current desktop version:** `0.54.0`  
 **Stable browser/PWA branch:** `main` — keep it unchanged unless the user explicitly requests browser/PWA work.
 
 ## Start here — current position
@@ -34,24 +34,31 @@ The shared desktop scrolling fix was committed on 11 November 2026:
 
 **User test result:** user reported "alright it works" after testing the build. Treat the shared scrolling issue as closed unless a specific page/control is later reported as still clipped.
 
-### Active major development — Phase 3 + Phase 4 + Phase 5: Local masks, architecture geometry and retouch (next desktop release)
+### JRVS Photo Studio V0.54.0 — Phase 3, Phase 4 and Phase 5
 
-**User-approved release scope:** continue from the Phase 1–2 foundation and complete the next practical layer of Photo Studio: brush-based local adjustment masks; genuine projective architectural correction and lens distortion controls; distinct clone and healing retouch algorithms. Target next signed desktop updater: **0.54.0**.
+**User-approved scope:** add local brush masks, projective architectural geometry/manual lens correction, and separate Clone/Heal retouch, then publish the next signed Windows desktop updater.
 
-**Checkpoint:** approved 11 November 2026 (Australia/Sydney). Desktop work only on `desktop-transition`. Keep `main` untouched. No release tag or signed update until all source checks and Windows release build pass.
+**Release candidate:** V0.54.0 on `desktop-transition`. Stable browser/PWA `main` remains untouched. The Windows release build and signed updater publication are pending GitHub Actions confirmation.
 
-**Existing foundation:** FlashRaw 0.1.0 is bundled locally; recipe schema v4 persists tone curve/HSL and supports v1–v3; colour/curve engine checks are part of Windows CI. Latest known full Windows build for that foundation succeeded on commit `c039a6712dc32b4e9075290909fbbb7d921fb363` (CI run 42955398595).
+**Implemented:**
+- Phase 3: dedicated Masks workspace; up to 12 masks, additive/subtractive brush strokes, flow, feather, enable/disable/invert, select/clear/delete, live brush outline and selected-mask overlay. Per-mask exposure, highlights, shadows, temperature and saturation. Mask data is saved in recipe schema v5; recipes v1–v4 remain supported. Mask state participates in undo/redo and the shared preview/full-resolution renderer.
+- Phase 4: replaces affine shear with projective homography for vertical/horizontal keystone correction. Adds manual radial lens-distortion correction and geometry reset. Neutral settings retain source centre crop; the same render path is used for preview and full-size export. No automatic camera/lens profiles.
+- Phase 5: Clone copies sampled source pixels. Heal uses sampled texture with local source/destination colour and luminance matching and feathered blending. Retouch strokes are non-destructive, recipe-backed and included in preview/export. This is not AI or content-aware reconstruction.
+- Preserved Phase 1–2: locally bundled FlashRaw 0.1.0, tone curve, eight-band HSL, recipe compatibility, JRVS Property Finish and Smart Finish.
+- Batch presets isolate per-photo mask/retouch/advanced state; editor state restores afterwards. Exact-look batch outputs retain editable recipes.
+- Added regression coverage for colour/HSL, tone curve, projective geometry identity/corners/inverse, lens bounds, mask feathering/normalisation/limits, Clone versus Heal and recipe compatibility.
 
-**Planned implementation:**
-1. Local adjustments: create multiple independent paint/erase brush masks with feather/flow, editable local exposure/highlights/shadows/temperature/saturation, enable/disable/select/delete controls, and non-destructive mask data in a new recipe schema. Use the same mask rendering stage for preview and full-size export.
-2. Geometry: replace the current affine shear approximation with a projective keystone transform for vertical/horizontal convergence, add radial lens distortion correction, preserve crop/rotation behaviour, and use the exact same warp for preview/export. Keep neutral geometry pixel-identical. Document that no camera-profile auto calibration is claimed.
-3. Retouch: make Clone and Heal separate algorithms. Clone copies the sampled source; Heal transfers sampled texture with destination/source tonal-colour matching and feathered blending. Keep retouch non-destructive in recipes and undo/redo, and leave source photos immutable.
-4. Add focused math/recipe/renderer regression checks for masks, feathering, homography identity/corner mapping, lens-neutral identity, heal/clone distinction and older recipe compatibility. Profile expensive pixel work and avoid repeated per-pixel channel scans.
-5. Build on Windows, verify the actual generated installers and the signed updater artifact. Bump all desktop version declarations to 0.54.0 only after implementation/test fixes are complete; publish via the existing `[release]` gate. Keep only V0.54.0 release notes in the shipped release notes.
+**Verification before release:**
+- All five inline application JavaScript scripts parsed without syntax errors.
+- Direct helper checks passed for projective identity/corner/inverse mapping, lens bounds, mask feathering/normalisation limits and distinct Clone/Heal blends.
+- Windows CI run 42992339544 passed handover/version validation and Photo Studio regression checks, but its installer build was cancelled by subsequent commits. This release commit starts a fresh Windows build and signed updater job.
+- **Not yet verified:** EOS 600D CR2 on the user's PC, complete offline workflows, large-file/image-quality tuning, or an installed-app in-place upgrade on the user's Windows profile.
 
-**Non-negotiables:** no source-photo overwrites, IDs/metadata/job links/number sequences lost, recipes silently dropped, or changes on `main`. Keep Property Finish/Smart Finish and phase 1–2 controls working. Don't call these tools content-aware or AI; don't claim calibrated lens profiles or quality parity without image tests. Distinguish source-level tests, Windows CI, installed-app tests, and user-camera validation.
+**Known limits:** masks are manual, not semantic AI selections; lens correction is manual without camera profiles; Heal is sampled patch matching, not generative repair; the renderer remains an 8-bit sRGB canvas. No Lightroom or camera-quality parity claim.
 
-**Immediate action:** implement masks, projective geometry and separate heal processing; add checks; then prepare 0.54.0 release.
+**Immediate next action:** confirm V0.54.0 Windows installer verification and signed updater publication. If successful, verify the GitHub Release and `latest.json` and record its tag/commit. If a workflow stage fails, inspect logs and fix it before calling the update available.
+
+**Non-negotiables:** preserve source bytes, IDs, metadata, job links and existing edits; no destructive recipe migrations; keep Property Finish/Smart Finish and prior controls; develop only on `desktop-transition`; never touch `main`.
 ## Latest confirmed application functionality
 
 The desktop branch's latest documented desktop release is **V0.53.0**.
