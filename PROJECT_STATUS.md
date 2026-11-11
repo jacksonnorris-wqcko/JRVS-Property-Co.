@@ -21,24 +21,27 @@ The desktop build now runs `npm run handover:check` before building. This valida
 
 ## Current active work and next action
 
-### Application task — verify shared scrolling fix
+### Application task — shared scrolling fix verified
 
-The latest app-facing change before this handover was committed on 11 November 2026:
+The shared desktop scrolling fix was committed on 11 November 2026:
 
 - **Commit:** `798542fa80e0f2cae02cf0f49b68c59c38091cbd`
 - **Message:** `Fix shared desktop vertical scrolling across all workspace tabs`
 - **File changed:** `scripts/prepare-desktop.mjs`
 - **Implementation:** desktop document/body are viewport-locked; the desktop shell is a fixed-height grid; the main workspace and sidebar have their own vertical scroll areas; active page content remains naturally sized and visible.
 
-**Status:** the scrolling fix is committed in source, but it has not been confirmed here against the user's installed Windows app. Do not claim it is fixed until it has been tested in the actual desktop build.
+**Status:** user-confirmed working in the Windows desktop app on 11 November 2026. The current Windows CI build also completed successfully for the handover commit `f40d221a2305c015a404adfbf169272ff0d7c37f`. CI confirms the project check, Windows installer build, output verification and artifact upload; it is not a substitute for the user's runtime test.
 
-**Next steps:**
-1. Build/test the current `desktop-transition` branch on Windows.
-2. Visit every main workspace tab and confirm content at the bottom is reachable: Dashboard, Calendar, Jobs, Clients, Photos, Quotes, Finances and Settings.
-3. Check the sidebar independently, and confirm modals, photo editor panels and long forms still scroll correctly without trapping the whole window.
-4. Test the normal desktop viewport and a shorter/reduced-height window.
-5. If any content is still clipped, inspect the generated `desktop-dist` HTML/CSS and the rendered element/scroll container dimensions. Do not blindly append another global overflow rule; identify which ancestor is constraining the content.
-6. Record the actual test result here, including the affected tab, window size and screenshot/diagnostic details if available.
+**User test result:** user reported "alright it works" after testing the build. Treat the shared scrolling issue as closed unless a specific page/control is later reported as still clipped.
+
+### Next major development — awaiting priority selection
+
+The scrolling issue is closed. Before starting another major feature, agree the next scope with the user. Strong candidate areas are:
+1. End-to-end job workflow connecting enquiries/clients, quotes, booked jobs, photo delivery, invoices and payment status.
+2. Finance and quote/invoice integration, including accurate outstanding balances, payment tracking and business cash position.
+3. Production-readiness/data-safety work: legacy data migration audit, full backup/restore round trip, photo asset integrity and upgrade testing.
+
+Do not assume one of these has been selected until the user chooses or gives a new development instruction.
 
 ### Continuity-system task — established in this commit series
 
