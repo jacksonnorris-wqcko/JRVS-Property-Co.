@@ -1779,6 +1779,7 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
  <div class="editor-tools"><button class="primary" type="button" onclick="addEditorLocalMask()">+ Add brush mask</button><button class="secondary" type="button" onclick="deleteSelectedEditorMask()">Delete selected</button></div>
  <div id="editorLocalMaskList" class="jrvs-local-mask-list"><div class="editor-help">No masks yet. Add a brush mask to begin.</div></div>
  <div class="jrvs-local-mask-modes"><button type="button" class="secondary" data-mask-mode="paint" onclick="setEditorLocalMaskMode('paint')">Paint</button><button type="button" class="secondary" data-mask-mode="erase" onclick="setEditorLocalMaskMode('erase')">Erase</button><button type="button" class="secondary" data-mask-mode="off" onclick="setEditorLocalMaskMode('off')">Move</button></div>
+ <label class="jrvs-local-mask-toggle"><input id="editorShowMaskOverlay" type="checkbox" checked onchange="editorShowMaskOverlay=this.checked;drawEditor()"> Show selected mask overlay</label>
  <div class="editor-help" id="editorLocalMaskInstructions">Select a mask and choose Paint, then brush over the photo. Use Erase to subtract from the selected mask.</div>
  <div class="editor-control"><label>Brush size <span id="localMaskBrushSizeValue">76 px</span></label><input id="localMaskBrushSize" type="range" min="8" max="260" value="76" oninput="editorLocalMaskBrushSize=+this.value;document.getElementById('localMaskBrushSizeValue').textContent=this.value+' px'"></div>
  <div class="editor-control"><label>Edge softness <span id="localMaskFeatherValue">70%</span></label><input id="localMaskFeather" type="range" min="0" max="100" value="70" oninput="editorLocalMaskFeather=+this.value/100;document.getElementById('localMaskFeatherValue').textContent=this.value+'%'"></div>
@@ -3304,7 +3305,7 @@ function editorZoom(delta){
 }
 let editorFitObserver=null;
 let editorRetouchMode='off',editorRetouchStrokes=[],editorRetouchSource=null,editorRetouchActive=null;
-let editorLocalMasks=[],editorLocalMaskSelectedId=null,editorLocalMaskMode='off',editorLocalMaskActive=null,editorLocalMaskBrushSize=76,editorLocalMaskFeather=.7,editorLocalMaskFlow=.75;
+let editorLocalMasks=[],editorLocalMaskSelectedId=null,editorLocalMaskMode='off',editorLocalMaskActive=null,editorLocalMaskBrushSize=76,editorLocalMaskFeather=.7,editorLocalMaskFlow=.75,editorShowMaskOverlay=true;
 const EDITOR_HSL_CHANNELS=[{id:'red',label:'Red',center:0},{id:'orange',label:'Orange',center:30},{id:'yellow',label:'Yellow',center:60},{id:'green',label:'Green',center:120},{id:'aqua',label:'Aqua',center:180},{id:'blue',label:'Blue',center:220},{id:'purple',label:'Purple',center:270},{id:'magenta',label:'Magenta',center:315}];
 let editorToneCurve=[64,128,192];
 let editorHsl=Object.fromEntries(EDITOR_HSL_CHANNELS.map(c=>[c.id,{hue:0,saturation:0,luminance:0}]));
@@ -3615,6 +3616,17 @@ function buildEditorLocalMaskCanvas(mask,width,height){
  });
  return surface;
 }
+function drawEditorMaskOverlay(context){
+ if(!editorShowMaskOverlay||editorActiveTab!=='mask')return;
+ const selected=selectedEditorLocalMask();if(!selected)return;
+ const preview=JSON.parse(JSON.stringify(selected));
+ if(editorLocalMaskActive?.maskId===selected.id)preview.strokes.push({mode:editorLocalMaskActive.mode,opacity:editorLocalMaskActive.opacity,feather:editorLocalMaskActive.feather,dabs:editorLocalMaskActive.dabs});
+ if(!preview.strokes.length)return;
+ const matte=buildEditorLocalMaskCanvas(preview,context.canvas.width,context.canvas.height),maskContext=matte.getContext('2d',{willReadFrequently:true}),image=maskContext.getImageData(0,0,matte.width,matte.height),pixels=image.data;
+ for(let i=0;i<pixels.length;i+=4){const amount=preview.inverted?255-pixels[i+3]:pixels[i+3];pixels[i]=238;pixels[i+1]=82;pixels[i+2]=72;pixels[i+3]=Math.round(amount*.38)}
+ maskContext.putImageData(image,0,0);context.save();context.globalCompositeOperation='source-over';context.drawImage(matte,0,0);context.restore();
+}
+
 function applyEditorLocalMasks(ctx,width,height){
  const masks=editorLocalMasks.filter(mask=>mask.enabled!==false&&mask.strokes?.length);if(!masks.length)return;
  const image=ctx.getImageData(0,0,width,height),data=image.data;
@@ -3880,6 +3892,7 @@ function drawEditor(){
   ctx.save();ctx.beginPath();ctx.rect(split,0,visible.width-split,visible.height);ctx.clip();ctx.drawImage(rendered.canvas,0,0);ctx.restore();
   ctx.fillStyle='#f7f1df';ctx.fillRect(split-1,0,2,visible.height);ctx.beginPath();ctx.arc(split,visible.height/2,13,0,Math.PI*2);ctx.fillStyle='#899b68';ctx.fill();ctx.strokeStyle='#f7f1df';ctx.lineWidth=2;ctx.stroke();
  }else ctx.drawImage(rendered.canvas,0,0);
+ drawEditorMaskOverlay(ctx);
  drawEditorHistogram(rendered.hist);
  fitEditorCanvas();
 }
