@@ -3536,7 +3536,7 @@ async function developEditorRawSource(){
 }
 function closeEditor(){if(editorFitObserver)editorFitObserver.disconnect();clearEditorFilmstripUrls();document.getElementById('editorBackdrop').classList.remove('show');if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=null;editorPhoto=null;editorSourcePhoto=null}
 function rotateEditor(deg){editorRotation=(editorRotation+deg+360)%360;drawEditor();captureEditorHistory()}
-function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','lensDistortion','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';editorRotation=0;editorLocalBalance=false;editorNaturalCurve=false;editorLocalMasks=[];editorLocalMaskSelectedId=null;editorRetouchStrokes=[];editorRetouchSource=null;renderEditorLocalMaskList();syncEditorLocalMaskControls();editorLastAnalysis=null;resetEditorAdvancedControls();const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value='natural';jrvsRenderFinishReport(null);drawEditor();captureEditorHistory()}
+function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','lensDistortion','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';editorRotation=0;editorRetouchActive=null;editorLocalMaskActive=null;editorLocalMaskMode='off';editorLocalBalance=false;editorNaturalCurve=false;editorLocalMasks=[];editorLocalMaskSelectedId=null;editorRetouchStrokes=[];editorRetouchSource=null;renderEditorLocalMaskList();syncEditorLocalMaskControls();setEditorLocalMaskMode('off');editorLastAnalysis=null;resetEditorAdvancedControls();const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value='natural';jrvsRenderFinishReport(null);drawEditor();captureEditorHistory()}
 function editorChanged(){
  // Coalesce rapid slider events into one preview render per animation frame.
  if(!editorPreviewFrame)editorPreviewFrame=requestAnimationFrame(()=>{editorPreviewFrame=0;drawEditor()});
@@ -3565,8 +3565,14 @@ function drawEditorToneCurve(){const c=document.getElementById('editorToneCurveC
 function resetEditorToneCurve(){editorToneCurve=[64,128,192];syncEditorAdvancedControls();editorChanged();captureEditorHistory()}
 function editorClamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||0))}
 function editorBuildGeometryQuad(vertical,horizontal){
- const v=editorClamp(vertical/15*.10,-.10,.10),h=editorClamp(horizontal/15*.10,-.10,.10);
- return [{x:v,y:h},{x:1-v,y:-h},{x:1+v,y:1-h},{x:-v,y:1+h}];
+ const v=editorClamp(vertical/15*.12,-.12,.12),h=editorClamp(horizontal/15*.12,-.12,.12);
+ const topInset=Math.max(0,v),bottomInset=Math.max(0,-v),leftInset=Math.max(0,-h),rightInset=Math.max(0,h);
+ return [
+  {x:topInset,y:leftInset},
+  {x:1-topInset,y:rightInset},
+  {x:1-bottomInset,y:1-rightInset},
+  {x:bottomInset,y:1-leftInset}
+ ];
 }
 function editorBuildHomography(quad){
  const [p0,p1,p2,p3]=quad,dx1=p1.x-p2.x,dx2=p3.x-p2.x,dx3=p0.x-p1.x+p2.x-p3.x;
@@ -3593,7 +3599,8 @@ function editorProjectiveMap(u,v,quad){return editorApplyHomography(editorBuildH
 function editorProjectiveInverseMap(u,v,inverse){return editorApplyHomography(inverse,u,v)}
 function editorMapGeometryPoint(u,v,vertical,horizontal,lens){
  const k=editorClamp(lens,-100,100)/100*.18,dx=u-.5,dy=v-.5,r2=dx*dx+dy*dy,factor=1+k*r2;
- return editorProjectiveMap(.5+dx*factor,.5+dy*factor,editorBuildGeometryQuad(vertical,horizontal));
+ const warpedU=editorClamp(.5+dx*factor,0,1),warpedV=editorClamp(.5+dy*factor,0,1);
+ return editorProjectiveMap(warpedU,warpedV,editorBuildGeometryQuad(vertical,horizontal));
 }
 function editorMaskFalloff(distance,radius,feather){
  if(radius<=0||distance>=radius)return 0;const inner=radius*(1-editorClamp(feather,0,1));if(distance<=inner)return 1;
@@ -3653,12 +3660,13 @@ function editorApplyGeometryWarp(sourceCanvas,destinationCanvas,vertical,horizon
  const sourceCtx=sourceCanvas.getContext('2d',{willReadFrequently:true}),destCtx=destinationCanvas.getContext('2d',{willReadFrequently:true});
  const cropW=Math.min(sw,sh*dw/dh),cropH=Math.min(sh,sw*dh/dw),left=(sw-cropW)/2,top=(sh-cropH)/2;
  if(!vertical&&!horizontal&&!lens){destCtx.drawImage(sourceCanvas,left,top,cropW,cropH,0,0,dw,dh);return}
- const source=sourceCtx.getImageData(0,0,sw,sh).data,output=destCtx.createImageData(dw,dh),out=output.data,quad=editorBuildGeometryQuad(vertical,horizontal),inverse=editorInvertHomography(editorBuildHomography(quad)),k=editorClamp(lens,-100,100)/100*.18;
+ const source=sourceCtx.getImageData(0,0,sw,sh).data,output=destCtx.createImageData(dw,dh),out=output.data,quad=editorBuildGeometryQuad(vertical,horizontal),homography=editorBuildHomography(quad),k=editorClamp(lens,-100,100)/100*.18;
  for(let y=0;y<dh;y++){
   const v=dh>1?y/(dh-1):.5,ny=(v-.5)*2;
   for(let x=0;x<dw;x++){
-   const u=dw>1?x/(dw-1):.5,nx=(u-.5)*2,r2=nx*nx+ny*ny;
-   const lensFactor=1-k*r2,projected=editorProjectiveInverseMap(.5+nx*.5*lensFactor,.5+ny*.5*lensFactor,inverse);
+   const u=dw>1?x/(dw-1):.5,nx=(u-.5)*2,r2=nx*nx+ny*ny,lensFactor=1+k*r2;
+   const warpedU=editorClamp(.5+nx*.5*lensFactor,0,1),warpedV=editorClamp(.5+ny*.5*lensFactor,0,1);
+   const projected=editorApplyHomography(homography,warpedU,warpedV);
    const sx=editorClamp(left+projected.x*cropW,0,sw-1),sy=editorClamp(top+projected.y*cropH,0,sh-1);
    const x0=Math.floor(sx),y0=Math.floor(sy),x1=Math.min(sw-1,x0+1),y1=Math.min(sh-1,y0+1),fx=sx-x0,fy=sy-y0,dst=(y*dw+x)*4;
    for(let c=0;c<4;c++){const p00=source[(y0*sw+x0)*4+c],p10=source[(y0*sw+x1)*4+c],p01=source[(y1*sw+x0)*4+c],p11=source[(y1*sw+x1)*4+c],a=p00+(p10-p00)*fx,b=p01+(p11-p01)*fx;out[dst+c]=a+(b-a)*fy}
