@@ -3829,7 +3829,7 @@ function applyEditorRetouchStrokes(ctx,width,height,strokes){
   (group.dabs||[]).forEach(dab=>{
    const x=dab.x*width,y=dab.y*height,r=Math.max(1,dab.radius*width),sx=dab.sx*width,sy=dab.sy*height;
    if(sx-r<0||sy-r<0||sx+r>=width||sy+r>=height||x-r<0||y-r<0||x+r>=width||y+r>=height)return;
-   const sourceMean=meanPatch(sx,sy,r,base),destinationMean=meanPatch(x,y,r,working),left=Math.max(0,Math.floor(x-r)),right=Math.min(width-1,Math.ceil(x+r)),top=Math.max(0,Math.floor(y-r)),bottom=Math.min(height-1,Math.ceil(y+r));
+   const isHeal=group.mode==='heal',sourceMean=isHeal?meanPatch(sx,sy,r,base):null,destinationMean=isHeal?meanPatch(x,y,r,working):null,left=Math.max(0,Math.floor(x-r)),right=Math.min(width-1,Math.ceil(x+r)),top=Math.max(0,Math.floor(y-r)),bottom=Math.min(height-1,Math.ceil(y+r));
    for(let py=top;py<=bottom;py++)for(let px=left;px<=right;px++){
     const dx=px+.5-x,dy=py+.5-y,distance=Math.hypot(dx,dy);if(distance>=r)continue;
     const feather=editorMaskFalloff(distance,r,group.hardness??.72),opacity=editorClamp(group.opacity??.9,0,1)*feather;if(opacity<=.001)continue;
