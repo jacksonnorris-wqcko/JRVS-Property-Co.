@@ -36,20 +36,29 @@ The shared desktop scrolling fix was committed on 11 November 2026:
 
 ### Active major development — Phase 1 + Phase 2: Photo Studio engine and professional Develop tools
 
-**User-approved scope:** begin both Phase 1 (reliable editing/RAW engine) and Phase 2 (professional tonal/colour controls). Finance is out of scope.
+**User-approved scope:** improve Photo Studio as a professional property-photography editor. Finance is out of scope.
 
-**Checkpoint:** approved on 11 November 2026. Work is on `desktop-transition` only. Desktop version remains V0.53.0 until a complete, tested release is ready. Do not touch `main`.
+**Current development milestone (desktop-transition, version 0.53.0):**
+- FlashRaw `0.1.0` pinned as a desktop dependency. The generated frontend copies the package browser module and WASM assets into `desktop-dist/vendor/flashraw`; the editor imports the local browser entry instead of loading esm.sh at runtime.
+- RAW sensor development requests CPU SIMD, automatic demosaic, as-shot white balance and highlight reconstruction. The editor stores whether a recipe used sensor-developed RAW and attempts to re-develop the untouched CR2 when reopening. If sensor decoding falls back to the embedded JPEG preview, the editor warns and clears the sensor-developed marker so a later save doesn't misrepresent the image source.
+- Added a three-anchor luminance tone curve and eight-band HSL mixer (hue/saturation/luminance for red, orange, yellow, green, aqua, blue, purple and magenta).
+- Tone curve and HSL data are persisted in edit recipe schema v4; old recipe schemas v1–v3 remain accepted. Advanced controls participate in undo/redo and are reset/isolated appropriately for presets and batch operations.
+- Added `npm run photo:engine:check` and wired it into Windows CI. It checks HSL RGB round trips, default curve identity, monotonic shaped curve, recipe compatibility and local RAW bundling references.
 
-**Implementation order:**
-1. Audit the actual image rendering pipeline, recipes/history and save/export path before changing engine behaviour.
-2. Strengthen RAW source/develop state so originals remain immutable, decoder failures are explicit, and the editor can distinguish embedded camera preview from sensor-developed data. Investigate bundling/pinning the decoder locally to remove runtime CDN dependency; only do so if package/API/build/licensing checks support it.
-3. Add the first professional Develop controls that can be implemented safely on the existing deterministic renderer (tone curve and HSL/colour channels), persisted in versioned non-destructive recipes and used consistently by preview and full-resolution export.
-4. Add focused tests/checks for the new rendering math, recipe round trips, legacy recipe compatibility and failure-safe RAW behaviour.
-5. Build Windows CI and update this status with exact implementation and verification evidence before proceeding to further advanced tools.
+**Build/test evidence:**
+- Static parsing of the 5 inline HTML scripts passed after the initial controls were added.
+- The first Windows CI attempt failed before Tauri compilation because the preparation script checked for `vendor/flashraw/index.js`; the published package browser entry is `browser.js`. The preparation check and import were corrected, and the engine regression test was added.
+- **Next check:** confirm the latest Windows CI run passes with the corrected browser entry, required WASM files and engine regression check.
+- **Not yet user-tested:** RAW development or the new tone curve/HSL controls in the installed Windows app.
+- **Not yet verified:** EOS 600D CR2 compatibility, offline runtime with network disabled, RAW fidelity/highlight reconstruction and preview/export image-quality parity.
 
-**Non-negotiable constraints:** never overwrite source photo bytes; preserve IDs, edit recipes, metadata, job links, original RAW files and existing edited outputs. Keep existing JRVS Property Finish/Smart Finish behaviour unless regression tests prove a safe improvement. Do not claim RAW parity without testing actual EOS 600D CR2 files; do not claim offline RAW until the decoder is bundled and verified offline. Do not call this Lightroom parity.
+**Known current limitations:** the render path still uses 8-bit sRGB canvas pixels; the tone curve has three parametric anchors rather than a freehand point graph; HSL is a simplified eight-band sRGB mixer. These are an initial professional control layer, not Lightroom parity or a complete high-bit-depth RAW development engine.
 
-**Checkpoint rhythm:** commit meaningful, buildable milestones and update this status as work proceeds.
+**Next action:** complete the corrected Windows CI build; then test the new controls and decoder against actual EOS 600D CR2 samples. Preserve original files and recipes. Do not issue a production release until build and user validation have passed.
+
+**Non-negotiable constraints:** never overwrite source photo bytes; preserve photo IDs, recipe history, metadata, job links and existing edited outputs; do not regress JRVS Property Finish/Smart Finish. Keep development on `desktop-transition`; do not touch `main`.
+
+See `PHOTO_STUDIO_ROADMAP.md` for the development notes and subsequent engineering steps.
 ## Latest confirmed application functionality
 
 The desktop branch's latest documented desktop release is **V0.53.0**.
