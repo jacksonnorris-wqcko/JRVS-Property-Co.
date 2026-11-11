@@ -17,6 +17,8 @@ JRVS has two deliberately separate tracks:
 
 The desktop branch is independently versioned. The desktop version is defined in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`. The desktop preparation script now reads `package.json` and injects that version into the generated desktop app. The inherited `index.html` source and root `version.json`/README may still show the stable PWA baseline version; do not mistake those inherited values for the desktop release version or change them just to make the desktop number match.
 
+The desktop build now runs `npm run handover:check` before building. This validates that `package.json`, `Cargo.toml` and Tauri configuration agree, that this handover records the current desktop version/branch, and that the new-chat and continuity instructions are present. The check is wired into `.github/workflows/desktop-shell-check.yml`.
+
 ## Current active work and next action
 
 ### Application task — verify shared scrolling fix
@@ -97,6 +99,7 @@ Read these when the task touches the relevant area:
 - Work on `desktop-transition` only for desktop features. Never commit desktop changes to `main`.
 - Windows prerequisites and local commands are in `DESKTOP_SETUP.md`.
 - Local commands: `npm install`, `npm run desktop:dev`, and `npm run desktop:build`.
+- Continuity/version check: `npm run handover:check` (also runs in the Windows CI build).
 - Every push to `desktop-transition` runs the Windows build workflow and uploads temporary installer artifacts when successful.
 - A signed public desktop update is gated: the final intentional release commit must include `[release]` in its commit message, for example `[release] JRVS Desktop 0.54.0`.
 - Before a release, bump the desktop version consistently in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`. The build script takes the in-app version from `package.json`.
