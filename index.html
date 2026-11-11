@@ -1703,7 +1703,7 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
 <div class="modal-backdrop" id="packageModalBackdrop"><div class="modal"><div class="modal-head"><h2 id="packageModalTitle">Add package</h2><button class="close" onclick="closePackageModal()">×</button></div><form id="packageForm" onsubmit="savePackageForm(event)"><div class="field"><label>Package name</label><input id="pkgName" required placeholder="e.g. Standard Property Photography"></div><div class="field"><label>Description / inclusions</label><textarea id="pkgDesc" rows="3"></textarea></div><div class="field"><label>Price (AUD)</label><input id="pkgPrice" type="number" min="0" step="0.01" required></div><div class="field"><label>Optional extra?</label><select id="pkgExtra"><option value="no">No — main package</option><option value="yes">Yes — optional add-on</option></select></div><div style="display:flex;justify-content:flex-end;gap:9px;margin-top:18px"><button type="button" class="secondary" onclick="closePackageModal()">Cancel</button><button class="primary" type="submit">Save package</button></div></form></div></div>
 
 <div class="editor-backdrop" id="editorBackdrop"><div class="editor-shell">
-<div class="editor-top"><div><div class="eyebrow">JRVS PHOTO STUDIO</div><h2 id="editorTitle">Edit photograph</h2><div class="muted" id="editorSubtitle">Non-destructive edit · Original preserved</div></div><div class="editor-top-actions"><button class="secondary" type="button" onclick="editorUndo()" title="Undo (Ctrl+Z)">↶ Undo</button><button class="secondary" type="button" onclick="editorRedo()" title="Redo (Ctrl+Shift+Z)">↷ Redo</button><button class="secondary" type="button" onclick="toggleEditorCompare()">◐ Compare view</button><button class="secondary" type="button" id="editorRawDevelopBtn" onclick="developEditorRawSource()" style="display:none">Develop RAW (experimental)</button><button class="primary" type="button" onclick="saveEditedPhoto()">Save copy</button><button class="secondary" onclick="closeEditor()">← Gallery</button></div></div>
+<div class="editor-top"><div><div class="eyebrow">JRVS PHOTO STUDIO</div><h2 id="editorTitle">Edit photograph</h2><div class="muted" id="editorSubtitle">Non-destructive edit · Original preserved</div></div><div class="editor-top-actions"><button class="secondary" type="button" onclick="editorUndo()" title="Undo (Ctrl+Z)">↶ Undo</button><button class="secondary" type="button" onclick="editorRedo()" title="Redo (Ctrl+Shift+Z)">↷ Redo</button><button class="secondary" type="button" onclick="toggleEditorCompare()">◐ Compare view</button><button class="secondary" type="button" id="editorRawDevelopBtn" onclick="developEditorRawSource()" style="display:none">Develop RAW</button><button class="primary" type="button" onclick="saveEditedPhoto()">Save copy</button><button class="secondary" onclick="closeEditor()">← Gallery</button></div></div>
 <div class="editor-layout"><div class="editor-stage-wrap"><div class="editor-stage-toolbar"><span id="editorViewLabel">FIT · FULL IMAGE</span><div><button type="button" class="secondary" onclick="editorZoom(-.15)">−</button><button type="button" class="secondary" onclick="editorZoom(0)">Fit</button><button type="button" class="secondary" onclick="editorZoom(.15)">+</button></div></div><div class="editor-stage" id="editorStage"><div id="retouchCursor" class="jrvs-retouch-cursor"></div><canvas id="editorCanvas" onpointerdown="editorRetouchPointerDown(event)" onpointermove="editorRetouchPointerMove(event)" onpointerup="editorRetouchPointerUp(event)" onpointercancel="editorRetouchPointerUp(event)"></canvas></div><div class="editor-compare-bar" id="editorCompareBar" hidden><span>ORIGINAL</span><input id="editorCompareRange" type="range" min="5" max="95" value="50" aria-label="Before and after split" oninput="editorComparePosition=Number(this.value);drawEditor()"><span>EDITED</span><button type="button" class="secondary" onclick="toggleEditorCompare(false)">Done</button></div><div class="editor-stage-footer"><span id="editorStageStatus">Original preserved · Non-destructive editing</span><span>Full-resolution export</span></div></div><aside class="editor-panel">
 <div class="editor-panel-heading"><div><strong>Photo development</strong><div class="editor-help">Build the look first, refine details when needed.</div></div><span class="editor-live-dot">● LIVE</span></div><nav class="editor-tabs" aria-label="Editing workspace"><button type="button" class="active" data-editor-tab="basic" onclick="setEditorTab('basic')">Develop</button><button type="button" data-editor-tab="colour" onclick="setEditorTab('colour')">Colour</button><button type="button" data-editor-tab="detail" onclick="setEditorTab('detail')">Finish</button><button type="button" data-editor-tab="geometry" onclick="setEditorTab('geometry')">Geometry</button><button type="button" data-editor-tab="export" onclick="setEditorTab('export')">Export</button><button type="button" data-editor-tab="retouch" onclick="setEditorTab('retouch')">Retouch</button></nav>
 <div class="editor-control"><label>Property presets</label><select id="editorPreset" onchange="applyEditorPreset(this.value)">
@@ -2547,14 +2547,14 @@ async function loadPhotos(){try{photoRecords=await photoRequest('readonly','all'
  await jrvsSyncManagedPhotoCopies(photoRecords);await ensureRawPreviews();populatePhotoJobFilter();renderPhotos();render()}
 function populatePhotoJobFilter(){const el=document.getElementById('photoJobFilter');if(!el)return;const old=el.value;el.innerHTML='<option value="all">All projects</option>'+data.jobs.map(j=>`<option value="${esc(j.id)}">${esc(j.name)}</option>`).join('');if([...el.options].some(o=>o.value===old))el.value=old}
 
-// V0.41 — genuine sensor RAW development via FlashRaw WebAssembly.
-// Decoder loads on first RAW use; first load needs internet unless browser cache has it.
+// V0.54 — bundled FlashRaw WebAssembly decoder. The desktop preparation step copies
+// the pinned npm package and WASM assets into the app bundle; no runtime CDN is required.
 let jrvsRawDecoderModule=null,jrvsRawDecoderPromise=null,jrvsLastRawDecodeInfo=null;
 async function getJrvsRawDecoder(){
  if(jrvsRawDecoderModule)return jrvsRawDecoderModule;
  if(!jrvsRawDecoderPromise){
   jrvsRawDecoderPromise=(async()=>{
-   const mod=await import('https://esm.sh/flashraw@0.1.0');
+   const mod=await import('./vendor/flashraw/index.js');
    if(!mod?.FlashRaw)throw new Error('FlashRaw module did not expose its decoder.');
    jrvsRawDecoderModule=mod.FlashRaw;return jrvsRawDecoderModule;
   })().catch(err=>{jrvsRawDecoderPromise=null;throw err});
@@ -2567,7 +2567,7 @@ async function decodeRawToJpeg(rawBlob,{halfSize=true,quality=.9}={}){
   const FlashRaw=await getJrvsRawDecoder();
   raw=await FlashRaw.open(rawBlob);
   const meta=raw.metadata||{};
-  const frame=await raw.decode({backend:'auto',output:'rgba8',demosaic:halfSize?'half-size':'bilinear',crop:true,colorSpace:'srgb',corruptionPolicy:'strict',previewFallback:false});
+  const frame=await raw.decode({backend:'cpu-simd',output:'rgba8',demosaic:halfSize?'half-size':'auto',whiteBalance:'as-shot',highlights:'reconstruct',crop:true,colorSpace:'srgb',corruptionPolicy:'strict',previewFallback:false});
   if(!frame||frame.source==='preview'||!frame.data||!frame.width||!frame.height)throw new Error('RAW decoder did not return developed sensor pixels.');
   const canvas=document.createElement('canvas');canvas.width=frame.width;canvas.height=frame.height;
   const ctx=canvas.getContext('2d');
@@ -2575,7 +2575,7 @@ async function decodeRawToJpeg(rawBlob,{halfSize=true,quality=.9}={}){
   ctx.putImageData(imageData,0,0);
   const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Could not encode the developed RAW image.')),'image/jpeg',quality));
   if(!blob)throw new Error('Could not encode the developed RAW image.');
-  jrvsLastRawDecodeInfo={mode:'sensor-raw',camera:meta.camera?.name||'Camera RAW',width:frame.width,height:frame.height,decodeMs:frame.timings?.totalMs||null,backend:frame.backend?.decode||frame.backend?.kind||'WASM'};
+  jrvsLastRawDecodeInfo={mode:'sensor-raw',camera:meta.camera?.name||'Camera RAW',width:frame.width,height:frame.height,decodeMs:frame.timings?.totalMs||null,backend:frame.backend?.decode||frame.backend?.kind||'WASM',whiteBalance:meta.whiteBalanceApplied?'camera-applied':'as-shot',highlightMode:'reconstruct',colourSpace:'sRGB'};
   raw.close?.();return blob;
  }catch(err){
   try{raw?.close?.()}catch(_){}
@@ -3350,7 +3350,7 @@ async function developEditorRawSource(){
  if(!editorSourcePhoto?.isRaw||!(editorSourcePhoto.blob instanceof Blob)){showToast('Select an original CR2 photo to develop RAW.','error');return}
  const btn=document.getElementById('editorRawDevelopBtn'),status=document.getElementById('editorStatus');
  if(btn){btn.disabled=true;btn.textContent='Developing RAW…'}
- if(status)status.textContent='Experimental RAW sensor development running. Your original file remains unchanged.';
+ if(status)status.textContent='RAW sensor development running. Your original CR2 remains unchanged.';
  try{
   const developed=await decodeRawToJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});
   const info=jrvsLastRawDecodeInfo;
@@ -3367,7 +3367,7 @@ async function developEditorRawSource(){
   if(status)status.textContent='RAW development unavailable · '+(err?.message||'decoder error');
   showToast('RAW development failed; your current edit is unchanged. '+(err?.message||''),'error');
  }finally{
-  if(btn){btn.disabled=false;btn.textContent='Develop RAW (experimental)'}
+  if(btn){btn.disabled=false;btn.textContent='Develop RAW'}
  }
 }
 function closeEditor(){if(editorFitObserver)editorFitObserver.disconnect();clearEditorFilmstripUrls();document.getElementById('editorBackdrop').classList.remove('show');if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=null;editorPhoto=null;editorSourcePhoto=null}
