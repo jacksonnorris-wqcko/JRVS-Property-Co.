@@ -13,13 +13,21 @@ function replaceExactlyOnce(source, before, after, label) {
   return source.replace(before, after);
 }
 
+const desktopPackage = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
+const desktopVersion = String(desktopPackage.version || '').trim();
+if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(desktopVersion)) {
+  throw new Error('package.json must contain a valid desktop semantic version. Desktop build stopped.');
+}
+
 let html = await readFile(path.join(root, 'index.html'), 'utf8');
 
 // The desktop shell has its own independently versioned release track.
+// Read its version from package.json so the visible in-app version cannot drift
+// away from the version checked by the signed-release workflow.
 html = replaceExactlyOnce(
   html,
   "const APP_VERSION='0.48.0';",
-  "const APP_VERSION='0.53.0';",
+  `const APP_VERSION='${desktopVersion}';`,
   'desktop application version'
 );
 
