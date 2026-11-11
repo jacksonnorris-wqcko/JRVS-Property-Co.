@@ -3756,29 +3756,46 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
   hist.fill(0);
   for(let i=0;i<d.length;i+=4){const l=Math.max(0,Math.min(255,.2126*d[i]+.7152*d[i+1]+.0722*d[i+2]));hist[Math.min(63,Math.floor(l/4))]++}
  }
- if(editorRetouchStrokes.length){
-  const base=document.createElement('canvas');base.width=canvas.width;base.height=canvas.height;
-  base.getContext('2d').drawImage(canvas,0,0);
-  const rc=canvas.getContext('2d');
-  editorRetouchStrokes.forEach(group=>{
-   group.dabs.forEach(st=>{
-    const x=st.x*canvas.width,y=st.y*canvas.height;
-    const r=Math.max(1,st.radius*canvas.width),sx=st.sx*canvas.width,sy=st.sy*canvas.height;
-    if(sx-r<0||sy-r<0||sx+r>base.width||sy+r>base.height)return;
-    rc.save();rc.globalAlpha=group.opacity;rc.beginPath();rc.arc(x,y,r,0,Math.PI*2);rc.clip();
-    rc.drawImage(base,sx-r,sy-r,2*r,2*r,x-r,y-r,2*r,2*r);
-    const feather=Math.max(0,Math.min(.98,group.hardness));
-    if(feather>0){
-     const g=rc.createRadialGradient(x,y,r*(1-feather),x,y,r);
-     g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,1)');
-     rc.globalCompositeOperation='destination-in';rc.fillStyle=g;rc.fillRect(x-r,y-r,2*r,2*r);
-     rc.globalCompositeOperation='source-over';
-    }
-    rc.restore();
-   });
-  });
+ applyEditorRetouchStrokes(ctx,width,height,editorRetouchStrokes);
  }
  return {canvas,hist};
+}
+
+function editorRetouchBlendPixel(mode,source,destination,sourceMean,destinationMean,opacity){
+ const blend=editorClamp(opacity,0,1),output=[];
+ for(let channel=0;channel<3;channel++){
+  const patch=mode==='heal'?source[channel]+destinationMean[channel]-sourceMean[channel]:source[channel];
+  output.push(editorClamp(destination[channel]+(patch-destination[channel])*blend,0,255));
+ }
+ return output;
+}
+function applyEditorRetouchStrokes(ctx,width,height,strokes){
+ if(!Array.isArray(strokes)||!strokes.length)return;
+ const image=ctx.getImageData(0,0,width,height),base=image.data,working=new Uint8ClampedArray(base);
+ const rgbAt=(x,y,data)=>{const px=editorClamp(Math.round(x),0,width-1),py=editorClamp(Math.round(y),0,height-1),i=(py*width+px)*4;return [data[i],data[i+1],data[i+2]]};
+ const meanPatch=(cx,cy,radius,data)=>{
+  const total=[0,0,0];let count=0;
+  for(let gy=-2;gy<=2;gy++)for(let gx=-2;gx<=2;gx++){
+   const dx=gx*.30,dy=gy*.30;if(dx*dx+dy*dy>.72)continue;
+   const rgb=rgbAt(cx+dx*radius,cy+dy*radius,data);for(let c=0;c<3;c++)total[c]+=rgb[c];count++;
+  }
+  return total.map(value=>value/Math.max(1,count));
+ };
+ strokes.forEach(group=>{
+  (group.dabs||[]).forEach(dab=>{
+   const x=dab.x*width,y=dab.y*height,r=Math.max(1,dab.radius*width),sx=dab.sx*width,sy=dab.sy*height;
+   if(sx-r<0||sy-r<0||sx+r>=width||sy+r>=height||x-r<0||y-r<0||x+r>=width||y+r>=height)return;
+   const sourceMean=meanPatch(sx,sy,r,base),destinationMean=meanPatch(x,y,r,working),left=Math.max(0,Math.floor(x-r)),right=Math.min(width-1,Math.ceil(x+r)),top=Math.max(0,Math.floor(y-r)),bottom=Math.min(height-1,Math.ceil(y+r));
+   for(let py=top;py<=bottom;py++)for(let px=left;px<=right;px++){
+    const dx=px+.5-x,dy=py+.5-y,distance=Math.hypot(dx,dy);if(distance>=r)continue;
+    const feather=editorMaskFalloff(distance,r,group.hardness??.72),opacity=editorClamp(group.opacity??.9,0,1)*feather;if(opacity<=.001)continue;
+    const source=rgbAt(sx+dx,sy+dy,base),index=(py*width+px)*4,destination=[working[index],working[index+1],working[index+2]];
+    const blended=editorRetouchBlendPixel(group.mode==='heal'?'heal':'clone',source,destination,sourceMean,destinationMean,opacity);
+    working[index]=blended[0];working[index+1]=blended[1];working[index+2]=blended[2];
+   }
+  });
+ });
+ image.data.set(working);ctx.putImageData(image,0,0);
 }
 
 function setEditorRetouchMode(mode){
@@ -3833,10 +3850,10 @@ function editorRetouchPointerUp(e){
  if(!editorRetouchActive)return;
  const st=editorRetouchActive;editorRetouchActive=null;
  editorRetouchStrokes.push({mode:st.mode,dabs:st.dabs,opacity:st.opacity,hardness:st.hardness});
- drawEditor();
+ drawEditor();captureEditorHistory();
 }
-function undoEditorRetouch(){if(!editorRetouchStrokes.length)return;editorRetouchStrokes.pop();drawEditor();const s=document.getElementById('editorStatus');if(s)s.textContent='Last retouch stroke undone.'}
-function clearEditorRetouch(){editorRetouchStrokes=[];editorRetouchSource=null;const s=document.getElementById('retouchSourceStatus');if(s)s.textContent='Not set';setEditorRetouchMode(editorRetouchMode);drawEditor()}
+function undoEditorRetouch(){if(!editorRetouchStrokes.length)return;editorRetouchStrokes.pop();drawEditor();captureEditorHistory();const s=document.getElementById('editorStatus');if(s)s.textContent='Last retouch stroke undone.'}
+function clearEditorRetouch(){editorRetouchStrokes=[];editorRetouchSource=null;const s=document.getElementById('retouchSourceStatus');if(s)s.textContent='Not set';setEditorRetouchMode(editorRetouchMode);drawEditor();captureEditorHistory()}
 
 function drawEditor(){
  const visible=document.getElementById('editorCanvas');if(!visible||!editorImage||!editorPhoto)return;
