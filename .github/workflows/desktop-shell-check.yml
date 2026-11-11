@@ -54,6 +54,9 @@ jobs:
       - name: Validate JRVS project handover and version state
         run: npm run handover:check
 
+      - name: Run Photo Studio engine regression checks
+        run: npm run photo:engine:check
+
       - name: Build Windows installers
         run: npm run desktop:build
 
