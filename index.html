@@ -3358,7 +3358,7 @@ function syncEditorLocalMaskControls(){
  Object.entries(sliders).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.value=value});
  const labels={localMaskExposureValue:(mask?.exposure||0).toFixed(2)+' EV',localMaskHighlightsValue:String(mask?.highlights||0),localMaskShadowsValue:String(mask?.shadows||0),localMaskTemperatureValue:String(mask?.temperature||0),localMaskSaturationValue:String(mask?.saturation||0)};
  Object.entries(labels).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value});
- ['localMaskEnabled','localMaskInverted','localMaskExposure','localMaskHighlights','localMaskShadows','localMaskTemperature','localMaskSaturation'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!mask});
+ ['localMaskEnabled','localMaskInverted','localMaskExposure','localMaskHighlights','localMaskShadows','localMaskTemperature','localMaskSaturation'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!mask;const numeric=el?.closest('.editor-control')?.querySelector('.editor-number');if(numeric)numeric.disabled=!mask});
  const del=document.querySelector('.jrvs-local-mask-panel button[onclick="deleteSelectedEditorMask()"]');if(del)del.disabled=!mask;
 }
 function selectEditorLocalMask(id){
@@ -3618,13 +3618,13 @@ function buildEditorLocalMaskCanvas(mask,width,height){
 }
 function drawEditorMaskOverlay(context){
  if(!editorShowMaskOverlay||editorActiveTab!=='mask')return;
- const selected=selectedEditorLocalMask();if(!selected)return;
+ const selected=selectedEditorLocalMask();if(!selected||selected.enabled===false)return;
  const preview=JSON.parse(JSON.stringify(selected));
  if(editorLocalMaskActive?.maskId===selected.id)preview.strokes.push({mode:editorLocalMaskActive.mode,opacity:editorLocalMaskActive.opacity,feather:editorLocalMaskActive.feather,dabs:editorLocalMaskActive.dabs});
  if(!preview.strokes.length)return;
  const matte=buildEditorLocalMaskCanvas(preview,context.canvas.width,context.canvas.height),maskContext=matte.getContext('2d',{willReadFrequently:true}),image=maskContext.getImageData(0,0,matte.width,matte.height),pixels=image.data;
  for(let i=0;i<pixels.length;i+=4){const amount=preview.inverted?255-pixels[i+3]:pixels[i+3];pixels[i]=238;pixels[i+1]=82;pixels[i+2]=72;pixels[i+3]=Math.round(amount*.38)}
- maskContext.putImageData(image,0,0);context.save();context.globalCompositeOperation='source-over';context.drawImage(matte,0,0);context.restore();
+ maskContext.putImageData(image,0,0);context.save();context.globalCompositeOperation='source-over';if(editorCompare){const split=Math.round(context.canvas.width*editorComparePosition/100);context.beginPath();context.rect(split,0,context.canvas.width-split,context.canvas.height);context.clip()}context.drawImage(matte,0,0);context.restore();
 }
 
 function applyEditorLocalMasks(ctx,width,height){
@@ -3782,7 +3782,8 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
   hist.fill(0);
   for(let i=0;i<d.length;i+=4){const l=Math.max(0,Math.min(255,.2126*d[i]+.7152*d[i+1]+.0722*d[i+2]));hist[Math.min(63,Math.floor(l/4))]++}
  }
- applyEditorRetouchStrokes(ctx,width,height,editorRetouchStrokes);
+ const retouchGroups=editorRetouchActive?[...editorRetouchStrokes,editorRetouchActive]:editorRetouchStrokes;
+ applyEditorRetouchStrokes(ctx,width,height,retouchGroups);
  return {canvas,hist};
 }
 
