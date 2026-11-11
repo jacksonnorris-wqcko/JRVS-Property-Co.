@@ -1720,6 +1720,7 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
  <div class="jrvs-finish-report" id="jrvsFinishReport" aria-live="polite">Ready to analyse this photo. The original will remain untouched.</div>
  <div class="jrvs-auto-enhance-note">Exposure and highlight adjustments only · Original always preserved</div>
 </div></div>
+<details class="editor-section jrvs-tone-curve" data-editor-group="basic"><summary>Tone curve <span class="jrvs-section-hint">Luminance · parametric point curve</span></summary><div class="editor-help">Shape shadows, midtones and highlights independently. The curve is non-destructive and is applied to both preview and full-resolution export.</div><canvas id="editorToneCurveCanvas" width="300" height="150" role="img" aria-label="Luminance tone curve preview" style="display:block;width:100%;height:auto;max-height:180px;background:#101712;border:1px solid #394637;border-radius:9px;margin:10px 0"></canvas><div class="editor-control"><label>Shadow point <span id="curveShadowVal">64</span></label><input id="curveShadow" type="range" min="0" max="255" value="64" oninput="editorToneCurve[0]=+this.value;document.getElementById(&quot;curveShadowVal&quot;).textContent=this.value;drawEditorToneCurve();editorChanged()"></div><div class="editor-control"><label>Midtone point <span id="curveMidVal">128</span></label><input id="curveMid" type="range" min="0" max="255" value="128" oninput="editorToneCurve[1]=+this.value;document.getElementById(&quot;curveMidVal&quot;).textContent=this.value;drawEditorToneCurve();editorChanged()"></div><div class="editor-control"><label>Highlight point <span id="curveHighlightVal">192</span></label><input id="curveHighlight" type="range" min="0" max="255" value="192" oninput="editorToneCurve[2]=+this.value;document.getElementById(&quot;curveHighlightVal&quot;).textContent=this.value;drawEditorToneCurve();editorChanged()"></div><button class="secondary" type="button" onclick="resetEditorToneCurve()">Reset tone curve</button></details>
 <details class="editor-section jrvs-quick-controls" open data-editor-group="basic">
 <summary>Quick light adjustments <span class="jrvs-section-hint">Exposure · contrast · tonal balance</span></summary>
 <div class="editor-control"><label>Exposure <span id="exposureVal">0</span></label><input id="exposure" type="range" min="-2" max="2" step="0.05" value="0" oninput="editorChanged()"></div>
@@ -1746,6 +1747,7 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
 <div class="editor-control" data-editor-group="colour"><label>Tint <span id="tintVal">0</span></label><input id="tint" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
 <div class="editor-control" data-editor-group="colour"><label>Vibrance <span id="vibranceVal">0</span></label><input id="vibrance" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
 </details>
+<details class="editor-section jrvs-hsl-mixer" data-editor-group="colour"><summary>HSL colour mixer <span class="jrvs-section-hint">Target individual colour ranges</span></summary><div class="editor-help">Adjust hue, saturation and luminance for each colour range without changing the whole image.</div><div id="editorHslChannels"></div></details>
 <details class="editor-section" data-editor-group="detail"><summary>Detail & finishing</summary>
 <div class="editor-control" data-editor-group="detail"><label>Clarity <span id="clarityVal">0</span></label><input id="clarity" type="range" min="-50" max="50" value="0" oninput="editorChanged()"></div>
 <div class="editor-control" data-editor-group="detail"><label>Sharpening <span id="sharpeningVal">0</span></label><input id="sharpening" type="range" min="0" max="100" value="0" oninput="editorChanged()"></div>
@@ -3263,6 +3265,9 @@ function editorZoom(delta){
 }
 let editorFitObserver=null;
 let editorRetouchMode='off',editorRetouchStrokes=[],editorRetouchSource=null,editorRetouchActive=null;
+const EDITOR_HSL_CHANNELS=[{id:'red',label:'Red',center:0},{id:'orange',label:'Orange',center:30},{id:'yellow',label:'Yellow',center:60},{id:'green',label:'Green',center:120},{id:'aqua',label:'Aqua',center:180},{id:'blue',label:'Blue',center:220},{id:'purple',label:'Purple',center:270},{id:'magenta',label:'Magenta',center:315}];
+let editorToneCurve=[64,128,192];
+let editorHsl=Object.fromEntries(EDITOR_HSL_CHANNELS.map(c=>[c.id,{hue:0,saturation:0,luminance:0}]));
 let editorRetouchBrushSize=34,editorRetouchOpacity=0.9,editorRetouchHardness=0.72;
 let editorLocalBalance=false;
 let editorNaturalCurve=false;
@@ -3272,9 +3277,13 @@ function observeEditorFit(){
  if(editorFitObserver)editorFitObserver.disconnect();
  if(stage&&window.ResizeObserver){editorFitObserver=new ResizeObserver(()=>{if(editorZoomLevel===1)fitEditorCanvas()});editorFitObserver.observe(stage)}
 }
+function buildEditorHslControls(){
+ const host=document.getElementById('editorHslChannels');if(!host||host.dataset.ready)return;host.dataset.ready='1';
+ host.innerHTML=EDITOR_HSL_CHANNELS.map(ch=>{let html='<details class="editor-section jrvs-hsl-channel"><summary>'+ch.label+'</summary>';['hue','saturation','luminance'].forEach(prop=>{const title=prop==='hue'?'Hue':prop==='saturation'?'Saturation':'Luminance',id='jrvsHsl_'+ch.id+'_'+prop;html+='<div class="editor-control"><label>'+title+' <span id="'+id+'Val">0</span></label><input id="'+id+'" type="range" min="-100" max="100" value="0" oninput="editorHsl.'+ch.id+'.'+prop+'=+this.value;document.getElementById(&quot;'+id+'Val&quot;).textContent=this.value;editorChanged()"></div>'});return html+'</details>'}).join('');
+}
 function initEditorProControls(){
- const panel=document.querySelector('#editorBackdrop .editor-panel');if(!panel||panel.dataset.proReady)return;panel.dataset.proReady='1';
- document.querySelectorAll('#editorBackdrop input[type=range]').forEach(range=>{const label=range.closest('.editor-control')?.querySelector('label');if(!label)return;const value=label.querySelector('span');if(!value)return;const num=document.createElement('input');num.type='number';num.className='editor-number';num.min=range.min;num.max=range.max;num.step=range.step||'1';num.value=range.value;num.setAttribute('aria-label',label.textContent.trim()+' exact value');num.addEventListener('change',()=>{const v=Math.max(Number(num.min),Math.min(Number(num.max),Number(num.value)||0));range.value=v;num.value=v;editorChanged()});range.addEventListener('input',()=>{num.value=range.value});label.appendChild(num);});
+ const panel=document.querySelector('#editorBackdrop .editor-panel');if(!panel)return;buildEditorHslControls();if(panel.dataset.proReady)return;panel.dataset.proReady='1';
+ panel.querySelectorAll('input[type=range]').forEach(range=>{const label=range.closest('.editor-control')?.querySelector('label');if(!label)return;const value=label.querySelector('span');if(!value)return;const num=document.createElement('input');num.type='number';num.className='editor-number';num.min=range.min;num.max=range.max;num.step=range.step||'1';num.value=range.value;num.setAttribute('aria-label',label.textContent.trim()+' exact value');num.addEventListener('change',()=>{const v=Math.max(Number(num.min),Math.min(Number(num.max),Number(num.value)||0));range.value=v;num.value=v;range.dispatchEvent(new Event('input',{bubbles:true}));editorChanged()});range.addEventListener('input',()=>{num.value=range.value});label.appendChild(num)});
 }
 document.addEventListener('keydown',e=>{if(!document.getElementById('editorBackdrop')?.classList.contains('show'))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?editorRedo():editorUndo()}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();editorRedo()}else if(e.key.toLowerCase()==='c'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();toggleEditorCompare()}else if(e.key==='Escape'){if(editorCompare)toggleEditorCompare(false);else closeEditor()}});
 function captureEditorRecipe(){
@@ -3293,7 +3302,7 @@ function captureEditorRecipe(){
  };
 }
 function restoreEditorRecipe(recipe){
- if(!recipe||![1,2,3].includes(recipe.schemaVersion))return false;
+ if(!recipe||![1,2,3,4].includes(recipe.schemaVersion))return false;
  editorLocalBalance=!!recipe.localBalance;
  editorNaturalCurve=!!recipe.naturalCurve;
  editorLastAnalysis=recipe.finishAnalysis?{...recipe.finishAnalysis,p50:recipe.finishAnalysis.median,clipRate:recipe.finishAnalysis.highlightClipRate||0,analysisMs:0,intent:recipe.finishIntent||recipe.finishAnalysis.intent||'natural'}:null;
@@ -3304,6 +3313,9 @@ function restoreEditorRecipe(recipe){
  const crop=document.getElementById('cropRatio');if(crop)crop.value=recipe.crop||'original';
  const preset=document.getElementById('editorPreset');if(preset)preset.value=recipe.preset||'none';
  editorRetouchStrokes=Array.isArray(recipe.retouchStrokes)?JSON.parse(JSON.stringify(recipe.retouchStrokes)):[];
+ editorToneCurve=Array.isArray(recipe.toneCurve)&&recipe.toneCurve.length===3?recipe.toneCurve.map(v=>Math.max(0,Math.min(255,Number(v)||0))):[64,128,192];
+ editorHsl=Object.fromEntries(EDITOR_HSL_CHANNELS.map(ch=>{const saved=recipe.hsl?.[ch.id]||{};return [ch.id,{hue:Number(saved.hue)||0,saturation:Number(saved.saturation)||0,luminance:Number(saved.luminance)||0}]}));
+ syncEditorAdvancedControls();
  return true;
 }
 let editorFilmstripUrls=[];
