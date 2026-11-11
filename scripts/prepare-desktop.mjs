@@ -815,6 +815,8 @@ await writeFile(path.join(output, 'index.html'), html, 'utf8');
 // This removes the first-use CDN dependency and keeps RAW decoding available offline.
 const flashRawDist = path.join(root, 'node_modules', 'flashraw', 'dist');
 await cp(flashRawDist, path.join(output, 'vendor', 'flashraw'), { recursive: true, force: true });
-await readFile(path.join(output, 'vendor', 'flashraw', 'index.js'));
+await readFile(path.join(output, 'vendor', 'flashraw', 'browser.js'));
+await readFile(path.join(output, 'vendor', 'flashraw', 'flashraw_simd.wasm'));
+await readFile(path.join(output, 'vendor', 'flashraw', 'flashraw.wasm'));
 
 console.log('Prepared local-only JRVS desktop frontend, including the bundled FlashRaw decoder, in desktop-dist/.');
