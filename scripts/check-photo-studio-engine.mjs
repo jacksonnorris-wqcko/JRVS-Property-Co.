@@ -124,6 +124,10 @@ assert.notDeepEqual(clone,heal);
 assert.deepEqual(retouch('heal',source,destination,sourceMean,destinationMean,0),destination);
 
 // Packaging, recipes, renderer and workflow integration.
+const rawDecodeAdapter=extract(html,'async function decodeRawToJpeg','async function extractEmbeddedRawJpeg','FlashRaw RAW decode adapter');
+requireText(rawDecodeAdapter,"demosaic:halfSize?'half-size':'bilinear'","FlashRaw uses only supported half-size and bilinear demosaic modes");
+assert.ok(!/demosaic\\s*:\\s*[^,}]*['"]auto['"]/.test(rawDecodeAdapter),"FlashRaw demosaic must never use the unsupported auto option");
+
 requireText(html,"import('./vendor/flashraw/browser.js')",'local bundled FlashRaw browser entry');
 assert.ok(!html.includes('https://esm.sh/flashraw'),'RAW decoder must not use a runtime CDN');
 for(const file of ["'browser.js'","'flashraw_simd.wasm'","'flashraw.wasm'","'LICENSE-MIT'","'LICENSE-APACHE'"])requireText(prepare,file,`desktop bundle includes ${file}`);

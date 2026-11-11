@@ -2607,7 +2607,7 @@ async function decodeRawToJpeg(rawBlob,{halfSize=true,quality=.9}={}){
   const FlashRaw=await getJrvsRawDecoder();
   raw=await FlashRaw.open(rawBlob);
   const meta=raw.metadata||{};
-  const frame=await raw.decode({backend:'cpu-simd',output:'rgba8',demosaic:halfSize?'half-size':'auto',whiteBalance:'as-shot',highlights:'reconstruct',crop:true,colorSpace:'srgb',corruptionPolicy:'strict',previewFallback:false});
+  const frame=await raw.decode({backend:'cpu-simd',output:'rgba8',demosaic:halfSize?'half-size':'bilinear',whiteBalance:'as-shot',highlights:'reconstruct',crop:true,colorSpace:'srgb',corruptionPolicy:'strict',previewFallback:false});
   if(!frame||frame.source==='preview'||!frame.data||!frame.width||!frame.height)throw new Error('RAW decoder did not return developed sensor pixels.');
   const canvas=document.createElement('canvas');canvas.width=frame.width;canvas.height=frame.height;
   const ctx=canvas.getContext('2d');

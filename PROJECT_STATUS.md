@@ -2,10 +2,10 @@
 
 > This is the durable handover for every JRVS development conversation. Read it at the start of a new chat, then verify the live GitHub branch and files before making changes. The repository is the source of truth for code; this file is the source of truth for the latest recorded work state and next action.
 
-**Last reviewed:** 11 November 2026 (Australia/Sydney)  
+**Last reviewed:** 12 November 2026 (Australia/Sydney)  
 **Repository:** [jacksonnorris-wqcko/JRVS-Property-Co.](https://github.com/jacksonnorris-wqcko/JRVS-Property-Co.)  
 **Active desktop branch:** `desktop-transition`  
-**Current desktop version:** `0.54.0`  
+**Current desktop version:** `0.54.1`  
 **Stable browser/PWA branch:** `main` — keep it unchanged unless the user explicitly requests browser/PWA work.
 
 ## Start here — current position
@@ -19,19 +19,17 @@ The desktop branch is independently versioned. The desktop version is defined in
 
 The desktop build now runs `npm run handover:check` before building. This validates that `package.json`, `Cargo.toml` and Tauri configuration agree, that this handover records the current desktop version/branch, and that the new-chat and continuity instructions are present. The check is wired into `.github/workflows/desktop-shell-check.yml`.
 
-## V0.54.0 release checkpoint — 12 November 2026
+## V0.54.1 hotfix checkpoint — 12 November 2026
 
 - Active branch: `desktop-transition`; stable browser/PWA `main` remains untouched.
-- Desktop release candidate: `0.54.0`. The `desktop-v0.54.0` tag was checked immediately before the release trigger and did not exist.
-- Root cause of prior failed signed publication: the Cargo version check was brittle against Windows CRLF line endings. The follow-on workflow edit also left a duplicated orphaned publish block, preventing valid job scheduling.
-- Repair commit: `2dd260d244c522a1545abb9a9103464e54c67e6d` removes the duplicated tail and extracts the Cargo version with a CRLF-safe expression.
-- Release-triggered CI run `43109112384` passed handover/version validation, Photo Studio regression checks, Windows installer build, installer output verification and artifact upload.
-- Signed publication then passed the Cargo/package/Tauri version checks and printed `Validated release candidate desktop-v0.54.0`, but the PowerShell step still exited 1. Root cause: `git ls-remote --exit-code` returns exit code 2 when the tag is correctly absent, and PowerShell retains that native exit code through the end of the step.
-- Workflow repair commit `687af11bc1d8befcd3e5346721a1bd83fbc9e4b7` captures the `git ls-remote` result, accepts only exit code 2 as the expected absent-tag result, and resets `$global:LASTEXITCODE = 0` before the PowerShell step completes. Unexpected lookup exit codes fail explicitly.
-- The signed-release workflow repeats the Windows build, verifies the three version declarations and the absence of an existing tag, checks the configured updater signing secret, then creates the signed GitHub Release and `latest.json`. Publication is gated on the Windows build succeeding.
-- Preserve the existing updater signing keys, V0.54.0 feature set, user data and all prior edit recipes. Do not modify `main`.
+- V0.54.0 was successfully published as `desktop-v0.54.0` on 12 November 2026 (UTC 11 November 22:33), with signed NSIS and MSI installers, both signature files, and `latest.json`. GitHub Actions run `43110797157` completed successfully.
+- User reported that the Photo Studio “Develop RAW” action failed with `unknown demosaic "auto" (expected bilinear or half-size)`.
+- Root cause confirmed in `decodeRawToJpeg()`: half-size previews use the supported `half-size` value, but full-resolution development (`halfSize:false`) incorrectly selected `auto`. FlashRaw 0.1.0 accepts only `bilinear` or `half-size`.
+- Hotfix changes full-resolution development to `bilinear` while retaining `half-size` for previews. Adds a regression assertion to prevent unsupported demosaic values from returning.
+- Bump desktop version consistently to `0.54.1` in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`. Keep V0.54.0 tagged release immutable.
+- Existing photo source files, saved edits and recipe versions are unchanged. No data migration or destructive storage operation is involved.
 
-**Immediate next action:** run the signed V0.54.0 workflow from the repaired branch head. Confirm the tag lookup passes, the existing updater signing secret is accepted, and the GitHub Release contains the NSIS installer/signature plus `latest.json` before describing V0.54.0 as released.
+**Immediate next action:** run handover and Photo Studio regression checks, build the Windows installers, then publish the signed `desktop-v0.54.1` update. After publication, user must retry Develop RAW with a Canon EOS 600D CR2 and confirm full-resolution output/image quality. Do not claim CR2 runtime validation until user tests it.
 
 ## Current active work and next action
 
@@ -48,11 +46,11 @@ The shared desktop scrolling fix was committed on 11 November 2026:
 
 **User test result:** user reported "alright it works" after testing the build. Treat the shared scrolling issue as closed unless a specific page/control is later reported as still clipped.
 
-### JRVS Photo Studio V0.54.0 — Phase 3, Phase 4 and Phase 5
+### JRVS Photo Studio V0.54.0 — Phase 3, Phase 4 and Phase 5 (released; features carried forward)
 
 **User-approved scope:** add local brush masks, projective architectural geometry/manual lens correction, and separate Clone/Heal retouch, then publish the next signed Windows desktop updater.
 
-**Release candidate:** V0.54.0 on `desktop-transition`. Stable browser/PWA `main` remains untouched. The Windows release build and signed updater publication are pending GitHub Actions confirmation.
+**Release:** V0.54.0 is published as `desktop-v0.54.0`; CI run `43110797157` passed the Windows build, installer verification, updater signing and GitHub publication. Stable browser/PWA `main` remains untouched.
 
 **Implemented:**
 - Phase 3: dedicated Masks workspace; up to 12 masks, additive/subtractive brush strokes, flow, feather, enable/disable/invert, select/clear/delete, live brush outline and selected-mask overlay. Per-mask exposure, highlights, shadows, temperature and saturation. Mask data is saved in recipe schema v5; recipes v1–v4 remain supported. Mask state participates in undo/redo and the shared preview/full-resolution renderer.
@@ -62,20 +60,20 @@ The shared desktop scrolling fix was committed on 11 November 2026:
 - Batch presets isolate per-photo mask/retouch/advanced state; editor state restores afterwards. Exact-look batch outputs retain editable recipes.
 - Added regression coverage for colour/HSL, tone curve, projective geometry identity/corners/inverse, lens bounds, mask feathering/normalisation/limits, Clone versus Heal and recipe compatibility.
 
-**Verification before release:**
+**Verification at V0.54.0 release:**
 - All five inline application JavaScript scripts parsed without syntax errors.
 - Direct helper checks passed for projective identity/corner/inverse mapping, lens bounds, mask feathering/normalisation limits and distinct Clone/Heal blends.
 - Windows CI run 42992339544 passed handover/version validation and Photo Studio regression checks, but its installer build was cancelled by subsequent commits. This release commit starts a fresh Windows build and signed updater job.
-- **Not yet verified:** EOS 600D CR2 on the user's PC, complete offline workflows, large-file/image-quality tuning, or an installed-app in-place upgrade on the user's Windows profile.
+- **Still not user-verified:** EOS 600D CR2 sensor development on the user's PC, complete offline workflows, large-file/image-quality tuning, or an installed-app in-place upgrade on the user's Windows profile. The V0.54.1 patch addresses a confirmed invalid demosaic option in the full-resolution path.
 
 **Known limits:** masks are manual, not semantic AI selections; lens correction is manual without camera profiles; Heal is sampled patch matching, not generative repair; the renderer remains an 8-bit sRGB canvas. No Lightroom or camera-quality parity claim.
 
-**Immediate next action:** confirm V0.54.0 Windows installer verification and signed updater publication. If successful, verify the GitHub Release and `latest.json` and record its tag/commit. If a workflow stage fails, inspect logs and fix it before calling the update available.
+**V0.54.1 next action:** validate the supported demosaic options in CI and publish the signed patch update. Ask the user to retry full-resolution CR2 development once installed.
 
 **Non-negotiables:** preserve source bytes, IDs, metadata, job links and existing edits; no destructive recipe migrations; keep Property Finish/Smart Finish and prior controls; develop only on `desktop-transition`; never touch `main`.
 ## Latest confirmed application functionality
 
-The desktop branch's latest documented desktop release is **V0.53.0**.
+The desktop branch's latest documented feature release is **V0.54.0**; V0.54.1 is a RAW demosaic hotfix.
 
 ### Photo editing
 - JRVS Property Finish replaces the earlier Rental Auto Enhance workflow.

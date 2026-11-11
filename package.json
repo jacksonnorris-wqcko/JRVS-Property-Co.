@@ -1,7 +1,7 @@
 {
   "name": "jrvs-property-co-desktop",
   "private": true,
-  "version": "0.54.0",
+  "version": "0.54.1",
   "description": "Windows desktop shell for JRVS Property Co.",
   "scripts": {
     "tauri": "tauri",
