@@ -135,7 +135,7 @@ jobs:
           $version = [string]$tauri.version
           if ([string]::IsNullOrWhiteSpace($version)) { throw "Desktop version is missing from tauri.conf.json." }
           if ($package.version -ne $version) { throw "package.json version ($($package.version)) does not match Tauri version ($version)." }
-          if ($cargo -notmatch ('(?m)^version = "' + [regex]::Escape($version) + '"\r? { throw "Cargo.toml version does not match Tauri version ($version)." }
+          if ($cargo -notmatch ('(?m)^version = "' + [regex]::Escape($version) + '"\r?$')) { throw "Cargo.toml version does not match Tauri version ($version)." }
           $tag = "desktop-v$version"
           git ls-remote --exit-code --tags origin "refs/tags/$tag" *> $null
           if ($LASTEXITCODE -eq 0) { throw "Release tag $tag already exists. Bump the desktop version before publishing another update." }
