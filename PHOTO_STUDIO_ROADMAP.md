@@ -84,3 +84,35 @@ V0.34.1 is primarily a workbench/interface milestone. It does not claim to provi
 - Embedded JPEG fallback remains available and is explicitly labelled when used.
 - Requires first-use network access to load the decoder from esm.sh; service worker caches successful CDN responses where supported.
 - Next: validate with the user's EOS 600D CR2, tune demosaic/white balance/highlight handling, then connect RAW-linear processing to the JRVS tonal engine without double-applying camera rendering.
+
+---
+
+# JRVS Photo Studio — Phase 1 + Phase 2 foundation (desktop development)
+
+## Implemented in the current development milestone
+
+- Pin FlashRaw JavaScript package version `0.1.0` in the desktop app dependencies.
+- Bundle the FlashRaw browser module and WASM runtime beside the generated desktop frontend; the app no longer imports its decoder from esm.sh at runtime.
+- Use the FlashRaw browser entry point and request CPU SIMD, automatic demosaic, as-shot white balance and highlight reconstruction for sensor development.
+- Keep embedded camera JPEG preview and true sensor-developed output distinguishable. Sensor-developed source state is recorded in recipe schema v4 so the original CR2 can be re-developed when an edit is reopened; fallback to the embedded preview is explicitly reported.
+- Add a luminance tone curve with three adjustable tonal anchors (shadows, midtones and highlights). A shared 256-entry curve lookup table is used by the chart and render pipeline.
+- Add an eight-band HSL mixer (red, orange, yellow, green, aqua, blue, purple and magenta), each with hue, saturation and luminance controls.
+- Persist tone curve and HSL values in recipe schema v4 while accepting legacy recipe schemas v1–v3. Include the settings in undo/redo history and isolate them from unrelated batch preset application.
+- Add an automated Photo Studio engine check for RGB/HSL round trips, default identity curve, monotonic adjusted curve, recipe compatibility and local RAW runtime wiring. The check is part of the Windows desktop CI workflow.
+
+## Verification state and limits
+
+- Source-level JavaScript syntax validation passed for all inline scripts before the final CI correction.
+- The first Windows build exposed an incorrect assumed FlashRaw output filename (`index.js`). The npm package's browser entry point is `browser.js`; the desktop copy/check/import paths were corrected.
+- **Awaiting:** the next Windows CI run after the corrected bundling path and Photo Studio regression check.
+- **Not yet verified:** actual Canon EOS 600D CR2 files, offline RAW development in the installed Windows application, RAW colour fidelity/highlight recovery, performance on large files and full-resolution output parity.
+- The tone curve is currently a three-anchor parametric luminance curve, not a freehand arbitrary point curve. HSL is an eight-range sRGB control, not a colour-managed wide-gamut workflow.
+- The editor's current renderer still works with browser canvas 8-bit sRGB pixels. A later engine stage is required for high-bit-depth linear RAW processing and advanced colour management.
+
+## Next engineering work
+
+1. Get a clean Windows build with the decoder bundled locally.
+2. Test with original EOS 600D CR2 files: preview, sensor development, close/reopen edited copy, save another edit, export, and repeat with network disabled.
+3. Compare before/after and inspect clipping, white balance, colour and detail at 100% zoom; record camera model, file dimensions and observed decoder metadata.
+4. Once RAW foundations are confirmed, develop the next control tier: proper RGB/parametric curve editing, split colour grading and more exact HSL selection, with recipe/history tests.
+5. Profile the image pipeline and move expensive work to a worker/offscreen path before expanding to masks and larger RAW workloads.
