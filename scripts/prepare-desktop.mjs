@@ -815,6 +815,8 @@ await writeFile(path.join(output, 'index.html'), html, 'utf8');
 // This removes the first-use CDN dependency and keeps RAW decoding available offline.
 const flashRawDist = path.join(root, 'node_modules', 'flashraw', 'dist');
 await cp(flashRawDist, path.join(output, 'vendor', 'flashraw'), { recursive: true, force: true });
+await copyFile(path.join(root, 'node_modules', 'flashraw', 'LICENSE-MIT'), path.join(output, 'vendor', 'flashraw', 'LICENSE-MIT'));
+await copyFile(path.join(root, 'node_modules', 'flashraw', 'LICENSE-APACHE'), path.join(output, 'vendor', 'flashraw', 'LICENSE-APACHE'));
 await readFile(path.join(output, 'vendor', 'flashraw', 'browser.js'));
 await readFile(path.join(output, 'vendor', 'flashraw', 'flashraw_simd.wasm'));
 await readFile(path.join(output, 'vendor', 'flashraw', 'flashraw.wasm'));
