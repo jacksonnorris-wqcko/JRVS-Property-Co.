@@ -19,6 +19,18 @@ The desktop branch is independently versioned. The desktop version is defined in
 
 The desktop build now runs `npm run handover:check` before building. This validates that `package.json`, `Cargo.toml` and Tauri configuration agree, that this handover records the current desktop version/branch, and that the new-chat and continuity instructions are present. The check is wired into `.github/workflows/desktop-shell-check.yml`.
 
+## V0.54.0 release repair checkpoint — 12 November 2026
+
+- Active branch at checkpoint: `desktop-transition`; stable `main` remains untouched.
+- Desktop version remains `0.54.0`; release tag `desktop-v0.54.0` does not yet exist.
+- Windows build and Photo Studio regression checks passed on run `42994566938`, and temporary installer artifacts were uploaded.
+- Signed publication failed at the Cargo version validation step because the PowerShell check did not accept Windows CRLF line endings.
+- Follow-on commits `c6fd7f2` and `7b4c111` attempted to repair the check, but left a duplicated orphaned publish-job block at the end of `.github/workflows/desktop-shell-check.yml`. Runs `42995642919` and `42996028120` ended without jobs and no release was created.
+- Repair plan: remove the duplicate trailing block and extract the Cargo version with a CRLF-safe expression; run a normal Windows build first, then make the intentional `[release]` commit only after that check passes.
+- Preserve the existing updater signing key, V0.54.0 code, and all application data. Do not change `main`.
+
+**Immediate next action:** repair the workflow YAML, verify it on a non-release push, then publish V0.54.0 through the signed release gate.
+
 ## Current active work and next action
 
 ### Application task — shared scrolling fix verified
