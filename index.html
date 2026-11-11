@@ -3392,9 +3392,10 @@ function updateSelectedEditorMaskControl(key,value){
 function setEditorLocalMaskMode(mode){
  editorLocalMaskMode=mode;
  document.querySelectorAll('[data-mask-mode]').forEach(button=>button.classList.toggle('active',button.dataset.maskMode===mode));
- const canvas=document.getElementById('editorCanvas');if(canvas&&editorRetouchMode==='off')canvas.style.cursor=mode==='off'?'default':'crosshair';
+ const canvas=document.getElementById('editorCanvas');if(canvas&&editorRetouchMode==='off')canvas.style.cursor=mode==='off'?'default':'none';
  const note=document.getElementById('editorLocalMaskInstructions');
  if(note)note.textContent=mode==='off'?'Select a mask and choose Paint, then brush over the photo. Use Erase to subtract from the selected mask.':mode==='erase'?'Paint over an area to subtract it from this mask.':'Paint over the photo to add to the selected mask.';
+ if(mode==='off')hideEditorBrushCursor();
 }
 function editorMaskPoint(event){
  const canvas=document.getElementById('editorCanvas'),rect=canvas.getBoundingClientRect();
@@ -3420,12 +3421,21 @@ function editorLocalMaskPointerUp(){
  if(mask){if(mask.strokes.length>=500){showToast('This mask has reached the 500-stroke limit.','info')}else{mask.strokes.push({mode:stroke.mode,opacity:stroke.opacity,feather:stroke.feather,dabs:stroke.dabs.slice(0,12000)});renderEditorLocalMaskList();drawEditor();captureEditorHistory()}}
  return true;
 }
-function editorCanvasPointerDown(event){if(editorLocalMaskPointerDown(event))return;editorRetouchPointerDown(event)}
-function editorCanvasPointerMove(event){if(editorLocalMaskPointerMove(event))return;editorRetouchPointerMove(event)}
+function hideEditorBrushCursor(){const cursor=document.getElementById('retouchCursor');if(cursor)cursor.style.display='none'}
+function updateEditorBrushCursor(event){
+ const cursor=document.getElementById('retouchCursor'),stage=document.getElementById('editorStage');if(!cursor||!stage)return;
+ const maskActive=editorActiveTab==='mask'&&editorLocalMaskMode!=='off',retouchActive=editorActiveTab==='retouch'&&editorRetouchMode!=='off';
+ if(!maskActive&&!retouchActive){hideEditorBrushCursor();return}
+ const rect=stage.getBoundingClientRect(),size=maskActive?editorLocalMaskBrushSize:editorRetouchBrushSize;
+ cursor.style.width=size+'px';cursor.style.height=size+'px';cursor.style.left=(event.clientX-rect.left)+'px';cursor.style.top=(event.clientY-rect.top)+'px';cursor.style.display='block';
+}
+function editorCanvasPointerDown(event){updateEditorBrushCursor(event);if(editorLocalMaskPointerDown(event))return;editorRetouchPointerDown(event)}
+function editorCanvasPointerMove(event){updateEditorBrushCursor(event);if(editorLocalMaskPointerMove(event))return;editorRetouchPointerMove(event)}
 function editorCanvasPointerUp(event){if(editorLocalMaskPointerUp())return;editorRetouchPointerUp(event)}
 
 function initEditorProControls(){
  const panel=document.querySelector('#editorBackdrop .editor-panel');if(!panel)return;buildEditorHslControls();renderEditorLocalMaskList();syncEditorLocalMaskControls();if(panel.dataset.proReady)return;panel.dataset.proReady='1';
+ document.getElementById('editorCanvas')?.addEventListener('pointerleave',hideEditorBrushCursor);
  panel.querySelectorAll('input[type=range]').forEach(range=>{const label=range.closest('.editor-control')?.querySelector('label');if(!label)return;const value=label.querySelector('span');if(!value)return;const num=document.createElement('input');num.type='number';num.className='editor-number';num.min=range.min;num.max=range.max;num.step=range.step||'1';num.value=range.value;num.setAttribute('aria-label',label.textContent.trim()+' exact value');num.addEventListener('change',()=>{const v=Math.max(Number(num.min),Math.min(Number(num.max),Number(num.value)||0));range.value=v;num.value=v;range.dispatchEvent(new Event('input',{bubbles:true}));editorChanged()});range.addEventListener('input',()=>{num.value=range.value});label.appendChild(num)});
 }
 document.addEventListener('keydown',e=>{if(!document.getElementById('editorBackdrop')?.classList.contains('show'))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?editorRedo():editorUndo()}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();editorRedo()}else if(e.key.toLowerCase()==='c'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();toggleEditorCompare()}else if(e.key==='Escape'){if(editorCompare)toggleEditorCompare(false);else closeEditor()}});
