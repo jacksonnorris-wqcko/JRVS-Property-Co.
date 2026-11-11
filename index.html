@@ -934,6 +934,21 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 
 /* JRVS V0.12.0 — retouch studio */
 .jrvs-retouch-panel{border:1px solid #dfe3d5;border-radius:12px;padding:12px;background:#fbfaf4;display:flex;flex-direction:column;gap:10px}
+.jrvs-local-mask-panel{border:1px solid #dfe3d5;border-radius:12px;padding:12px;background:#fbfaf4;display:flex;flex-direction:column;gap:10px}
+.jrvs-local-mask-head{display:flex;justify-content:space-between;align-items:center}
+.jrvs-local-mask-list{display:flex;flex-direction:column;gap:5px;max-height:210px;overflow:auto}
+.jrvs-local-mask-row{display:flex;align-items:center;gap:7px;width:100%;padding:8px 9px;border:1px solid #e0e4d8;border-radius:8px;background:#fffdf7;color:#34402c;text-align:left;font-size:11px}
+.jrvs-local-mask-row.active{border-color:#899b68;background:#eef2e6}
+.jrvs-local-mask-row span:first-child{flex:1;font-weight:750}
+.jrvs-local-mask-row small{color:#72786d;font-size:10px}
+.jrvs-local-mask-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.jrvs-local-mask-modes button.active{background:#899b68!important;color:#fff!important;border-color:#899b68!important}
+.jrvs-local-mask-toggle{display:flex;align-items:center;gap:8px;font-size:11px;color:#47513f}
+.jrvs-local-mask-toggle input{accent-color:#899b68}
+.jrvs-local-mask-adjustments{border-top:1px solid #e1e4d8;padding-top:8px;display:flex;flex-direction:column;gap:7px}
+.jrvs-local-mask-adjustments>strong{font-size:12px;color:#44513a}
+#editorBackdrop .editor-stage{position:relative}
+
 .jrvs-retouch-head{display:flex;justify-content:space-between;align-items:center}
 .jrvs-retouch-tag{font-size:9px;letter-spacing:1px;font-weight:900;color:#617447;background:#e9eedf;padding:5px 8px;border-radius:20px}
 .jrvs-retouch-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
@@ -1705,7 +1720,7 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
 <div class="editor-backdrop" id="editorBackdrop"><div class="editor-shell">
 <div class="editor-top"><div><div class="eyebrow">JRVS PHOTO STUDIO</div><h2 id="editorTitle">Edit photograph</h2><div class="muted" id="editorSubtitle">Non-destructive edit · Original preserved</div></div><div class="editor-top-actions"><button class="secondary" type="button" onclick="editorUndo()" title="Undo (Ctrl+Z)">↶ Undo</button><button class="secondary" type="button" onclick="editorRedo()" title="Redo (Ctrl+Shift+Z)">↷ Redo</button><button class="secondary" type="button" onclick="toggleEditorCompare()">◐ Compare view</button><button class="secondary" type="button" id="editorRawDevelopBtn" onclick="developEditorRawSource()" style="display:none">Develop RAW</button><button class="primary" type="button" onclick="saveEditedPhoto()">Save copy</button><button class="secondary" onclick="closeEditor()">← Gallery</button></div></div>
 <div class="editor-layout"><div class="editor-stage-wrap"><div class="editor-stage-toolbar"><span id="editorViewLabel">FIT · FULL IMAGE</span><div><button type="button" class="secondary" onclick="editorZoom(-.15)">−</button><button type="button" class="secondary" onclick="editorZoom(0)">Fit</button><button type="button" class="secondary" onclick="editorZoom(.15)">+</button></div></div><div class="editor-stage" id="editorStage"><div id="retouchCursor" class="jrvs-retouch-cursor"></div><canvas id="editorCanvas" onpointerdown="editorRetouchPointerDown(event)" onpointermove="editorRetouchPointerMove(event)" onpointerup="editorRetouchPointerUp(event)" onpointercancel="editorRetouchPointerUp(event)"></canvas></div><div class="editor-compare-bar" id="editorCompareBar" hidden><span>ORIGINAL</span><input id="editorCompareRange" type="range" min="5" max="95" value="50" aria-label="Before and after split" oninput="editorComparePosition=Number(this.value);drawEditor()"><span>EDITED</span><button type="button" class="secondary" onclick="toggleEditorCompare(false)">Done</button></div><div class="editor-stage-footer"><span id="editorStageStatus">Original preserved · Non-destructive editing</span><span>Full-resolution export</span></div></div><aside class="editor-panel">
-<div class="editor-panel-heading"><div><strong>Photo development</strong><div class="editor-help">Build the look first, refine details when needed.</div></div><span class="editor-live-dot">● LIVE</span></div><nav class="editor-tabs" aria-label="Editing workspace"><button type="button" class="active" data-editor-tab="basic" onclick="setEditorTab('basic')">Develop</button><button type="button" data-editor-tab="colour" onclick="setEditorTab('colour')">Colour</button><button type="button" data-editor-tab="detail" onclick="setEditorTab('detail')">Finish</button><button type="button" data-editor-tab="geometry" onclick="setEditorTab('geometry')">Geometry</button><button type="button" data-editor-tab="export" onclick="setEditorTab('export')">Export</button><button type="button" data-editor-tab="retouch" onclick="setEditorTab('retouch')">Retouch</button></nav>
+<div class="editor-panel-heading"><div><strong>Photo development</strong><div class="editor-help">Build the look first, refine details when needed.</div></div><span class="editor-live-dot">● LIVE</span></div><nav class="editor-tabs" aria-label="Editing workspace"><button type="button" class="active" data-editor-tab="basic" onclick="setEditorTab('basic')">Develop</button><button type="button" data-editor-tab="colour" onclick="setEditorTab('colour')">Colour</button><button type="button" data-editor-tab="detail" onclick="setEditorTab('detail')">Finish</button><button type="button" data-editor-tab="geometry" onclick="setEditorTab('geometry')">Geometry</button><button type="button" data-editor-tab="mask" onclick="setEditorTab('mask')">Masks</button><button type="button" data-editor-tab="export" onclick="setEditorTab('export')">Export</button><button type="button" data-editor-tab="retouch" onclick="setEditorTab('retouch')">Retouch</button></nav>
 <div class="editor-control"><label>Property presets</label><select id="editorPreset" onchange="applyEditorPreset(this.value)">
 <option value="none">No preset — original</option>
 <optgroup label="Interior · Professional">
@@ -1753,13 +1768,35 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
 <div class="editor-control" data-editor-group="detail"><label>Sharpening <span id="sharpeningVal">0</span></label><input id="sharpening" type="range" min="0" max="100" value="0" oninput="editorChanged()"></div>
 <div class="editor-control" data-editor-group="detail"><label>Vignette <span id="vignetteVal">0</span></label><input id="vignette" type="range" min="-60" max="60" value="0" oninput="editorChanged()"></div>
 </details>
-<div data-editor-group="geometry"><strong>Transform tools</strong><div class="editor-tools"><button class="secondary" onclick="rotateEditor(-90)">↶ Rotate left</button><button class="secondary" onclick="rotateEditor(90)">↷ Rotate right</button></div></div>
-<div class="editor-control" data-editor-group="geometry"><label>Vertical perspective <span id="perspectiveVVal">0</span></label><input id="perspectiveV" type="range" min="-15" max="15" value="0" oninput="editorChanged()"></div>
-<div class="editor-control" data-editor-group="geometry"><label>Horizontal perspective <span id="perspectiveHVal">0</span></label><input id="perspectiveH" type="range" min="-15" max="15" value="0" oninput="editorChanged()"></div>
-<div class="editor-help" data-editor-group="geometry">Perspective controls provide a lightweight preview correction. Precision architectural keystone correction is a later dedicated transform upgrade.</div>
+<div data-editor-group="geometry"><strong>Transform tools</strong><div class="editor-tools"><button class="secondary" onclick="rotateEditor(-90)">↶ Rotate left</button><button class="secondary" onclick="rotateEditor(90)">↷ Rotate right</button><button class="secondary" onclick="resetEditorGeometry()">Reset geometry</button></div></div>
+<div class="editor-control" data-editor-group="geometry"><label>Vertical keystone <span id="perspectiveVVal">0</span></label><input id="perspectiveV" type="range" min="-15" max="15" value="0" oninput="editorChanged()"></div>
+<div class="editor-control" data-editor-group="geometry"><label>Horizontal keystone <span id="perspectiveHVal">0</span></label><input id="perspectiveH" type="range" min="-15" max="15" value="0" oninput="editorChanged()"></div>
+<div class="editor-control" data-editor-group="geometry"><label>Lens distortion <span id="lensDistortionVal">0</span></label><input id="lensDistortion" type="range" min="-100" max="100" value="0" oninput="editorChanged()"></div>
+<div class="editor-help" data-editor-group="geometry">Projective keystone correction straightens converging architectural lines. Lens distortion is a manual radial correction; it is not an automatic camera-lens profile.</div>
 
+<section class="jrvs-local-mask-panel" data-editor-group="mask">
+ <div class="jrvs-local-mask-head"><div><strong>Local adjustments</strong><div class="editor-help">Paint independent corrections onto selected areas</div></div><span class="jrvs-retouch-tag">MASKS</span></div>
+ <div class="editor-tools"><button class="primary" type="button" onclick="addEditorLocalMask()">+ Add brush mask</button><button class="secondary" type="button" onclick="deleteSelectedEditorMask()">Delete selected</button></div>
+ <div id="editorLocalMaskList" class="jrvs-local-mask-list"><div class="editor-help">No masks yet. Add a brush mask to begin.</div></div>
+ <div class="jrvs-local-mask-modes"><button type="button" class="secondary" data-mask-mode="paint" onclick="setEditorLocalMaskMode('paint')">Paint</button><button type="button" class="secondary" data-mask-mode="erase" onclick="setEditorLocalMaskMode('erase')">Erase</button><button type="button" class="secondary" data-mask-mode="off" onclick="setEditorLocalMaskMode('off')">Move</button></div>
+ <div class="editor-help" id="editorLocalMaskInstructions">Select a mask and choose Paint, then brush over the photo. Use Erase to subtract from the selected mask.</div>
+ <div class="editor-control"><label>Brush size <span id="localMaskBrushSizeValue">76 px</span></label><input id="localMaskBrushSize" type="range" min="8" max="260" value="76" oninput="editorLocalMaskBrushSize=+this.value;document.getElementById('localMaskBrushSizeValue').textContent=this.value+' px'"></div>
+ <div class="editor-control"><label>Edge softness <span id="localMaskFeatherValue">70%</span></label><input id="localMaskFeather" type="range" min="0" max="100" value="70" oninput="editorLocalMaskFeather=+this.value/100;document.getElementById('localMaskFeatherValue').textContent=this.value+'%'"></div>
+ <div class="editor-control"><label>Brush flow <span id="localMaskFlowValue">75%</span></label><input id="localMaskFlow" type="range" min="5" max="100" value="75" oninput="editorLocalMaskFlow=+this.value/100;document.getElementById('localMaskFlowValue').textContent=this.value+'%'"></div>
+ <label class="jrvs-local-mask-toggle"><input id="localMaskEnabled" type="checkbox" checked onchange="updateSelectedEditorMask('enabled',this.checked)"> Enable selected mask</label>
+ <label class="jrvs-local-mask-toggle"><input id="localMaskInverted" type="checkbox" onchange="updateSelectedEditorMask('inverted',this.checked)"> Invert selected mask</label>
+ <div class="jrvs-local-mask-adjustments"><strong>Selected mask adjustments</strong>
+  <div class="editor-control"><label>Exposure <span id="localMaskExposureValue">0.00 EV</span></label><input id="localMaskExposure" type="range" min="-100" max="100" value="0" oninput="updateSelectedEditorMaskControl('exposure',this.value)"></div>
+  <div class="editor-control"><label>Highlights <span id="localMaskHighlightsValue">0</span></label><input id="localMaskHighlights" type="range" min="-100" max="100" value="0" oninput="updateSelectedEditorMaskControl('highlights',this.value)"></div>
+  <div class="editor-control"><label>Shadows <span id="localMaskShadowsValue">0</span></label><input id="localMaskShadows" type="range" min="-100" max="100" value="0" oninput="updateSelectedEditorMaskControl('shadows',this.value)"></div>
+  <div class="editor-control"><label>Temperature <span id="localMaskTemperatureValue">0</span></label><input id="localMaskTemperature" type="range" min="-100" max="100" value="0" oninput="updateSelectedEditorMaskControl('temperature',this.value)"></div>
+  <div class="editor-control"><label>Saturation <span id="localMaskSaturationValue">0</span></label><input id="localMaskSaturation" type="range" min="-100" max="100" value="0" oninput="updateSelectedEditorMaskControl('saturation',this.value)"></div>
+ </div>
+ <div class="editor-tools"><button class="secondary" type="button" onclick="clearSelectedEditorMask()">Clear strokes</button></div>
+ <div class="editor-help">Masks are manual brush regions with soft edges. They are saved with the edit recipe and applied to preview and full-resolution exports. No automatic room/window detection is claimed.</div>
+</section>
 <section class="jrvs-retouch-panel" data-editor-group="retouch">
- <div class="jrvs-retouch-head"><div><strong>Retouch studio</strong><div class="editor-help">Manual clone &amp; soft-edge spot repair</div></div><span class="jrvs-retouch-tag">NEW</span></div>
+ <div class="jrvs-retouch-head"><div><strong>Retouch studio</strong><div class="editor-help">Separate sampled Clone and colour-matched Heal tools</div></div><span class="jrvs-retouch-tag">NEW</span></div>
  <div class="jrvs-retouch-modes">
   <button type="button" class="secondary active" data-retouch-mode="clone" onclick="setEditorRetouchMode('clone')">Clone</button>
   <button type="button" class="secondary" data-retouch-mode="heal" onclick="setEditorRetouchMode('heal')">Heal</button>
@@ -1771,7 +1808,7 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
  <div class="editor-control"><label>Edge softness <span id="retouchHardnessValue">72%</span></label><input id="retouchHardness" type="range" min="0" max="100" value="72" oninput="editorRetouchHardness=+this.value/100;document.getElementById('retouchHardnessValue').textContent=this.value+'%'"></div>
  <div class="jrvs-retouch-source"><span>Sample source</span><strong id="retouchSourceStatus">Not set</strong></div>
  <div class="editor-tools"><button type="button" class="secondary" onclick="undoEditorRetouch()">Undo retouch</button><button type="button" class="secondary" onclick="clearEditorRetouch()">Clear retouch</button></div>
- <div class="editor-help">Clone copies pixels from your chosen source. Heal uses a soft sampled patch for small spot repairs; it is not content-aware reconstruction. This is manual retouching, not AI object reconstruction.</div>
+ <div class="editor-help">Clone copies sampled pixels. Heal transfers sampled texture with local colour and luminance matching for small spot repairs. This is not content-aware or AI object reconstruction.</div>
 </section>
 
 <div class="editor-control" data-editor-group="export"><label>Export profile</label><select id="editorExportProfile"><option value="agency">Real estate agency · JPEG high quality</option><option value="web">Web delivery · JPEG balanced</option><option value="max">Maximum quality · JPEG</option><option value="png">PNG · lossless</option></select></div>
