@@ -3424,14 +3424,15 @@ function editorCanvasPointerMove(event){if(editorLocalMaskPointerMove(event))ret
 function editorCanvasPointerUp(event){if(editorLocalMaskPointerUp())return;editorRetouchPointerUp(event)}
 
 function initEditorProControls(){
- const panel=document.querySelector('#editorBackdrop .editor-panel');if(!panel)return;buildEditorHslControls();if(panel.dataset.proReady)return;panel.dataset.proReady='1';
+ const panel=document.querySelector('#editorBackdrop .editor-panel');if(!panel)return;buildEditorHslControls();renderEditorLocalMaskList();syncEditorLocalMaskControls();if(panel.dataset.proReady)return;panel.dataset.proReady='1';
  panel.querySelectorAll('input[type=range]').forEach(range=>{const label=range.closest('.editor-control')?.querySelector('label');if(!label)return;const value=label.querySelector('span');if(!value)return;const num=document.createElement('input');num.type='number';num.className='editor-number';num.min=range.min;num.max=range.max;num.step=range.step||'1';num.value=range.value;num.setAttribute('aria-label',label.textContent.trim()+' exact value');num.addEventListener('change',()=>{const v=Math.max(Number(num.min),Math.min(Number(num.max),Number(num.value)||0));range.value=v;num.value=v;range.dispatchEvent(new Event('input',{bubbles:true}));editorChanged()});range.addEventListener('input',()=>{num.value=range.value});label.appendChild(num)});
 }
 document.addEventListener('keydown',e=>{if(!document.getElementById('editorBackdrop')?.classList.contains('show'))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?editorRedo():editorUndo()}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();editorRedo()}else if(e.key.toLowerCase()==='c'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();toggleEditorCompare()}else if(e.key==='Escape'){if(editorCompare)toggleEditorCompare(false);else closeEditor()}});
 function captureEditorRecipe(){
  return {
-  schemaVersion:4,
+  schemaVersion:5,
   rawDeveloped:!!editorRawDeveloped,
+  localMasks:cloneEditorLocalMasks(),
   toneCurve:[...editorToneCurve],
   hsl:JSON.parse(JSON.stringify(editorHsl)),
   localBalance:!!editorLocalBalance,
@@ -3447,7 +3448,7 @@ function captureEditorRecipe(){
  };
 }
 function restoreEditorRecipe(recipe){
- if(!recipe||![1,2,3,4].includes(recipe.schemaVersion))return false;
+ if(!recipe||![1,2,3,4,5].includes(recipe.schemaVersion))return false;
  editorLocalBalance=!!recipe.localBalance;
  editorNaturalCurve=!!recipe.naturalCurve;
  editorLastAnalysis=recipe.finishAnalysis?{...recipe.finishAnalysis,p50:recipe.finishAnalysis.median,clipRate:recipe.finishAnalysis.highlightClipRate||0,analysisMs:0,intent:recipe.finishIntent||recipe.finishAnalysis.intent||'natural'}:null;
@@ -3458,6 +3459,9 @@ function restoreEditorRecipe(recipe){
  const crop=document.getElementById('cropRatio');if(crop)crop.value=recipe.crop||'original';
  const preset=document.getElementById('editorPreset');if(preset)preset.value=recipe.preset||'none';
  editorRetouchStrokes=Array.isArray(recipe.retouchStrokes)?JSON.parse(JSON.stringify(recipe.retouchStrokes)):[];
+ editorLocalMasks=normaliseEditorLocalMasks(recipe.localMasks);
+ editorLocalMaskSelectedId=editorLocalMasks[0]?.id||null;
+ renderEditorLocalMaskList();syncEditorLocalMaskControls();
  editorRawDeveloped=!!recipe.rawDeveloped;
  editorToneCurve=Array.isArray(recipe.toneCurve)&&recipe.toneCurve.length===3?recipe.toneCurve.map(v=>Math.max(0,Math.min(255,Number(v)||0))):[64,128,192];
  editorHsl=Object.fromEntries(EDITOR_HSL_CHANNELS.map(ch=>{const saved=recipe.hsl?.[ch.id]||{};return [ch.id,{hue:Number(saved.hue)||0,saturation:Number(saved.saturation)||0,luminance:Number(saved.luminance)||0}]}));
@@ -3486,7 +3490,7 @@ async function openEditor(id){
  const linkedOriginal=(String(p.type||'').toLowerCase()==='edited'&&p.sourcePhotoId)?photoRecords.find(x=>String(x.id)===String(p.sourcePhotoId)):null;
  editorPhoto=p;editorSourcePhoto=linkedOriginal||p;editorRotation=0;editorRawDeveloped=false;
  ['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','lensDistortion','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>{const el=document.getElementById(k);if(el)el.value=0});
- editorHistory=[];editorHistoryIndex=-1;editorRetouchStrokes=[];editorRetouchSource=null;editorRetouchActive=null;editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;resetEditorAdvancedControls();const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value='natural';jrvsRenderFinishReport(null);setEditorRetouchMode('off');editorCompare=false;editorComparePosition=50;toggleEditorCompare(false);
+ editorHistory=[];editorHistoryIndex=-1;editorRetouchStrokes=[];editorRetouchSource=null;editorRetouchActive=null;editorLocalMasks=[];editorLocalMaskSelectedId=null;renderEditorLocalMaskList();syncEditorLocalMaskControls();editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;resetEditorAdvancedControls();const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value='natural';jrvsRenderFinishReport(null);setEditorRetouchMode('off');editorCompare=false;editorComparePosition=50;toggleEditorCompare(false);
  document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';document.getElementById('editorExportProfile').value='agency';document.getElementById('editorTitle').textContent=p.name;const rawDevelopBtn=document.getElementById('editorRawDevelopBtn');if(rawDevelopBtn)rawDevelopBtn.style.display=editorSourcePhoto.isRaw?'inline-flex':'none';
  const hasRecipe=!!(p.editRecipe&&linkedOriginal);
  document.getElementById('editorSubtitle').textContent=(editorSourcePhoto.jobName||p.jobName)+(editorSourcePhoto.isRaw?' · RAW source':' · Original source')+(hasRecipe?' · Saved edit recipe restored':' · Original remains unchanged');
@@ -3531,7 +3535,7 @@ async function developEditorRawSource(){
 }
 function closeEditor(){if(editorFitObserver)editorFitObserver.disconnect();clearEditorFilmstripUrls();document.getElementById('editorBackdrop').classList.remove('show');if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=null;editorPhoto=null;editorSourcePhoto=null}
 function rotateEditor(deg){editorRotation=(editorRotation+deg+360)%360;drawEditor();captureEditorHistory()}
-function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','lensDistortion','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';editorRotation=0;editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;resetEditorAdvancedControls();const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value='natural';jrvsRenderFinishReport(null);drawEditor();captureEditorHistory()}
+function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','lensDistortion','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';editorRotation=0;editorLocalBalance=false;editorNaturalCurve=false;editorLocalMasks=[];editorLocalMaskSelectedId=null;editorRetouchStrokes=[];editorRetouchSource=null;renderEditorLocalMaskList();syncEditorLocalMaskControls();editorLastAnalysis=null;resetEditorAdvancedControls();const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value='natural';jrvsRenderFinishReport(null);drawEditor();captureEditorHistory()}
 function editorChanged(){
  // Coalesce rapid slider events into one preview render per animation frame.
  if(!editorPreviewFrame)editorPreviewFrame=requestAnimationFrame(()=>{editorPreviewFrame=0;drawEditor()});
@@ -3541,9 +3545,9 @@ const EDITOR_KEYS=['brightness','contrast','saturation','warmth','highlights','s
 function editorHslSnapshot(){return JSON.parse(JSON.stringify(editorHsl))}
 function syncEditorAdvancedControls(){['curveShadow','curveMid','curveHighlight'].forEach((id,i)=>{const el=document.getElementById(id),value=editorToneCurve[i];if(el)el.value=value;const label=document.getElementById(id+'Val');if(label)label.textContent=String(value);const num=el?.closest('.editor-control')?.querySelector('.editor-number');if(num)num.value=value});EDITOR_HSL_CHANNELS.forEach(ch=>['hue','saturation','luminance'].forEach(prop=>{const id='jrvsHsl_'+ch.id+'_'+prop,el=document.getElementById(id),value=editorHsl[ch.id]?.[prop]||0;if(el)el.value=value;const label=document.getElementById(id+'Val');if(label)label.textContent=String(value);const num=el?.closest('.editor-control')?.querySelector('.editor-number');if(num)num.value=value}));drawEditorToneCurve()}
 function resetEditorAdvancedControls(){editorToneCurve=[64,128,192];editorHsl=Object.fromEntries(EDITOR_HSL_CHANNELS.map(ch=>[ch.id,{hue:0,saturation:0,luminance:0}]));syncEditorAdvancedControls()}
-function currentEditorState(){return {values:Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value])),rotation:editorRotation,crop:document.getElementById('cropRatio').value,preset:document.getElementById('editorPreset').value,localBalance:!!editorLocalBalance,naturalCurve:!!editorNaturalCurve,toneCurve:[...editorToneCurve],hsl:editorHslSnapshot()}}
+function currentEditorState(){return {values:Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value])),rotation:editorRotation,crop:document.getElementById('cropRatio').value,preset:document.getElementById('editorPreset').value,localBalance:!!editorLocalBalance,naturalCurve:!!editorNaturalCurve,toneCurve:[...editorToneCurve],hsl:editorHslSnapshot(),localMasks:cloneEditorLocalMasks(),localMaskSelectedId:editorLocalMaskSelectedId,retouchStrokes:JSON.parse(JSON.stringify(editorRetouchStrokes||[]))}}
 function captureEditorHistory(){const state=currentEditorState(),last=editorHistory[editorHistoryIndex];if(last&&JSON.stringify(last)===JSON.stringify(state))return;editorHistory=editorHistory.slice(0,editorHistoryIndex+1);editorHistory.push(state);if(editorHistory.length>60)editorHistory.shift();editorHistoryIndex=editorHistory.length-1}
-function restoreEditorHistory(i){if(i<0||i>=editorHistory.length)return;editorHistoryIndex=i;const s=editorHistory[i];Object.entries(s.values).forEach(([k,v])=>document.getElementById(k).value=v);editorRotation=s.rotation;document.getElementById('cropRatio').value=s.crop;document.getElementById('editorPreset').value=s.preset;editorLocalBalance=!!s.localBalance;editorNaturalCurve=!!s.naturalCurve;editorToneCurve=Array.isArray(s.toneCurve)?[...s.toneCurve]:[64,128,192];editorHsl=s.hsl||Object.fromEntries(EDITOR_HSL_CHANNELS.map(ch=>[ch.id,{hue:0,saturation:0,luminance:0}]));syncEditorAdvancedControls();drawEditor()}
+function restoreEditorHistory(i){if(i<0||i>=editorHistory.length)return;editorHistoryIndex=i;const s=editorHistory[i];Object.entries(s.values).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=v});editorRotation=s.rotation;document.getElementById('cropRatio').value=s.crop;document.getElementById('editorPreset').value=s.preset;editorLocalBalance=!!s.localBalance;editorNaturalCurve=!!s.naturalCurve;editorToneCurve=Array.isArray(s.toneCurve)?[...s.toneCurve]:[64,128,192];editorHsl=s.hsl||Object.fromEntries(EDITOR_HSL_CHANNELS.map(ch=>[ch.id,{hue:0,saturation:0,luminance:0}]));editorLocalMasks=normaliseEditorLocalMasks(s.localMasks);editorLocalMaskSelectedId=editorLocalMasks.some(mask=>mask.id===s.localMaskSelectedId)?s.localMaskSelectedId:(editorLocalMasks[0]?.id||null);editorRetouchStrokes=Array.isArray(s.retouchStrokes)?JSON.parse(JSON.stringify(s.retouchStrokes)):[];syncEditorAdvancedControls();renderEditorLocalMaskList();syncEditorLocalMaskControls();drawEditor()}
 function editorUndo(){clearTimeout(editorHistoryTimer);captureEditorHistory();restoreEditorHistory(editorHistoryIndex-1)}
 function editorRedo(){restoreEditorHistory(editorHistoryIndex+1)}
 function toggleEditorCompare(force){editorCompare=typeof force==='boolean'?force:!editorCompare;const bar=document.getElementById('editorCompareBar');if(bar)bar.hidden=!editorCompare;const r=document.getElementById('editorCompareRange');if(r)r.value=editorComparePosition;const status=document.getElementById('editorStageStatus');if(status)status.textContent=editorCompare?'Drag the divider to compare original and edited':'Original preserved · Non-destructive editing';drawEditor()}
