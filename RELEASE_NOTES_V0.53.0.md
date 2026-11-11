@@ -3,9 +3,10 @@
 ## JRVS Property Finish
 - Replaced Rental Auto Enhance with a guided, image-aware Property Finish workflow.
 - Added Natural Listing, Bright Listing and Window-safe finishing approaches.
-- Local analysis samples luminance distribution, highlight clipping, crushed shadows, spatial lighting variation, saturation and likely neutral surfaces for cautious white-balance correction.
+- Analyses image luminance and uses one soft room-light map to apply a capped, image-specific shadow lift.
+- Applies a restrained highlight shoulder for strong direct light while avoiding automatic white-balance, saturation, clarity and sharpening changes.
 - Corrections are tailored to each image instead of applying a one-size-fits-all preset.
-- Added a visible analysis report before saving.
+- Shows a concise analysis report before saving.
 - Originals remain untouched and edit settings are stored as non-destructive recipes.
 
 ## Smart Finish · Whole Property
