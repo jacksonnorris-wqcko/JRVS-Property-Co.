@@ -675,6 +675,56 @@ html.jrvs-desktop #recentJobs:has(> .recent-job-card:only-child)>.recent-job-car
  grid-column:3!important;grid-row:1!important;align-self:center!important;
 }
 
+
+/* V0.53 shared desktop scroll fix — all tabs scroll inside the main workspace. */
+html.jrvs-desktop,
+html.jrvs-desktop body{
+ height:100%!important;
+ min-height:100%!important;
+ overflow:hidden!important;
+}
+html.jrvs-desktop .shell{
+ display:grid!important;
+ height:100vh!important;
+ min-height:0!important;
+ grid-template-rows:minmax(0,1fr)!important;
+ align-items:stretch!important;
+ overflow:hidden!important;
+}
+html.jrvs-desktop .shell>main{
+ grid-column:2!important;
+ grid-row:1!important;
+ align-self:stretch!important;
+ height:100%!important;
+ max-height:100vh!important;
+ min-height:0!important;
+ box-sizing:border-box!important;
+ overflow-y:auto!important;
+ overflow-x:hidden!important;
+ overscroll-behavior-y:contain!important;
+ scrollbar-gutter:stable;
+}
+html.jrvs-desktop .shell>main>.page.active{
+ min-height:min-content!important;
+ height:auto!important;
+ overflow:visible!important;
+}
+html.jrvs-desktop .shell>aside{
+ align-self:stretch!important;
+ min-height:0!important;
+ max-height:100vh!important;
+ overflow-y:auto!important;
+ overscroll-behavior-y:contain!important;
+}
+html.jrvs-desktop .shell>main::-webkit-scrollbar,
+html.jrvs-desktop .shell>aside::-webkit-scrollbar{width:11px!important}
+html.jrvs-desktop .shell>main::-webkit-scrollbar-track,
+html.jrvs-desktop .shell>aside::-webkit-scrollbar-track{background:#111711!important}
+html.jrvs-desktop .shell>main::-webkit-scrollbar-thumb,
+html.jrvs-desktop .shell>aside::-webkit-scrollbar-thumb{background:#536344!important;border:2px solid #111711!important;border-radius:10px!important}
+html.jrvs-desktop .shell>main::-webkit-scrollbar-thumb:hover,
+html.jrvs-desktop .shell>aside::-webkit-scrollbar-thumb:hover{background:#82985d!important}
+
 </style>
 <script>
 window.__JRVS_DESKTOP__ = true;
