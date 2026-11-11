@@ -3845,7 +3845,7 @@ function applyEditorRetouchStrokes(ctx,width,height,strokes){
 function setEditorRetouchMode(mode){
  editorRetouchMode=mode;
  document.querySelectorAll('[data-retouch-mode]').forEach(b=>b.classList.toggle('active',b.dataset.retouchMode===mode));
- const c=document.getElementById('editorCanvas');if(c)c.style.cursor=mode==='off'?'default':'crosshair';
+ const c=document.getElementById('editorCanvas');if(c)c.style.cursor=mode==='off'?'default':'none';if(mode==='off'&&editorLocalMaskMode==='off')hideEditorBrushCursor();
  const note=document.getElementById('retouchInstructions');
  if(note)note.textContent=mode==='off'?'Move mode: choose Clone or Heal to retouch.':editorRetouchSource?'Source set. Paint over the area you want to repair.':'Alt-click a clean source area, then paint over the distraction. Hold Alt while clicking to resample.';
 }
