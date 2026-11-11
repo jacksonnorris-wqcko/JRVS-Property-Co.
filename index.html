@@ -3567,16 +3567,29 @@ function editorBuildGeometryQuad(vertical,horizontal){
  const v=editorClamp(vertical/15*.10,-.10,.10),h=editorClamp(horizontal/15*.10,-.10,.10);
  return [{x:v,y:h},{x:1-v,y:-h},{x:1+v,y:1-h},{x:-v,y:1+h}];
 }
-function editorProjectiveMap(u,v,quad){
+function editorBuildHomography(quad){
  const [p0,p1,p2,p3]=quad,dx1=p1.x-p2.x,dx2=p3.x-p2.x,dx3=p0.x-p1.x+p2.x-p3.x;
  const dy1=p1.y-p2.y,dy2=p3.y-p2.y,dy3=p0.y-p1.y+p2.y-p3.y;
  const denominator=dx1*dy2-dx2*dy1;let g=0,h=0;
- if(Math.abs(dx3)>1e-10||Math.abs(dy3)>1e-10){if(Math.abs(denominator)<1e-12)return {x:u,y:v};g=(dx3*dy2-dx2*dy3)/denominator;h=(dx1*dy3-dx3*dy1)/denominator}
+ if(Math.abs(dx3)>1e-10||Math.abs(dy3)>1e-10){if(Math.abs(denominator)<1e-12)throw new Error('Keystone transform is degenerate');g=(dx3*dy2-dx2*dy3)/denominator;h=(dx1*dy3-dx3*dy1)/denominator}
  const a=p1.x-p0.x+g*p1.x,b=p3.x-p0.x+h*p3.x,c=p0.x;
  const d=p1.y-p0.y+g*p1.y,e=p3.y-p0.y+h*p3.y,f=p0.y;
- const divisor=g*u+h*v+1;if(Math.abs(divisor)<1e-12)return {x:u,y:v};
- return {x:(a*u+b*v+c)/divisor,y:(d*u+e*v+f)/divisor};
+ return [a,b,c,d,e,f,g,h,1];
 }
+function editorInvertHomography(matrix){
+ const [a,b,c,d,e,f,g,h,i]=matrix;
+ const A=e*i-f*h,B=c*h-b*i,C=b*f-c*e,D=f*g-d*i,E=a*i-c*g,F=c*d-a*f,G=d*h-e*g,H=b*g-a*h,I=a*e-b*d;
+ const determinant=a*A+b*D+c*G;
+ if(Math.abs(determinant)<1e-12)throw new Error('Keystone transform cannot be inverted');
+ return [A,B,C,D,E,F,G,H,I].map(value=>value/determinant);
+}
+function editorApplyHomography(matrix,x,y){
+ const [a,b,c,d,e,f,g,h,i]=matrix,denominator=g*x+h*y+i;
+ if(Math.abs(denominator)<1e-12)return {x:.5,y:.5};
+ return {x:(a*x+b*y+c)/denominator,y:(d*x+e*y+f)/denominator};
+}
+function editorProjectiveMap(u,v,quad){return editorApplyHomography(editorBuildHomography(quad),u,v)}
+function editorProjectiveInverseMap(u,v,inverse){return editorApplyHomography(inverse,u,v)}
 function editorMapGeometryPoint(u,v,vertical,horizontal,lens){
  const k=editorClamp(lens,-100,100)/100*.18,dx=u-.5,dy=v-.5,r2=dx*dx+dy*dy,factor=1+k*r2;
  return editorProjectiveMap(.5+dx*factor,.5+dy*factor,editorBuildGeometryQuad(vertical,horizontal));
@@ -3628,12 +3641,13 @@ function editorApplyGeometryWarp(sourceCanvas,destinationCanvas,vertical,horizon
  const sourceCtx=sourceCanvas.getContext('2d',{willReadFrequently:true}),destCtx=destinationCanvas.getContext('2d',{willReadFrequently:true});
  const cropW=Math.min(sw,sh*dw/dh),cropH=Math.min(sh,sw*dh/dw),left=(sw-cropW)/2,top=(sh-cropH)/2;
  if(!vertical&&!horizontal&&!lens){destCtx.drawImage(sourceCanvas,left,top,cropW,cropH,0,0,dw,dh);return}
- const source=sourceCtx.getImageData(0,0,sw,sh).data,output=destCtx.createImageData(dw,dh),out=output.data,quad=editorBuildGeometryQuad(vertical,horizontal),k=editorClamp(lens,-100,100)/100*.18;
+ const source=sourceCtx.getImageData(0,0,sw,sh).data,output=destCtx.createImageData(dw,dh),out=output.data,quad=editorBuildGeometryQuad(vertical,horizontal),inverse=editorInvertHomography(editorBuildHomography(quad)),k=editorClamp(lens,-100,100)/100*.18;
  for(let y=0;y<dh;y++){
   const v=dh>1?y/(dh-1):.5,ny=(v-.5)*2;
   for(let x=0;x<dw;x++){
-   const u=dw>1?x/(dw-1):.5,nx=(u-.5)*2,r2=nx*nx+ny*ny,factor=1+k*r2,ru=.5+nx*.5*factor,rv=.5+ny*.5*factor;
-   const mapped=editorProjectiveMap(ru,rv,quad),sx=editorClamp(left+mapped.x*cropW,0,sw-1),sy=editorClamp(top+mapped.y*cropH,0,sh-1);
+   const u=dw>1?x/(dw-1):.5,nx=(u-.5)*2,r2=nx*nx+ny*ny;
+   const lensFactor=1-k*r2,projected=editorProjectiveInverseMap(.5+nx*.5*lensFactor,.5+ny*.5*lensFactor,inverse);
+   const sx=editorClamp(left+projected.x*cropW,0,sw-1),sy=editorClamp(top+projected.y*cropH,0,sh-1);
    const x0=Math.floor(sx),y0=Math.floor(sy),x1=Math.min(sw-1,x0+1),y1=Math.min(sh-1,y0+1),fx=sx-x0,fy=sy-y0,dst=(y*dw+x)*4;
    for(let c=0;c<4;c++){const p00=source[(y0*sw+x0)*4+c],p10=source[(y0*sw+x1)*4+c],p01=source[(y1*sw+x0)*4+c],p11=source[(y1*sw+x1)*4+c],a=p00+(p10-p00)*fx,b=p01+(p11-p01)*fx;out[dst+c]=a+(b-a)*fy}
   }
