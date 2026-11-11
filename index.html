@@ -2877,10 +2877,10 @@ async function applyBatchPresetToSelection(){
   const preset=document.getElementById('batchPreset')?.value||'natural',presetLabel=document.querySelector('#batchPreset option:checked')?.textContent||preset;
   const accepted=await showConfirm(`Apply ${presetLabel} to ${targets.length} selected original photos? New edited copies will be created; originals stay untouched.`,{title:'Apply batch edit',confirmText:'Apply to photos',danger:false});
   if(!accepted)return;
-  const saved={photo:editorPhoto,sourcePhoto:editorSourcePhoto,image:editorImage,rotation:editorRotation,rawDeveloped:editorRawDeveloped,retouchStrokes:JSON.parse(JSON.stringify(editorRetouchStrokes||[])),retouchSource:editorRetouchSource,localBalance:editorLocalBalance,naturalCurve:editorNaturalCurve,lastAnalysis:editorLastAnalysis,values:editorSettings(),crop:document.getElementById('cropRatio')?.value||'original',preset:document.getElementById('editorPreset')?.value||'none',toneCurve:[...editorToneCurve],hsl:editorHslSnapshot()};
+  const saved={photo:editorPhoto,sourcePhoto:editorSourcePhoto,image:editorImage,rotation:editorRotation,rawDeveloped:editorRawDeveloped,retouchStrokes:JSON.parse(JSON.stringify(editorRetouchStrokes||[])),retouchSource:editorRetouchSource,localBalance:editorLocalBalance,naturalCurve:editorNaturalCurve,lastAnalysis:editorLastAnalysis,values:editorSettings(),crop:document.getElementById('cropRatio')?.value||'original',preset:document.getElementById('editorPreset')?.value||'none',toneCurve:[...editorToneCurve],hsl:editorHslSnapshot(),localMasks:cloneEditorLocalMasks(),localMaskSelectedId:editorLocalMaskSelectedId};
   let done=0,failed=0;const errors=[];
   try{
-   const settings=editorSettingsFromPreset(preset);resetEditorAdvancedControls();editorRetouchStrokes=[];editorRetouchSource=null;editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;
+   const settings=editorSettingsFromPreset(preset);resetEditorAdvancedControls();editorRetouchStrokes=[];editorRetouchSource=null;editorLocalMasks=[];editorLocalMaskSelectedId=null;editorLocalMaskActive=null;renderEditorLocalMaskList();syncEditorLocalMaskControls();editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;
    for(let i=0;i<targets.length;i++){
     const target=targets[i];let url=null;if(progress)progress.textContent=`Applying ${presetLabel} · ${i+1} of ${targets.length}: ${target.name}`;
     try{
@@ -2913,7 +2913,7 @@ async function applyBatchPresetToSelection(){
    EDITOR_KEYS.forEach(key=>{const control=document.getElementById(key);if(control)control.value=saved.values[key]??0});
    const crop=document.getElementById('cropRatio');if(crop)crop.value=saved.crop;
    const presetControl=document.getElementById('editorPreset');if(presetControl)presetControl.value=saved.preset;
-   editorToneCurve=[...saved.toneCurve];editorHsl=saved.hsl;syncEditorAdvancedControls();
+   editorToneCurve=[...saved.toneCurve];editorHsl=saved.hsl;editorLocalMasks=normaliseEditorLocalMasks(saved.localMasks);editorLocalMaskSelectedId=editorLocalMasks.some(mask=>mask.id===saved.localMaskSelectedId)?saved.localMaskSelectedId:(editorLocalMasks[0]?.id||null);renderEditorLocalMaskList();syncEditorLocalMaskControls();syncEditorAdvancedControls();
    if(saved.image&&saved.photo)drawEditor();
   }
  }catch(error){console.error('JRVS batch operation failed',error);if(progress)progress.textContent=`Batch edit failed: ${error?.message||'Unknown error'}`;showToast(`Batch edit failed: ${error?.message||'Unknown error'}`,'error')}
@@ -4012,7 +4012,7 @@ async function smartFinishWholeProperty(){
  const accepted=await showConfirm('Analyse '+targets.length+' other original photos individually and create new edited copies? JRVS will use this photo as the brightness reference while protecting each image\'s own highlights and colour. Originals and existing edits stay untouched.',{title:'Smart Finish · whole property',confirmText:'Finish property photos',danger:false});
  if(!accepted)return;
  editorBusy=true;const buttons=[...document.querySelectorAll('#editorBackdrop button')];buttons.forEach(b=>b.disabled=true);
- const saved={photo:editorPhoto,sourcePhoto:editorSourcePhoto,image:editorImage,rotation:editorRotation,retouchStrokes:editorRetouchStrokes,retouchSource:editorRetouchSource,localBalance:editorLocalBalance,naturalCurve:editorNaturalCurve,lastAnalysis:editorLastAnalysis,rawDeveloped:editorRawDeveloped,settings:editorSettings(),crop:document.getElementById('cropRatio')?.value||'original',preset:document.getElementById('editorPreset')?.value||'none'};
+ const saved={photo:editorPhoto,sourcePhoto:editorSourcePhoto,image:editorImage,rotation:editorRotation,retouchStrokes:JSON.parse(JSON.stringify(editorRetouchStrokes||[])),retouchSource:editorRetouchSource,localMasks:cloneEditorLocalMasks(),localMaskSelectedId:editorLocalMaskSelectedId,toneCurve:[...editorToneCurve],hsl:editorHslSnapshot(),localBalance:editorLocalBalance,naturalCurve:editorNaturalCurve,lastAnalysis:editorLastAnalysis,rawDeveloped:editorRawDeveloped,settings:editorSettings(),crop:document.getElementById('cropRatio')?.value||'original',preset:document.getElementById('editorPreset')?.value||'none'};
  let done=0,failed=0,rawPreviewFallbacks=0;
  try{
   const anchor=createEditorRenderCanvas(720);if(!anchor)throw new Error('The reference photo could not be rendered.');
@@ -4027,7 +4027,7 @@ async function smartFinishWholeProperty(){
     if(target.isRaw){try{const sensorBlob=await decodeRawToJpeg(target.blob,{halfSize:false,quality:.98});if(jrvsLastRawDecodeInfo?.mode==='sensor-raw'){sourceBlob=sensorBlob;rawDeveloped=true}else{rawPreviewFallbacks++;sourceBlob=target.previewBlob instanceof Blob?target.previewBlob:await extractEmbeddedRawJpeg(target.blob,{halfSize:false,quality:.98})}}catch(rawError){rawPreviewFallbacks++;sourceBlob=target.previewBlob instanceof Blob?target.previewBlob:await extractEmbeddedRawJpeg(target.blob,{halfSize:false,quality:.98})}}
     url=URL.createObjectURL(sourceBlob);
     const image=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error('Image could not be decoded'));img.src=url});
-    editorPhoto=target;editorSourcePhoto=target;editorImage=image;editorRotation=0;editorRawDeveloped=rawDeveloped;editorRetouchStrokes=[];editorRetouchSource=null;editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;
+    editorPhoto=target;editorSourcePhoto=target;editorImage=image;editorRotation=0;editorRawDeveloped=rawDeveloped;editorRetouchStrokes=[];editorRetouchSource=null;editorLocalMasks=[];editorLocalMaskSelectedId=null;editorLocalMaskActive=null;renderEditorLocalMaskList();syncEditorLocalMaskControls();editorToneCurve=[64,128,192];editorHsl=Object.fromEntries(EDITOR_HSL_CHANNELS.map(channel=>[channel.id,{hue:0,saturation:0,luminance:0}]));syncEditorAdvancedControls();EDITOR_KEYS.forEach(key=>{const input=document.getElementById(key);if(input)input.value=0});editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;
     const crop=document.getElementById('cropRatio');if(crop)crop.value='original';
     const analysis=jrvsAnalysePropertyImage(image);jrvsApplyPropertyFinish(analysis,intent,referenceMedian);drawEditor();
     const blob=await createFullQualityEditorBlob(mime,quality);if(!blob)throw new Error('Full-resolution export failed.');
@@ -4040,7 +4040,7 @@ async function smartFinishWholeProperty(){
   showToast('Property Finish created '+done+' edited copies'+(failed?' · '+failed+' photo(s) skipped':'')+(rawPreviewFallbacks?' · '+rawPreviewFallbacks+' RAW preview fallback(s)':'')+'. Originals remain unchanged.',failed?'info':'success');
  }catch(error){console.error('JRVS Smart Finish failed',error);showToast('Smart Finish stopped: '+(error?.message||error),'error')}
  finally{
-  editorPhoto=saved.photo;editorSourcePhoto=saved.sourcePhoto;editorImage=saved.image;editorRotation=saved.rotation;editorRawDeveloped=saved.rawDeveloped;editorRetouchStrokes=saved.retouchStrokes;editorRetouchSource=saved.retouchSource;editorLocalBalance=saved.localBalance;editorNaturalCurve=saved.naturalCurve;editorLastAnalysis=saved.lastAnalysis;
+  editorPhoto=saved.photo;editorSourcePhoto=saved.sourcePhoto;editorImage=saved.image;editorRotation=saved.rotation;editorRawDeveloped=saved.rawDeveloped;editorRetouchStrokes=saved.retouchStrokes;editorRetouchSource=saved.retouchSource;editorLocalMasks=normaliseEditorLocalMasks(saved.localMasks);editorLocalMaskSelectedId=editorLocalMasks.some(mask=>mask.id===saved.localMaskSelectedId)?saved.localMaskSelectedId:(editorLocalMasks[0]?.id||null);editorLocalMaskActive=null;renderEditorLocalMaskList();syncEditorLocalMaskControls();editorToneCurve=[...saved.toneCurve];editorHsl=saved.hsl;syncEditorAdvancedControls();editorLocalBalance=saved.localBalance;editorNaturalCurve=saved.naturalCurve;editorLastAnalysis=saved.lastAnalysis;
   Object.entries(saved.settings).forEach(([key,value])=>{const input=document.getElementById(key);if(input)input.value=value;const label=document.getElementById(key+'Val');if(label)label.textContent=Number(value)>0?'+'+value:value;const number=input?.closest('.editor-control')?.querySelector('.editor-number');if(number)number.value=value});
   const crop=document.getElementById('cropRatio');if(crop)crop.value=saved.crop;
   const preset=document.getElementById('editorPreset');if(preset)preset.value=saved.preset;
@@ -4056,7 +4056,7 @@ async function batchApplyEditor(){
  if(!targets.length){showToast('No other editable JPEG/PNG originals are available in this project. RAW files need sensor development before exact-look batching.','info');return}
  if(!await showConfirm(`Apply these adjustments, tone curve, HSL and retouch settings to ${targets.length} other editable original photos? Each result is saved as a new non-destructive edited copy; originals remain untouched.`,{title:'Apply exact look to property',confirmText:'Apply to originals',danger:false}))return;
  editorBusy=true;const btns=[...document.querySelectorAll('#editorBackdrop button')];btns.forEach(b=>b.disabled=true);
- const saved={photo:editorPhoto,sourcePhoto:editorSourcePhoto,image:editorImage,rotation:editorRotation,rawDeveloped:editorRawDeveloped,settings:editorSettings(),crop:document.getElementById('cropRatio')?.value||'original',preset:document.getElementById('editorPreset')?.value||'none',retouchStrokes:JSON.parse(JSON.stringify(editorRetouchStrokes||[])),retouchSource:editorRetouchSource,localBalance:editorLocalBalance,naturalCurve:editorNaturalCurve,lastAnalysis:editorLastAnalysis,toneCurve:[...editorToneCurve],hsl:editorHslSnapshot()};
+ const saved={photo:editorPhoto,sourcePhoto:editorSourcePhoto,image:editorImage,rotation:editorRotation,rawDeveloped:editorRawDeveloped,settings:editorSettings(),crop:document.getElementById('cropRatio')?.value||'original',preset:document.getElementById('editorPreset')?.value||'none',retouchStrokes:JSON.parse(JSON.stringify(editorRetouchStrokes||[])),retouchSource:editorRetouchSource,localMasks:cloneEditorLocalMasks(),localMaskSelectedId:editorLocalMaskSelectedId,localBalance:editorLocalBalance,naturalCurve:editorNaturalCurve,lastAnalysis:editorLastAnalysis,toneCurve:[...editorToneCurve],hsl:editorHslSnapshot()};
  let done=0,failed=0;const errors=[];
  try{
   for(let i=0;i<targets.length;i++){
@@ -4082,7 +4082,7 @@ async function batchApplyEditor(){
  finally{
   editorPhoto=saved.photo;editorSourcePhoto=saved.sourcePhoto;editorImage=saved.image;editorRotation=saved.rotation;editorRawDeveloped=saved.rawDeveloped;
   EDITOR_KEYS.forEach(key=>{const input=document.getElementById(key);if(input)input.value=saved.settings[key]??0});
-  editorRetouchStrokes=saved.retouchStrokes;editorRetouchSource=saved.retouchSource;editorLocalBalance=saved.localBalance;editorNaturalCurve=saved.naturalCurve;editorLastAnalysis=saved.lastAnalysis;editorToneCurve=[...saved.toneCurve];editorHsl=saved.hsl;
+  editorRetouchStrokes=saved.retouchStrokes;editorRetouchSource=saved.retouchSource;editorLocalMasks=normaliseEditorLocalMasks(saved.localMasks);editorLocalMaskSelectedId=editorLocalMasks.some(mask=>mask.id===saved.localMaskSelectedId)?saved.localMaskSelectedId:(editorLocalMasks[0]?.id||null);renderEditorLocalMaskList();syncEditorLocalMaskControls();editorLocalBalance=saved.localBalance;editorNaturalCurve=saved.naturalCurve;editorLastAnalysis=saved.lastAnalysis;editorToneCurve=[...saved.toneCurve];editorHsl=saved.hsl;
   const crop=document.getElementById('cropRatio');if(crop)crop.value=saved.crop;
   const preset=document.getElementById('editorPreset');if(preset)preset.value=saved.preset;
   syncEditorAdvancedControls();jrvsRenderFinishReport(editorLastAnalysis);drawEditor();btns.forEach(b=>b.disabled=false);editorBusy=false;await loadPhotos();
