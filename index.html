@@ -3284,7 +3284,7 @@ const EDITOR_PREVIEW_MAX=1600;
 
 // JRVS Photo Studio workspace controls (v0.9.0)
 let editorZoomLevel=1, editorActiveTab='basic';
-function setEditorTab(tab){editorActiveTab=tab;document.querySelectorAll('[data-editor-tab]').forEach(b=>b.classList.toggle('active',b.dataset.editorTab===tab));document.querySelectorAll('[data-editor-group]').forEach(el=>{el.hidden=el.dataset.editorGroup!==tab});if(tab!=='mask')setEditorLocalMaskMode('off');if(tab!=='retouch')setEditorRetouchMode('off');}
+function setEditorTab(tab){editorActiveTab=tab;document.querySelectorAll('[data-editor-tab]').forEach(b=>b.classList.toggle('active',b.dataset.editorTab===tab));document.querySelectorAll('[data-editor-group]').forEach(el=>{el.hidden=el.dataset.editorGroup!==tab});if(tab!=='mask')setEditorLocalMaskMode('off');if(tab!=='retouch')setEditorRetouchMode('off');drawEditor();}
 function fitEditorCanvas(){
  const stage=document.getElementById('editorStage'),c=document.getElementById('editorCanvas');
  if(!stage||!c||!c.width||!c.height)return;
@@ -3362,7 +3362,7 @@ function syncEditorLocalMaskControls(){
  const del=document.querySelector('.jrvs-local-mask-panel button[onclick="deleteSelectedEditorMask()"]');if(del)del.disabled=!mask;
 }
 function selectEditorLocalMask(id){
- editorLocalMaskSelectedId=editorLocalMasks.some(mask=>mask.id===id)?id:null;renderEditorLocalMaskList();syncEditorLocalMaskControls();
+ editorLocalMaskSelectedId=editorLocalMasks.some(mask=>mask.id===id)?id:null;renderEditorLocalMaskList();syncEditorLocalMaskControls();drawEditor();
 }
 function addEditorLocalMask(){
  if(editorLocalMasks.length>=12){showToast('A photo can contain up to 12 local masks.','info');return}
