@@ -3780,32 +3780,40 @@ async function smartFinishWholeProperty(){
 function editorSettings(){return Object.fromEntries(EDITOR_KEYS.map(k=>[k,document.getElementById(k).value]))}
 async function batchApplyEditor(){
  if(!editorPhoto||!editorImage||editorBusy)return;
- const targets=photoRecords.filter(p=>p.jobId===editorPhoto.jobId&&p.id!==editorPhoto.id&&p.type==='Original');
- if(!targets.length){showToast('No other original photos in this project to batch edit.');return}
- if(!await showConfirm(`Apply these adjustments to ${targets.length} other original photos? Each will be saved as a separate edited copy.`))return;
- editorBusy=true;const btns=document.querySelectorAll('#editorBackdrop button');btns.forEach(b=>b.disabled=true);
- const originalPhoto=editorPhoto,originalImage=editorImage,settings=editorSettings();let done=0;
+ const targets=photoRecords.filter(p=>String(p.jobId)===String(editorPhoto.jobId)&&String(p.id)!==String(editorPhoto.id)&&p.type==='Original'&&!p.isRaw&&p.blob instanceof Blob);
+ if(!targets.length){showToast('No other editable JPEG/PNG originals are available in this project. RAW files need sensor development before exact-look batching.','info');return}
+ if(!await showConfirm(`Apply these adjustments, tone curve, HSL and retouch settings to ${targets.length} other editable original photos? Each result is saved as a new non-destructive edited copy; originals remain untouched.`,{title:'Apply exact look to property',confirmText:'Apply to originals',danger:false}))return;
+ editorBusy=true;const btns=[...document.querySelectorAll('#editorBackdrop button')];btns.forEach(b=>b.disabled=true);
+ const saved={photo:editorPhoto,sourcePhoto:editorSourcePhoto,image:editorImage,rotation:editorRotation,rawDeveloped:editorRawDeveloped,settings:editorSettings(),crop:document.getElementById('cropRatio')?.value||'original',preset:document.getElementById('editorPreset')?.value||'none',retouchStrokes:JSON.parse(JSON.stringify(editorRetouchStrokes||[])),retouchSource:editorRetouchSource,localBalance:editorLocalBalance,naturalCurve:editorNaturalCurve,lastAnalysis:editorLastAnalysis,toneCurve:[...editorToneCurve],hsl:editorHslSnapshot()};
+ let done=0,failed=0;const errors=[];
  try{
-  for(const target of targets){
-   const url=URL.createObjectURL(target.blob);
+  for(let i=0;i<targets.length;i++){
+   const target=targets[i],url=URL.createObjectURL(target.blob);
    try{
-    const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=url});
-    editorPhoto=target;editorImage=img;drawEditor();
-    const profile=document.getElementById('editorExportProfile').value;
-    const mime=profile==='png'?'image/png':'image/jpeg';
-    const quality=profile==='web'?.86:profile==='max'?.99:.94;
-    const blob=await createFullQualityEditorBlob(mime,quality);
-    if(!blob)throw Error('Export failed');
-    const rec={id:jrvsNewId('photo'),jobId:target.jobId,jobName:target.jobName,name:target.name.replace(/\.[^.]+$/,'')+'_edited.jpg',type:'Edited',size:blob.size,mime:blob.type,addedAt:new Date().toISOString(),status:'Edited',isCover:false,sourcePhotoId:target.id,blob};
-    await photoRequest('readwrite','put',rec);done++;
-   }finally{URL.revokeObjectURL(url)}
+    const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('Image could not be decoded'));im.src=url});
+    editorPhoto=target;editorSourcePhoto=target;editorImage=img;editorRawDeveloped=false;
+    const profile=document.getElementById('editorExportProfile').value,mime=profile==='png'?'image/png':'image/jpeg',quality=profile==='web'?.86:profile==='max'?.99:.94;
+    if(document.getElementById('editorStatus'))document.getElementById('editorStatus').textContent=`Applying exact JRVS look · ${i+1} of ${targets.length} · ${target.name}`;
+    const blob=await createFullQualityEditorBlob(mime,quality);if(!blob)throw new Error('Full-resolution export failed');
+    const recipe=captureEditorRecipe();
+    const rec={id:jrvsNewId('photo'),jobId:target.jobId,jobName:target.jobName,name:target.name.replace(/\.[^.]+$/,'')+'_edited.'+(mime==='image/png'?'png':'jpg'),type:'Edited',size:blob.size,mime:blob.type,addedAt:new Date().toISOString(),status:'Edited',isCover:false,sourcePhotoId:target.id,editRecipe:recipe,editRecipeVersion:1,blob};
+    await photoRequest('readwrite','put',rec);
+    const verify=await photoRequest('readonly','get',rec.id);if(!verify||!(verify.blob instanceof Blob)||verify.blob.size!==blob.size||!verify.editRecipe)throw new Error('Edited copy or its recipe could not be verified after saving');
+    done++;
+   }catch(error){failed++;errors.push(target.name+': '+(error?.message||'Unknown error'));console.error('JRVS exact-look batch failed for '+target.name,error)}
+   finally{URL.revokeObjectURL(url)}
   }
-  showToast(`${done} edited copies saved to ${originalPhoto.jobName}.`);
- }catch(e){showToast(`Batch edit stopped after ${done} photos. The originals remain unchanged.`)}
+  if(done)showToast(done+' edited copies saved with their tone curve, HSL and recipes'+(failed?' · '+failed+' failed':'')+'.');
+  else showToast('No edited copies were saved. '+(errors[0]||'Please try again.'),'error');
+  if(failed&&document.getElementById('editorStatus'))document.getElementById('editorStatus').textContent='Batch finished with '+failed+' failure(s): '+errors[0];
+ }catch(error){console.error('JRVS exact-look batch stopped',error);showToast('Batch edit stopped after '+done+' photos: '+(error?.message||'Unknown error'),'error')}
  finally{
-  editorPhoto=originalPhoto;editorImage=originalImage;
-  Object.entries(settings).forEach(([k,v])=>document.getElementById(k).value=v);
-  drawEditor();btns.forEach(b=>b.disabled=false);editorBusy=false;await loadPhotos();
+  editorPhoto=saved.photo;editorSourcePhoto=saved.sourcePhoto;editorImage=saved.image;editorRotation=saved.rotation;editorRawDeveloped=saved.rawDeveloped;
+  EDITOR_KEYS.forEach(key=>{const input=document.getElementById(key);if(input)input.value=saved.settings[key]??0});
+  editorRetouchStrokes=saved.retouchStrokes;editorRetouchSource=saved.retouchSource;editorLocalBalance=saved.localBalance;editorNaturalCurve=saved.naturalCurve;editorLastAnalysis=saved.lastAnalysis;editorToneCurve=[...saved.toneCurve];editorHsl=saved.hsl;
+  const crop=document.getElementById('cropRatio');if(crop)crop.value=saved.crop;
+  const preset=document.getElementById('editorPreset');if(preset)preset.value=saved.preset;
+  syncEditorAdvancedControls();jrvsRenderFinishReport(editorLastAnalysis);drawEditor();btns.forEach(b=>b.disabled=false);editorBusy=false;await loadPhotos();
  }
 }
 async function mergeHdrSelection(){
