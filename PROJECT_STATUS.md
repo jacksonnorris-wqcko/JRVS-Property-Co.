@@ -161,4 +161,5 @@ These are not claims that the features are broken; they are verification areas t
 
 - First hotfix validation run `43113993364` passed handover/version checks and Photo Studio regression tests, then stalled in `Build Windows installers` from 11 November 2026 22:43:07 UTC; it remained in progress with no installer artifact in later checks.
 - The job is configured with a 45-minute timeout, but GitHub did not report a timeout or finish the job. A fresh ordinary push will use the workflow's replaceable check concurrency group to supersede the stalled runner.
-- Re-run V0.54.1 Windows build + regression checks before creating the intentional signed release commit. Existing V0.54.0 release and stable `main` remain untouched.
+- Recovery run `43114715262` completed successfully: handover/version checks, Photo Studio regression checks, Windows installer build, installer verification and artifact upload all passed. The ordinary commit correctly skipped publication because it was not the intentional release commit.
+- Next, publish V0.54.1 through the separate signed release workflow. Existing V0.54.0 release and stable `main` remain untouched.
