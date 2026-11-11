@@ -3240,7 +3240,7 @@ function editQuote(id){openQuoteForm(id)}
 function changeQuoteStatus(id){const q=data.quotes.find(x=>x.id===id);if(!q)return;const states=['Draft','Sent','Accepted','Declined'];q.status=states[(states.indexOf(q.status)+1)%states.length];if(q.status==='Accepted'&&q.jobId){const job=data.jobs.find(j=>j.id===q.jobId);if(job&&job.status==='Enquiry'){job.status='Booked';job.statusUpdatedAt=new Date().toISOString()}}save();renderQuotes();renderAttention();render()}
 async function deleteQuote(id){if(await showConfirm('Delete this quotation?')){data.quotes=data.quotes.filter(q=>q.id!==id);jrvsTombstone('quotes',id);renderQuotes();renderAttention()}}
 
-let editorPhoto=null,editorSourcePhoto=null,editorImage=null,editorRotation=0,editorBusy=false,editorHistory=[],editorHistoryIndex=-1,editorHistoryTimer=null,editorCompare=false,editorComparePosition=50,editorPreviewFrame=0;
+let editorPhoto=null,editorSourcePhoto=null,editorImage=null,editorRotation=0,editorBusy=false,editorHistory=[],editorHistoryIndex=-1,editorHistoryTimer=null,editorCompare=false,editorComparePosition=50,editorPreviewFrame=0,editorRawDeveloped=false;
 const EDITOR_PREVIEW_MAX=1600;
 
 // JRVS Photo Studio workspace controls (v0.9.0)
@@ -3290,6 +3290,7 @@ document.addEventListener('keydown',e=>{if(!document.getElementById('editorBackd
 function captureEditorRecipe(){
  return {
   schemaVersion:4,
+  rawDeveloped:!!editorRawDeveloped,
   toneCurve:[...editorToneCurve],
   hsl:JSON.parse(JSON.stringify(editorHsl)),
   localBalance:!!editorLocalBalance,
@@ -3316,6 +3317,7 @@ function restoreEditorRecipe(recipe){
  const crop=document.getElementById('cropRatio');if(crop)crop.value=recipe.crop||'original';
  const preset=document.getElementById('editorPreset');if(preset)preset.value=recipe.preset||'none';
  editorRetouchStrokes=Array.isArray(recipe.retouchStrokes)?JSON.parse(JSON.stringify(recipe.retouchStrokes)):[];
+ editorRawDeveloped=!!recipe.rawDeveloped;
  editorToneCurve=Array.isArray(recipe.toneCurve)&&recipe.toneCurve.length===3?recipe.toneCurve.map(v=>Math.max(0,Math.min(255,Number(v)||0))):[64,128,192];
  editorHsl=Object.fromEntries(EDITOR_HSL_CHANNELS.map(ch=>{const saved=recipe.hsl?.[ch.id]||{};return [ch.id,{hue:Number(saved.hue)||0,saturation:Number(saved.saturation)||0,luminance:Number(saved.luminance)||0}]}));
  syncEditorAdvancedControls();
@@ -3341,7 +3343,7 @@ function renderEditorFilmstrip(){
 async function openEditor(id){
  const p=photoRecords.find(x=>String(x.id)===String(id));if(!p)return;
  const linkedOriginal=(String(p.type||'').toLowerCase()==='edited'&&p.sourcePhotoId)?photoRecords.find(x=>String(x.id)===String(p.sourcePhotoId)):null;
- editorPhoto=p;editorSourcePhoto=linkedOriginal||p;editorRotation=0;
+ editorPhoto=p;editorSourcePhoto=linkedOriginal||p;editorRotation=0;editorRawDeveloped=false;
  ['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>{const el=document.getElementById(k);if(el)el.value=0});
  editorHistory=[];editorHistoryIndex=-1;editorRetouchStrokes=[];editorRetouchSource=null;editorRetouchActive=null;editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;resetEditorAdvancedControls();const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value='natural';jrvsRenderFinishReport(null);setEditorRetouchMode('off');editorCompare=false;editorComparePosition=50;toggleEditorCompare(false);
  document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';document.getElementById('editorExportProfile').value='agency';document.getElementById('editorTitle').textContent=p.name;const rawDevelopBtn=document.getElementById('editorRawDevelopBtn');if(rawDevelopBtn)rawDevelopBtn.style.display=editorSourcePhoto.isRaw?'inline-flex':'none';
@@ -3349,7 +3351,7 @@ async function openEditor(id){
  document.getElementById('editorSubtitle').textContent=(editorSourcePhoto.jobName||p.jobName)+(editorSourcePhoto.isRaw?' · RAW source':' · Original source')+(hasRecipe?' · Saved edit recipe restored':' · Original remains unchanged');
  document.getElementById('editorStatus').textContent=hasRecipe?'Restoring your saved non-destructive edit recipe…':'';
  const img=new Image();let editorSourceBlob=editorSourcePhoto.blob;
- if(editorSourcePhoto.isRaw){try{document.getElementById('editorStatus').textContent='Preparing embedded camera preview…';editorSourceBlob=editorSourcePhoto.previewBlob instanceof Blob?editorSourcePhoto.previewBlob:await extractEmbeddedRawJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});document.getElementById('editorStatus').textContent='CR2 preview ready · optional RAW development available'}catch(err){showToast('Could not prepare CR2 preview: '+(err?.message||'preview error'),'error');return}}
+ if(editorSourcePhoto.isRaw){try{if(hasRecipe&&p.editRecipe?.rawDeveloped){document.getElementById('editorStatus').textContent='Re-developing the original CR2 sensor data…';const developed=await decodeRawToJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});if(jrvsLastRawDecodeInfo?.mode==='sensor-raw'){editorSourceBlob=developed;editorRawDeveloped=true;document.getElementById('editorStatus').textContent='Full-resolution sensor RAW restored · continuing saved edit'}else{editorSourceBlob=await extractEmbeddedRawJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});showToast('This saved edit used sensor RAW development, but the decoder fell back to the camera preview. The original and saved edited copy remain safe.','error')}}else{document.getElementById('editorStatus').textContent='Preparing embedded camera preview…';editorSourceBlob=editorSourcePhoto.previewBlob instanceof Blob?editorSourcePhoto.previewBlob:await extractEmbeddedRawJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});document.getElementById('editorStatus').textContent='CR2 preview ready · optional full sensor development available'}}catch(err){showToast('Could not prepare CR2 image: '+(err?.message||'RAW decode error'),'error');return}}
  const url=URL.createObjectURL(editorSourceBlob);
  img.onload=()=>{
   if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);
@@ -3375,7 +3377,7 @@ async function developEditorRawSource(){
   await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Developed RAW image could not be opened.'));img.src=url});
   if(editorImage?._url)URL.revokeObjectURL(editorImage._url);
   editorImage=img;editorImage._url=url;
-  editorHistory=[];editorHistoryIndex=-1;captureEditorHistory();
+  editorRawDeveloped=true;editorHistory=[];editorHistoryIndex=-1;captureEditorHistory();
   drawEditor();requestAnimationFrame(fitEditorCanvas);
   if(status)status.textContent=`RAW sensor developed · ${info.camera} · ${info.width}×${info.height}`;
   showToast('RAW sensor development applied to the editor. Original CR2 preserved.');
