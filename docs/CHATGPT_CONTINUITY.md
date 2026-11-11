@@ -10,6 +10,7 @@ The user may hit a ChatGPT limit without being able to ask for a summary, a hand
 
 - `PROJECT_STATUS.md` is the living handover and records the exact current state and next action.
 - `NEW_CHAT_PROMPT.md` is the reusable prompt the user can paste into a fresh conversation.
+- `npm run handover:check` validates the live desktop version against this status document and checks that the new-chat/continuity instructions are present; the Windows CI build runs this check.
 - The GitHub repository and latest commits are the source of truth for application code.
 - The previous chat is useful context when available, but must never be required to resume safely.
 
