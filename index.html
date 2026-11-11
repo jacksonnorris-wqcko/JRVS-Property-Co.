@@ -2556,7 +2556,7 @@ async function getJrvsRawDecoder(){
  if(jrvsRawDecoderModule)return jrvsRawDecoderModule;
  if(!jrvsRawDecoderPromise){
   jrvsRawDecoderPromise=(async()=>{
-   const mod=await import('./vendor/flashraw/index.js');
+   const mod=await import('./vendor/flashraw/browser.js');
    if(!mod?.FlashRaw)throw new Error('FlashRaw module did not expose its decoder.');
    jrvsRawDecoderModule=mod.FlashRaw;return jrvsRawDecoderModule;
   })().catch(err=>{jrvsRawDecoderPromise=null;throw err});
@@ -3350,14 +3350,14 @@ async function openEditor(id){
  const hasRecipe=!!(p.editRecipe&&linkedOriginal);
  document.getElementById('editorSubtitle').textContent=(editorSourcePhoto.jobName||p.jobName)+(editorSourcePhoto.isRaw?' · RAW source':' · Original source')+(hasRecipe?' · Saved edit recipe restored':' · Original remains unchanged');
  document.getElementById('editorStatus').textContent=hasRecipe?'Restoring your saved non-destructive edit recipe…':'';
- const img=new Image();let editorSourceBlob=editorSourcePhoto.blob;
- if(editorSourcePhoto.isRaw){try{if(hasRecipe&&p.editRecipe?.rawDeveloped){document.getElementById('editorStatus').textContent='Re-developing the original CR2 sensor data…';const developed=await decodeRawToJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});if(jrvsLastRawDecodeInfo?.mode==='sensor-raw'){editorSourceBlob=developed;editorRawDeveloped=true;document.getElementById('editorStatus').textContent='Full-resolution sensor RAW restored · continuing saved edit'}else{editorSourceBlob=await extractEmbeddedRawJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});showToast('This saved edit used sensor RAW development, but the decoder fell back to the camera preview. The original and saved edited copy remain safe.','error')}}else{document.getElementById('editorStatus').textContent='Preparing embedded camera preview…';editorSourceBlob=editorSourcePhoto.previewBlob instanceof Blob?editorSourcePhoto.previewBlob:await extractEmbeddedRawJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});document.getElementById('editorStatus').textContent='CR2 preview ready · optional full sensor development available'}}catch(err){showToast('Could not prepare CR2 image: '+(err?.message||'RAW decode error'),'error');return}}
+ const img=new Image();let editorSourceBlob=editorSourcePhoto.blob,rawRecipeFallback=false;
+ if(editorSourcePhoto.isRaw){try{if(hasRecipe&&p.editRecipe?.rawDeveloped){document.getElementById('editorStatus').textContent='Re-developing the original CR2 sensor data…';const developed=await decodeRawToJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});if(jrvsLastRawDecodeInfo?.mode==='sensor-raw'){editorSourceBlob=developed;editorRawDeveloped=true;document.getElementById('editorStatus').textContent='Full-resolution sensor RAW restored · continuing saved edit'}else{editorSourceBlob=await extractEmbeddedRawJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});rawRecipeFallback=true;showToast('This saved edit used sensor RAW development, but the decoder fell back to the camera preview. The original and saved edited copy remain safe.','error')}}else{document.getElementById('editorStatus').textContent='Preparing embedded camera preview…';editorSourceBlob=editorSourcePhoto.previewBlob instanceof Blob?editorSourcePhoto.previewBlob:await extractEmbeddedRawJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});document.getElementById('editorStatus').textContent='CR2 preview ready · optional full sensor development available'}}catch(err){showToast('Could not prepare CR2 image: '+(err?.message||'RAW decode error'),'error');return}}
  const url=URL.createObjectURL(editorSourceBlob);
  img.onload=()=>{
   if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);
   editorImage=img;editorImage._url=url;
   document.getElementById('editorBackdrop').classList.add('show');initEditorProControls();
-  if(hasRecipe)restoreEditorRecipe(p.editRecipe);else syncEditorAdvancedControls();
+  if(hasRecipe)restoreEditorRecipe(p.editRecipe);else syncEditorAdvancedControls();if(rawRecipeFallback)editorRawDeveloped=false;
   setEditorTab('basic');editorZoomLevel=1;observeEditorFit();drawEditor();requestAnimationFrame(fitEditorCanvas);captureEditorHistory();renderEditorFilmstrip();
   document.getElementById('editorStatus').textContent=hasRecipe?'Saved edit recipe loaded. Continue editing and save a new version.':'';
  };
