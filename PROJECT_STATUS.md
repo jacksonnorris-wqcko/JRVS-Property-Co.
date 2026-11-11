@@ -156,3 +156,9 @@ These are not claims that the features are broken; they are verification areas t
 6. Preserve existing functionality and user data. Avoid destructive migrations, clearing browser data, changing IDs or renumbering records.
 7. Keep the interface compact, use in-app toasts and styled confirmation dialogs, and preserve the approved JRVS branding.
 8. When a conversation ends unexpectedly, the next conversation must resume from this file and the latest GitHub commit without asking the user to reconstruct the history.
+
+### V0.54.1 CI runner recovery — 12 November 2026
+
+- First hotfix validation run `43113993364` passed handover/version checks and Photo Studio regression tests, then stalled in `Build Windows installers` from 11 November 2026 22:43:07 UTC; it remained in progress with no installer artifact in later checks.
+- The job is configured with a 45-minute timeout, but GitHub did not report a timeout or finish the job. A fresh ordinary push will use the workflow's replaceable check concurrency group to supersede the stalled runner.
+- Re-run V0.54.1 Windows build + regression checks before creating the intentional signed release commit. Existing V0.54.0 release and stable `main` remain untouched.
