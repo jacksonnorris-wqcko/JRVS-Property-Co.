@@ -34,38 +34,24 @@ The shared desktop scrolling fix was committed on 11 November 2026:
 
 **User test result:** user reported "alright it works" after testing the build. Treat the shared scrolling issue as closed unless a specific page/control is later reported as still clipped.
 
-### Active major development — Phase 1 + Phase 2: Photo Studio engine and professional Develop tools
+### Active major development — Phase 3 + Phase 4 + Phase 5: Local masks, architecture geometry and retouch (next desktop release)
 
-**User-approved scope:** make Photo Studio a high-end property/interior photography editor with a Lightroom-class ambition. Finance is out of scope.
+**User-approved release scope:** continue from the Phase 1–2 foundation and complete the next practical layer of Photo Studio: brush-based local adjustment masks; genuine projective architectural correction and lens distortion controls; distinct clone and healing retouch algorithms. Target next signed desktop updater: **0.54.0**.
 
-**Current milestone:** desktop version remains `0.53.0` on `desktop-transition`; no production release has been published. The stable `main` PWA has not been modified.
+**Checkpoint:** approved 11 November 2026 (Australia/Sydney). Desktop work only on `desktop-transition`. Keep `main` untouched. No release tag or signed update until all source checks and Windows release build pass.
 
-**Implemented in source:**
-- Pin FlashRaw `0.1.0` as a desktop dependency. The desktop preparation script copies the published browser entry, JavaScript modules, WASM variants and both upstream licence texts into `desktop-dist/vendor/flashraw`. Runtime import is local (`./vendor/flashraw/browser.js`), not esm.sh.
-- RAW sensor decoding requests CPU SIMD, automatic demosaic, as-shot white balance, highlight reconstruction and sRGB output. Sensor-developed state is stored in recipe schema v4. Reopening a RAW-derived edit attempts to re-develop from the immutable original CR2; if the decoder falls back to the embedded camera JPEG, the user is warned and the recipe marker is cleared.
-- Smart Finish attempts full-resolution sensor RAW development for RAW originals. It records any preview fallbacks in its completion notification and saves the proper RAW-developed marker per output.
-- Added a three-anchor luminance tone curve (shadow, midtone, highlight) with a shared 256-entry LUT used in preview and full-resolution rendering. Curve anchors now align to exact 8-bit identity positions; neutral settings have been directly verified to be exactly identity.
-- Added an eight-band HSL mixer for red, orange, yellow, green, aqua, blue, purple and magenta, each with hue, saturation and luminance controls. Per-degree colour adjustments are precomputed once per render rather than looping all channels for every pixel.
-- Curve and HSL settings are saved in recipe schema v4; legacy schemas v1–v3 remain accepted. Settings participate in undo/redo and are restored when an edit is reopened.
-- Preset batch editing resets advanced/retouch stages to a neutral preset state, saves a recipe per output and restores the editor state afterwards.
-- Exact-look batch editing now saves a complete editable recipe with each output, preserves tone curve/HSL/retouch state, verifies the saved copy, and avoids trying to open RAW containers directly as browser images. RAW originals are handled separately by Smart Finish/full RAW development.
-- Added `npm run photo:engine:check` to Windows CI. It tests RGB/HSL round trips, identity and monotonic curve behaviour, HSL band lookup, recipe compatibility and local FlashRaw bundle/license wiring.
+**Existing foundation:** FlashRaw 0.1.0 is bundled locally; recipe schema v4 persists tone curve/HSL and supports v1–v3; colour/curve engine checks are part of Windows CI. Latest known full Windows build for that foundation succeeded on commit `c039a6712dc32b4e9075290909fbbb7d921fb363` (CI run 42955398595).
 
-**Verification evidence:**
-- All 5 inline JavaScript scripts in `index.html` passed source syntax parsing after the current engine changes.
-- Direct execution of the extracted colour/curve helpers passed: 11 RGB/HSL round-trip samples within tolerance; default curve is exact identity; a shaped curve is monotonic and changes the image; HSL orange adjustment peaks at its channel centre without leaking into green.
-- Windows CI run `42954994274` passed the JRVS handover/version check and the Photo Studio engine regression check. The Windows installer build was still in progress at the time of this checkpoint. This status commit will be a new branch head and will trigger a fresh Windows CI run; check the latest run for final build status.
-- A previous Windows attempt failed because the assumed package entry was incorrectly named `index.js`; the package uses `browser.js`. The copy/import paths and required WASM/license checks have since been corrected.
-- **Not yet user-tested:** the new controls and RAW workflow in the installed Windows app.
-- **Not yet verified:** EOS 600D CR2 compatibility, offline runtime with network disabled, RAW colour/highlight fidelity, large-file performance or true preview/export image-quality parity.
+**Planned implementation:**
+1. Local adjustments: create multiple independent paint/erase brush masks with feather/flow, editable local exposure/highlights/shadows/temperature/saturation, enable/disable/select/delete controls, and non-destructive mask data in a new recipe schema. Use the same mask rendering stage for preview and full-size export.
+2. Geometry: replace the current affine shear approximation with a projective keystone transform for vertical/horizontal convergence, add radial lens distortion correction, preserve crop/rotation behaviour, and use the exact same warp for preview/export. Keep neutral geometry pixel-identical. Document that no camera-profile auto calibration is claimed.
+3. Retouch: make Clone and Heal separate algorithms. Clone copies the sampled source; Heal transfers sampled texture with destination/source tonal-colour matching and feathered blending. Keep retouch non-destructive in recipes and undo/redo, and leave source photos immutable.
+4. Add focused math/recipe/renderer regression checks for masks, feathering, homography identity/corner mapping, lens-neutral identity, heal/clone distinction and older recipe compatibility. Profile expensive pixel work and avoid repeated per-pixel channel scans.
+5. Build on Windows, verify the actual generated installers and the signed updater artifact. Bump all desktop version declarations to 0.54.0 only after implementation/test fixes are complete; publish via the existing `[release]` gate. Keep only V0.54.0 release notes in the shipped release notes.
 
-**Known engine limits:** the renderer still uses 8-bit sRGB canvas pixels; the tone curve is a three-anchor parametric luminance curve (not a freehand arbitrary RGB point graph); HSL is a simplified eight-band sRGB mixer. This is an initial pro Develop foundation, not full high-bit-depth RAW processing or Lightroom parity.
+**Non-negotiables:** no source-photo overwrites, IDs/metadata/job links/number sequences lost, recipes silently dropped, or changes on `main`. Keep Property Finish/Smart Finish and phase 1–2 controls working. Don't call these tools content-aware or AI; don't claim calibrated lens profiles or quality parity without image tests. Distinguish source-level tests, Windows CI, installed-app tests, and user-camera validation.
 
-**Immediate next action:** monitor the latest Windows CI run for a successful build and installer artifact. If it passes, give the user the GitHub Actions artifact link and have them test real Canon EOS 600D CR2 files plus tone curve/HSL save/reopen/undo/redo/batch behaviour and offline decoding. Record the exact test outcomes. If CI fails, inspect the Windows job logs and fix the failing step before installing anything.
-
-**Non-negotiable constraints:** never overwrite source photo bytes; preserve photo IDs, recipes, metadata, job links and existing edited outputs; do not regress JRVS Property Finish/Smart Finish. Keep all desktop development on `desktop-transition`; do not touch `main`. Do not mark offline RAW or image-quality parity as verified until tested on the user's PC. Do not publish a signed release until the user explicitly approves and the release version is intentionally advanced.
-
-See `PHOTO_STUDIO_ROADMAP.md` for phase details and subsequent engineering steps.
+**Immediate action:** implement masks, projective geometry and separate heal processing; add checks; then prepare 0.54.0 release.
 ## Latest confirmed application functionality
 
 The desktop branch's latest documented desktop release is **V0.53.0**.
