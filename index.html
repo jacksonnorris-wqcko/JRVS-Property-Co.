@@ -2839,21 +2839,22 @@ async function applyBatchPresetToSelection(){
   const preset=document.getElementById('batchPreset')?.value||'natural',presetLabel=document.querySelector('#batchPreset option:checked')?.textContent||preset;
   const accepted=await showConfirm(`Apply ${presetLabel} to ${targets.length} selected original photos? New edited copies will be created; originals stay untouched.`,{title:'Apply batch edit',confirmText:'Apply to photos',danger:false});
   if(!accepted)return;
-  const saved={photo:editorPhoto,image:editorImage,rotation:editorRotation,values:editorSettings(),crop:document.getElementById('cropRatio')?.value||'original',preset:document.getElementById('editorPreset')?.value||'none',toneCurve:[...editorToneCurve],hsl:editorHslSnapshot()};
+  const saved={photo:editorPhoto,sourcePhoto:editorSourcePhoto,image:editorImage,rotation:editorRotation,rawDeveloped:editorRawDeveloped,retouchStrokes:JSON.parse(JSON.stringify(editorRetouchStrokes||[])),retouchSource:editorRetouchSource,localBalance:editorLocalBalance,naturalCurve:editorNaturalCurve,lastAnalysis:editorLastAnalysis,values:editorSettings(),crop:document.getElementById('cropRatio')?.value||'original',preset:document.getElementById('editorPreset')?.value||'none',toneCurve:[...editorToneCurve],hsl:editorHslSnapshot()};
   let done=0,failed=0;const errors=[];
   try{
-   const settings=editorSettingsFromPreset(preset);resetEditorAdvancedControls();
+   const settings=editorSettingsFromPreset(preset);resetEditorAdvancedControls();editorRetouchStrokes=[];editorRetouchSource=null;editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;
    for(let i=0;i<targets.length;i++){
     const target=targets[i];let url=null;if(progress)progress.textContent=`Applying ${presetLabel} · ${i+1} of ${targets.length}: ${target.name}`;
     try{
      url=URL.createObjectURL(target.blob);
      const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('Image could not be decoded'));im.src=url});
-     editorPhoto=target;editorImage=img;editorRotation=0;
+     editorPhoto=target;editorSourcePhoto=target;editorImage=img;editorRotation=0;editorRawDeveloped=false;
      EDITOR_KEYS.forEach(key=>{const control=document.getElementById(key);if(control)control.value=settings[key]??0});
      const crop=document.getElementById('cropRatio');if(crop)crop.value='original';
      const rendered=createEditorRenderCanvas(0);if(!rendered?.canvas)throw new Error('Editor could not render this image');
      const blob=await new Promise((resolve,reject)=>rendered.canvas.toBlob(value=>value&&value.size?resolve(value):reject(new Error('Image export was empty')),'image/jpeg',.94));
-     const rec={id:(crypto.randomUUID?crypto.randomUUID():jrvsNewId('photo')),jobId:target.jobId,jobName:target.jobName,name:target.name.replace(/\.[^.]+$/,'')+'_edited.jpg',type:'Edited',size:blob.size,mime:'image/jpeg',addedAt:new Date().toISOString(),status:'Edited',isCover:false,sourcePhotoId:target.id,blob};
+     const recipe=captureEditorRecipe();
+     const rec={id:(crypto.randomUUID?crypto.randomUUID():jrvsNewId('photo')),jobId:target.jobId,jobName:target.jobName,name:target.name.replace(/\.[^.]+$/,'')+'_edited.jpg',type:'Edited',size:blob.size,mime:'image/jpeg',addedAt:new Date().toISOString(),status:'Edited',isCover:false,sourcePhotoId:target.id,editRecipe:recipe,editRecipeVersion:1,blob};
      await photoRequest('readwrite','put',rec);
      const verify=await photoRequest('readonly','get',rec.id);
      if(!verify||!(verify.blob instanceof Blob)||verify.blob.size!==blob.size)throw new Error('Edited copy was not confirmed in the photo library');
@@ -2870,7 +2871,7 @@ async function applyBatchPresetToSelection(){
    }else{if(progress)progress.textContent=`No copies saved. ${errors[0]||''}`;showToast(`No edited copies were saved. ${errors[0]||'Please try again.'}`,'error')}
    if(failed&&progress)progress.textContent+=` First error: ${errors[0]}`;
   }finally{
-   editorPhoto=saved.photo;editorImage=saved.image;editorRotation=saved.rotation;
+   editorPhoto=saved.photo;editorSourcePhoto=saved.sourcePhoto;editorImage=saved.image;editorRotation=saved.rotation;editorRawDeveloped=saved.rawDeveloped;editorRetouchStrokes=saved.retouchStrokes;editorRetouchSource=saved.retouchSource;editorLocalBalance=saved.localBalance;editorNaturalCurve=saved.naturalCurve;editorLastAnalysis=saved.lastAnalysis;
    EDITOR_KEYS.forEach(key=>{const control=document.getElementById(key);if(control)control.value=saved.values[key]??0});
    const crop=document.getElementById('cropRatio');if(crop)crop.value=saved.crop;
    const presetControl=document.getElementById('editorPreset');if(presetControl)presetControl.value=saved.preset;
