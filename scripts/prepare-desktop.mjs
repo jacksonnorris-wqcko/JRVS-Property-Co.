@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -811,4 +811,10 @@ await mkdir(output, { recursive: true });
 await copyFile(path.join(root, 'jrvs-logo.png'), path.join(output, 'jrvs-logo.png'));
 await writeFile(path.join(output, 'index.html'), html, 'utf8');
 
-console.log('Prepared local-only JRVS desktop frontend in desktop-dist/.');
+// Ship FlashRaw's ES modules and WebAssembly assets beside the desktop frontend.
+// This removes the first-use CDN dependency and keeps RAW decoding available offline.
+const flashRawDist = path.join(root, 'node_modules', 'flashraw', 'dist');
+await cp(flashRawDist, path.join(output, 'vendor', 'flashraw'), { recursive: true, force: true });
+await readFile(path.join(output, 'vendor', 'flashraw', 'index.js'));
+
+console.log('Prepared local-only JRVS desktop frontend, including the bundled FlashRaw decoder, in desktop-dist/.');
