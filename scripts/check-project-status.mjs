@@ -51,7 +51,7 @@ if (!prepare.includes('desktopPackage.version') || !prepare.includes('${desktopV
   throw new Error('Desktop preparation must inject its visible app version from package.json.');
 }
 
-if (!prepare.includes(`appVersion:'${desktopVersion}'`)) {
+if (!prepare.includes("appVersion:'${desktopVersion}'")) {
   throw new Error(`Desktop backup payload version must match ${desktopVersion}.`);
 }
 const releaseNotes = await read(`RELEASE_NOTES_V${desktopVersion}.md`);
