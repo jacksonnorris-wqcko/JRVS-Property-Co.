@@ -3757,7 +3757,6 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
   for(let i=0;i<d.length;i+=4){const l=Math.max(0,Math.min(255,.2126*d[i]+.7152*d[i+1]+.0722*d[i+2]));hist[Math.min(63,Math.floor(l/4))]++}
  }
  applyEditorRetouchStrokes(ctx,width,height,editorRetouchStrokes);
- }
  return {canvas,hist};
 }
 
