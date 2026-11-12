@@ -1863,6 +1863,9 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
  <div class="editor-control"><label>Brush edge softness <span id="localMaskFeatherValue">70%</span></label><input id="localMaskFeather" type="range" min="0" max="100" value="70" oninput="editorLocalMaskFeather=+this.value/100;document.getElementById('localMaskFeatherValue').textContent=this.value+'%'"></div>
  <div class="editor-control"><label>Brush flow <span id="localMaskFlowValue">75%</span></label><input id="localMaskFlow" type="range" min="5" max="100" value="75" oninput="editorLocalMaskFlow=+this.value/100;document.getElementById('localMaskFlowValue').textContent=this.value+'%'"></div>
  <div class="editor-control jrvs-local-mask-gradient-control"><label>Gradient transition <span id="localMaskGradientFeatherValue">65%</span></label><input id="localMaskGradientFeather" type="range" min="5" max="100" value="65" oninput="updateSelectedEditorMaskControl('gradientFeather',this.value)"></div>
+ <div class="editor-control jrvs-local-mask-range-control"><label>Tonal range</label><select id="localMaskToneRange" onchange="updateSelectedEditorMaskToneRange(this.value)"><option value="all">All tones</option><option value="shadows">Shadows</option><option value="midtones">Midtones</option><option value="highlights">Highlights</option></select></div>
+ <div class="editor-control jrvs-local-mask-range-control"><label>Range softness <span id="localMaskToneRangeFeatherValue">32%</span></label><input id="localMaskToneRangeFeather" type="range" min="0" max="100" value="32" oninput="updateSelectedEditorMaskControl('toneRangeFeather',this.value)"></div>
+ <div class="editor-help">Tonal range refines the selected shape so adjustments affect only the chosen brightness range.</div>
  <label class="jrvs-local-mask-toggle"><input id="localMaskEnabled" type="checkbox" checked onchange="updateSelectedEditorMask('enabled',this.checked)"> Enable selected mask</label>
  <label class="jrvs-local-mask-toggle"><input id="localMaskInverted" type="checkbox" onchange="updateSelectedEditorMask('inverted',this.checked)"> Invert selected mask</label>
  <div class="jrvs-local-mask-adjustments"><strong>Selected mask adjustments</strong>
@@ -3463,7 +3466,7 @@ function buildEditorHslControls(){
 function editorClamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||0))}
 function createEditorLocalMask(type='brush'){
  const kind=type==='linear'||type==='radial'?type:'brush';
- return {id:jrvsNewId('mask'),name:'Mask '+(editorLocalMasks.length+1),type:kind,geometry:null,gradientFeather:.65,enabled:true,inverted:false,exposure:0,highlights:0,shadows:0,contrast:0,whites:0,blacks:0,temperature:0,saturation:0,strokes:[]};
+ return {id:jrvsNewId('mask'),name:'Mask '+(editorLocalMasks.length+1),type:kind,geometry:null,gradientFeather:.65,toneRange:'all',toneRangeFeather:32,enabled:true,inverted:false,exposure:0,highlights:0,shadows:0,contrast:0,whites:0,blacks:0,temperature:0,saturation:0,strokes:[]};
 }
 function normaliseEditorLocalMasks(masks){
  if(!Array.isArray(masks))return [];
@@ -3474,7 +3477,7 @@ function normaliseEditorLocalMasks(masks){
   else if(type==='radial'&&raw&&[raw.cx,raw.cy,raw.rx,raw.ry].every(value=>Number.isFinite(Number(value))))geometry={cx:editorClamp(raw.cx,0,1),cy:editorClamp(raw.cy,0,1),rx:editorClamp(raw.rx,.01,.75),ry:editorClamp(raw.ry,.01,.75)};
   return {
    id:String(mask?.id||jrvsNewId('mask')),name:String(mask?.name||('Mask '+(index+1))).slice(0,40),type,geometry,
-   gradientFeather:editorClamp(mask?.gradientFeather??.65,.05,1),enabled:mask?.enabled!==false,inverted:!!mask?.inverted,
+   gradientFeather:editorClamp(mask?.gradientFeather??.65,.05,1),toneRange:['all','shadows','midtones','highlights'].includes(mask?.toneRange)?mask.toneRange:'all',toneRangeFeather:editorClamp(mask?.toneRangeFeather??32,0,100),enabled:mask?.enabled!==false,inverted:!!mask?.inverted,
    exposure:editorClamp(mask?.exposure,-2,2),highlights:editorClamp(mask?.highlights,-100,100),shadows:editorClamp(mask?.shadows,-100,100),
    contrast:editorClamp(mask?.contrast,-100,100),whites:editorClamp(mask?.whites,-100,100),blacks:editorClamp(mask?.blacks,-100,100),
    temperature:editorClamp(mask?.temperature,-100,100),saturation:editorClamp(mask?.saturation,-100,100),
@@ -3500,11 +3503,12 @@ function renderEditorLocalMaskList(){
 function syncEditorLocalMaskControls(){
  const mask=selectedEditorLocalMask(),map={localMaskEnabled:mask?.enabled!==false,localMaskInverted:!!mask?.inverted};
  Object.entries(map).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.checked=value});
- const sliders={localMaskExposure:mask?Math.round(mask.exposure*50):0,localMaskHighlights:mask?.highlights||0,localMaskShadows:mask?.shadows||0,localMaskContrast:mask?.contrast||0,localMaskWhites:mask?.whites||0,localMaskBlacks:mask?.blacks||0,localMaskTemperature:mask?.temperature||0,localMaskSaturation:mask?.saturation||0,localMaskGradientFeather:Math.round((mask?.gradientFeather??.65)*100)};
+ const toneRange=document.getElementById('localMaskToneRange');if(toneRange){toneRange.value=mask?.toneRange||'all';toneRange.disabled=!mask}
+ const sliders={localMaskExposure:mask?Math.round(mask.exposure*50):0,localMaskHighlights:mask?.highlights||0,localMaskShadows:mask?.shadows||0,localMaskContrast:mask?.contrast||0,localMaskWhites:mask?.whites||0,localMaskBlacks:mask?.blacks||0,localMaskTemperature:mask?.temperature||0,localMaskSaturation:mask?.saturation||0,localMaskGradientFeather:Math.round((mask?.gradientFeather??.65)*100),localMaskToneRangeFeather:Math.round(mask?.toneRangeFeather??32)};
  Object.entries(sliders).forEach(([id,value])=>{const el=document.getElementById(id);if(el){el.value=value;const numeric=el.closest('.editor-control')?.querySelector('.editor-number');if(numeric)numeric.value=value}});
- const labels={localMaskExposureValue:(mask?.exposure||0).toFixed(2)+' EV',localMaskHighlightsValue:String(mask?.highlights||0),localMaskShadowsValue:String(mask?.shadows||0),localMaskContrastValue:String(mask?.contrast||0),localMaskWhitesValue:String(mask?.whites||0),localMaskBlacksValue:String(mask?.blacks||0),localMaskTemperatureValue:String(mask?.temperature||0),localMaskSaturationValue:String(mask?.saturation||0),localMaskGradientFeatherValue:Math.round((mask?.gradientFeather??.65)*100)+'%'};
+ const labels={localMaskExposureValue:(mask?.exposure||0).toFixed(2)+' EV',localMaskHighlightsValue:String(mask?.highlights||0),localMaskShadowsValue:String(mask?.shadows||0),localMaskContrastValue:String(mask?.contrast||0),localMaskWhitesValue:String(mask?.whites||0),localMaskBlacksValue:String(mask?.blacks||0),localMaskTemperatureValue:String(mask?.temperature||0),localMaskSaturationValue:String(mask?.saturation||0),localMaskGradientFeatherValue:Math.round((mask?.gradientFeather??.65)*100)+'%',localMaskToneRangeFeatherValue:Math.round(mask?.toneRangeFeather??32)+'%'};
  Object.entries(labels).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value});
- const ids=['localMaskEnabled','localMaskInverted','localMaskExposure','localMaskHighlights','localMaskShadows','localMaskContrast','localMaskWhites','localMaskBlacks','localMaskTemperature','localMaskSaturation','localMaskGradientFeather'];
+ const ids=['localMaskEnabled','localMaskInverted','localMaskExposure','localMaskHighlights','localMaskShadows','localMaskContrast','localMaskWhites','localMaskBlacks','localMaskTemperature','localMaskSaturation','localMaskGradientFeather','localMaskToneRangeFeather'];
  ids.forEach(id=>{const el=document.getElementById(id);if(el){el.disabled=!mask||(id==='localMaskGradientFeather'&&mask.type==='brush');const numeric=el.closest('.editor-control')?.querySelector('.editor-number');if(numeric)numeric.disabled=el.disabled}});
  const del=document.querySelector('.jrvs-local-mask-panel button[onclick="deleteSelectedEditorMask()"]');if(del)del.disabled=!mask;
  const clear=document.querySelector('.jrvs-local-mask-panel button[onclick="clearSelectedEditorMask()"]');if(clear)clear.disabled=!mask;
@@ -3536,10 +3540,15 @@ function clearSelectedEditorMask(){
 }
 function updateSelectedEditorMaskControl(key,value){
  const mask=selectedEditorLocalMask();if(!mask)return;
- mask[key]=key==='exposure'?editorClamp(value,-100,100)/50:key==='gradientFeather'?editorClamp(value,5,100)/100:editorClamp(value,-100,100);
+ mask[key]=key==='exposure'?editorClamp(value,-100,100)/50:key==='gradientFeather'?editorClamp(value,5,100)/100:key==='toneRangeFeather'?editorClamp(value,0,100):editorClamp(value,-100,100);
  const label=document.getElementById('localMask'+key[0].toUpperCase()+key.slice(1)+'Value');
- if(label)label.textContent=key==='exposure'?mask.exposure.toFixed(2)+' EV':key==='gradientFeather'?Math.round(mask.gradientFeather*100)+'%':String(mask[key]);
+ if(label)label.textContent=key==='exposure'?mask.exposure.toFixed(2)+' EV':key==='gradientFeather'?Math.round(mask.gradientFeather*100)+'%':key==='toneRangeFeather'?Math.round(mask.toneRangeFeather)+'%':String(mask[key]);
  editorChanged();clearTimeout(editorHistoryTimer);editorHistoryTimer=setTimeout(captureEditorHistory,250);
+}
+function updateSelectedEditorMaskToneRange(value){
+ const mask=selectedEditorLocalMask();if(!mask)return;
+ mask.toneRange=['all','shadows','midtones','highlights'].includes(value)?value:'all';
+ editorChanged();captureEditorHistory();drawEditor();
 }
 function setEditorLocalMaskMode(mode){
  const allowed=['paint','erase','linear','radial','off'];editorLocalMaskMode=allowed.includes(mode)?mode:'off';
@@ -3619,7 +3628,7 @@ function initEditorProControls(){
 document.addEventListener('keydown',e=>{if(!document.getElementById('editorBackdrop')?.classList.contains('show'))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?editorRedo():editorUndo()}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();editorRedo()}else if(e.key.toLowerCase()==='c'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();toggleEditorCompare()}else if(e.key==='Escape'){if(editorCompare)toggleEditorCompare(false);else closeEditor()}});
 function captureEditorRecipe(){
  return {
-  schemaVersion:5,
+  schemaVersion:6,
   rawDeveloped:!!editorRawDeveloped,
   localMasks:cloneEditorLocalMasks(),
   toneCurve:[...editorToneCurve],
@@ -3637,7 +3646,7 @@ function captureEditorRecipe(){
  };
 }
 function restoreEditorRecipe(recipe){
- if(!recipe||![1,2,3,4,5].includes(recipe.schemaVersion))return false;
+ if(!recipe||![1,2,3,4,5,6].includes(recipe.schemaVersion))return false;
  editorLocalBalance=!!recipe.localBalance;
  editorNaturalCurve=!!recipe.naturalCurve;
  editorLastAnalysis=recipe.finishAnalysis?{...recipe.finishAnalysis,p50:recipe.finishAnalysis.median,clipRate:recipe.finishAnalysis.highlightClipRate||0,analysisMs:0,intent:recipe.finishIntent||recipe.finishAnalysis.intent||'natural'}:null;
@@ -3806,6 +3815,16 @@ function editorGradientMaskAlpha(mask,x,y){
  if(position<=start)return 1;if(position>=1)return 0;
  const t=editorClamp((position-start)/feather,0,1);return 1-t*t*(3-2*t);
 }
+function editorToneRangeWeight(luminance,mode,softness=32){
+ const level=editorClamp(luminance/255,0,1);
+ if(mode==='all'||!mode)return 1;
+ const edge=.015+editorClamp(softness,0,100)/100*.16;
+ const smooth=(start,end,value)=>{const t=editorClamp((value-start)/Math.max(1e-6,end-start),0,1);return t*t*(3-2*t)};
+ if(mode==='shadows')return 1-smooth(.30-edge,.30+edge,level);
+ if(mode==='midtones')return smooth(.25-edge,.25+edge,level)*(1-smooth(.75-edge,.75+edge,level));
+ if(mode==='highlights')return smooth(.70-edge,.70+edge,level);
+ return 1;
+}
 function buildEditorLocalMaskCanvas(mask,width,height){
  const surface=document.createElement('canvas');surface.width=width;surface.height=height;
  const maskCtx=surface.getContext('2d',{willReadFrequently:true}),geometry=mask.geometry,feather=editorClamp(mask.gradientFeather??.65,.05,1);
@@ -3876,9 +3895,11 @@ function applyEditorLocalMasks(ctx,width,height){
  masks.forEach(mask=>{
   const surface=buildEditorLocalMaskCanvas(mask,width,height),alpha=surface.getContext('2d',{willReadFrequently:true}).getImageData(0,0,width,height).data;
   const exposure=Number(mask.exposure)||0,highlights=Number(mask.highlights)||0,shadows=Number(mask.shadows)||0,contrast=Number(mask.contrast)||0,whites=Number(mask.whites)||0,blacks=Number(mask.blacks)||0,temperature=Number(mask.temperature)||0,saturation=Number(mask.saturation)||0;
+  const toneRange=mask.toneRange||'all',toneRangeFeather=Number(mask.toneRangeFeather??32);
   for(let i=0;i<data.length;i+=4){
    let amount=alpha[i+3]/255;if(mask.inverted)amount=1-amount;if(amount<=.001)continue;
    let r=data[i],g=data[i+1],b=data[i+2],lum=.2126*r+.7152*g+.0722*b;
+   amount*=editorToneRangeWeight(lum,toneRange,toneRangeFeather);if(amount<=.001)continue;
    const tone=(shadows*(1-lum/255)*.28+highlights*(lum/255)*.22)*amount,exp=Math.pow(2,exposure*amount);
    r=(r+tone+temperature*.22*amount)*exp;g=(g+tone)*exp;b=(b+tone-temperature*.22*amount)*exp;
    if(contrast){const strength=contrast*.55*amount,factor=(259*(255+strength))/(255*(259-strength));r=(r-128)*factor+128;g=(g-128)*factor+128;b=(b-128)*factor+128}
