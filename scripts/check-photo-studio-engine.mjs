@@ -190,7 +190,10 @@ requireText(html,'![1,2,3,4,5].includes(recipe.schemaVersion)','legacy recipe ve
 requireText(html,'localMasks:cloneEditorLocalMasks()','masks persist in the non-destructive recipe');
 requireText(html,'normaliseEditorLocalMasks(recipe.localMasks)','masks restore from recipe');
 requireText(html,'mask.strokes.length>=500','mask stroke limit is enforced during painting');
-requireText(html,'stroke.dabs.length<12000','mask dab limit is enforced during painting');
+const maskPointerMove=extract(html,'function editorLocalMaskPointerMove','function editorLocalMaskPointerUp','brush mask pointer move');
+requireText(maskPointerMove,'active.dabs.length<12000','brush pointer move enforces the 12,000-dab cap');
+const maskPointerUp=extract(html,'function editorLocalMaskPointerUp','function hideEditorBrushCursor','brush mask pointer up');
+requireText(maskPointerUp,'active.dabs.slice(0,12000)','brush mask commit enforces the 12,000-dab cap');
 requireText(html,'toneCurve:[...editorToneCurve]','tone curve persists');
 requireText(html,'hsl:JSON.parse(JSON.stringify(editorHsl))','HSL persists');
 requireText(html,'editorApplyGeometryWarp(temp,canvas,pv,ph,distortion)','geometry is shared by preview and full export');
