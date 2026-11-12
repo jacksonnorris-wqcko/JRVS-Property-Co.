@@ -3885,12 +3885,10 @@ function editorLinearRawToCanvas(frame,maxDimension=EDITOR_PREVIEW_MAX,exposureE
   // without independently clipping colour channels and shifting hue.
   const lum=.2126*r+.7152*g+.0722*b;
   const mappedLum=lum<=.78?lum:.78+.22*(lum-.78)/(lum-.78+.22);
-  let chromaScale=1;
-  for(const channel of [r,g,b]){
-   const delta=channel-lum;
-   if(delta>0)chromaScale=Math.min(chromaScale,(1-mappedLum)/delta);
-   else if(delta<0)chromaScale=Math.min(chromaScale,mappedLum/-delta);
-  }
+  let chromaScale=1,delta=r-lum;
+  if(delta>0)chromaScale=Math.min(chromaScale,(1-mappedLum)/delta);else if(delta<0)chromaScale=Math.min(chromaScale,mappedLum/-delta);
+  delta=g-lum;if(delta>0)chromaScale=Math.min(chromaScale,(1-mappedLum)/delta);else if(delta<0)chromaScale=Math.min(chromaScale,mappedLum/-delta);
+  delta=b-lum;if(delta>0)chromaScale=Math.min(chromaScale,(1-mappedLum)/delta);else if(delta<0)chromaScale=Math.min(chromaScale,mappedLum/-delta);
   chromaScale=editorClamp(chromaScale,0,1);
   r=mappedLum+(r-lum)*chromaScale;g=mappedLum+(g-lum)*chromaScale;b=mappedLum+(b-lum)*chromaScale;
   const i=(y*width+x)*4;out[i]=srgb[Math.round(editorClamp(r,0,1)*65535)];out[i+1]=srgb[Math.round(editorClamp(g,0,1)*65535)];out[i+2]=srgb[Math.round(editorClamp(b,0,1)*65535)];out[i+3]=255;
