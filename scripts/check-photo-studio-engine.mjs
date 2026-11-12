@@ -125,8 +125,8 @@ assert.deepEqual(retouch('heal',source,destination,sourceMean,destinationMean,0)
 
 // Packaging, recipes, renderer and workflow integration.
 const rawDecodeAdapter=extract(html,'async function decodeRawToJpeg','async function extractEmbeddedRawJpeg','FlashRaw RAW decode adapter');
-requireText(rawDecodeAdapter,"demosaic:halfSize?'half-size':'bilinear'","FlashRaw uses only supported half-size and bilinear demosaic modes");
-assert.ok(!/demosaic\\s*:\\s*[^,}]*['"]auto['"]/.test(rawDecodeAdapter),"FlashRaw demosaic must never use the unsupported auto option");
+requireText(rawDecodeAdapter,"demosaic:halfSize?'half-size':'auto'","FlashRaw 0.2 uses half-size previews and sensor-aware auto full-resolution demosaicing");
+assert.ok(/demosaic:halfSize\?'half-size':'auto'/.test(rawDecodeAdapter),"Full-resolution RAW development must retain sensor-aware auto demosaicing");
 
 requireText(html,"import('./vendor/flashraw/browser.js')",'local bundled FlashRaw browser entry');
 assert.ok(!html.includes('https://esm.sh/flashraw'),'RAW decoder must not use a runtime CDN');
