@@ -182,3 +182,24 @@ V0.34.1 is primarily a workbench/interface milestone. It does not claim to provi
 - The output stage after linear RAW conversion is still an 8-bit sRGB canvas; some legacy controls, mask composition, geometry, retouch and final JPEG/PNG output still operate on that display-range image.
 - Full float processing for every adjustment stage, wide-gamut editing/output, GPU compute, camera-profile management and end-to-end ICC export are not yet delivered.
 - Actual EOS 600D colour, noise, detail, clipping and full-resolution quality must be checked with the user's CR2 files. CI validates logic and packaging, not camera-image fidelity.
+
+
+---
+
+# JRVS Photo Studio — Phase 3 expansion (V0.57.0)
+
+## Implemented in the current candidate
+- Extend the existing brush-mask model with manually placed linear-gradient and radial/elliptical-gradient selections.
+- Drag directly on the image to set linear gradient direction/fade distance or radial centre and ellipse radii. Shape guides and selected-mask overlays are preview-only aids.
+- Compose gradient geometry with existing additive/subtractive brush strokes, mask inversion, enable/disable and the 12-mask/500-stroke safety limits.
+- Add local contrast, whites and blacks to the existing exposure, highlights, shadows, temperature and saturation controls.
+- Persist type, gradient geometry, transition softness and local tonal values in the existing non-destructive recipe. Older recipes default to brush masks and remain readable; no database migration or destructive rewrite is required.
+- Render masks through the shared preview/export compositor.
+
+## Phase 3 remaining work
+- Semantic selections for windows/glass, sky, walls, ceilings, floors and furniture.
+- Edge-aware subject refinement, colour/luminance-range masks and AI-assisted region selection.
+- GPU/worker-based mask rasterisation and full-resolution performance tuning after user testing on large EOS 600D RAW files.
+
+## Honest capability boundary
+V0.57.0 does not claim AI object detection or automatic property-part recognition. Linear and radial gradients are manual, deterministic geometry masks. Validate gradients, local corrections, save/reopen, batch isolation and export parity with actual rental photos before progressing to semantic selection.

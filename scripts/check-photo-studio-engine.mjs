@@ -55,7 +55,7 @@ assert.equal(orangeLut[120].hue,0);
 const geometryHelpers=extract(html,'function editorBuildGeometryQuad','function buildEditorLocalMaskCanvas','projective geometry and mask falloff');
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,Number(value)||0));
 const geometry=new Function('editorClamp',`${geometryHelpers}
-return {editorBuildGeometryQuad,editorBuildHomography,editorInvertHomography,editorApplyHomography,editorProjectiveMap,editorProjectiveInverseMap,editorMapGeometryPoint,editorMaskFalloff};
+return {editorBuildGeometryQuad,editorBuildHomography,editorInvertHomography,editorApplyHomography,editorProjectiveMap,editorProjectiveInverseMap,editorMapGeometryPoint,editorMaskFalloff,editorGradientMaskAlpha};
 `)(clamp);
 const identityQuad=geometry.editorBuildGeometryQuad(0,0);
 const identityMatrix=geometry.editorBuildHomography(identityQuad);
@@ -90,6 +90,25 @@ assert.equal(geometry.editorMaskFalloff(5,10,.5),1);
 assert.ok(Math.abs(geometry.editorMaskFalloff(7.5,10,.5)-.5)<1e-9);
 assert.equal(geometry.editorMaskFalloff(10,10,.5),0);
 assert.equal(geometry.editorMaskFalloff(5,10,0),1);
+// Gradient mask geometry: directional fade and elliptical radial falloff.
+const linearMask={type:'linear',gradientFeather:.25,geometry:{x1:.1,y1:.5,x2:.9,y2:.5}};
+assert.equal(geometry.editorGradientMaskAlpha(linearMask,.1,.5),1);
+assert.equal(geometry.editorGradientMaskAlpha(linearMask,.7,.5),1);
+assert.ok(Math.abs(geometry.editorGradientMaskAlpha(linearMask,.8,.5)-.5)<1e-9);
+assert.equal(geometry.editorGradientMaskAlpha(linearMask,.9,.5),0);
+assert.equal(geometry.editorGradientMaskAlpha(linearMask,.95,.1),0);
+const radialMask={type:'radial',gradientFeather:.5,geometry:{cx:.5,cy:.5,rx:.25,ry:.5}};
+assert.equal(geometry.editorGradientMaskAlpha(radialMask,.5,.5),1);
+assert.equal(geometry.editorGradientMaskAlpha(radialMask,.375,.5),1);
+assert.ok(Math.abs(geometry.editorGradientMaskAlpha(radialMask,.3125,.5)-.5)<1e-9);
+assert.equal(geometry.editorGradientMaskAlpha(radialMask,.25,.5),0);
+assert.equal(geometry.editorGradientMaskAlpha({...radialMask,geometry:null},.5,.5),0);
+const maskGeometrySource=extract(html,'function editorMaskGeometryFromDrag','function editorLocalMaskPointerDown','gradient drag geometry');
+const maskGeometryEngine=new Function('editorClamp',maskGeometrySource+'\nreturn editorMaskGeometryFromDrag;\n')(clamp);
+assert.deepEqual(maskGeometryEngine('linear',{x:.1,y:.2},{x:.9,y:.7}),{x1:.1,y1:.2,x2:.9,y2:.7});
+const radialDrag=maskGeometryEngine('radial',{x:.5,y:.5},{x:.7,y:.8});
+assert.ok(Math.abs(radialDrag.cx-.5)<1e-9&&Math.abs(radialDrag.cy-.5)<1e-9&&Math.abs(radialDrag.rx-.2)<1e-9&&Math.abs(radialDrag.ry-.3)<1e-9);
+assert.equal(maskGeometryEngine('linear',{x:.5,y:.5},{x:.501,y:.501}),null);
 
 // Mask recipes are bounded on restore and clamp unsupported values safely.
 const normaliseMaskSource=extract(html,'function normaliseEditorLocalMasks','function cloneEditorLocalMasks','mask recipe normalisation');
@@ -109,6 +128,13 @@ assert.equal(overLimitMask.strokes[0].dabs.length,12000);
 assert.equal(overLimitMask.strokes[0].dabs[0].x,1);
 assert.equal(overLimitMask.strokes[0].dabs[0].y,0);
 assert.equal(overLimitMask.strokes[0].dabs[0].radius,.45);
+const gradientNormalised=normaliseMasks([{type:'radial',geometry:{cx:.5,cy:.4,rx:.9,ry:.2},gradientFeather:0,contrast:140,whites:-120,blacks:30}])[0];
+assert.equal(gradientNormalised.type,'radial');
+assert.deepEqual(gradientNormalised.geometry,{cx:.5,cy:.4,rx:.75,ry:.2});
+assert.equal(gradientNormalised.gradientFeather,.05);
+assert.equal(gradientNormalised.contrast,100);
+assert.equal(gradientNormalised.whites,-100);
+assert.equal(gradientNormalised.blacks,30);
 
 // Clone and Heal must produce different blends for different source/destination colour fields.
 const retouchHelpers=extract(html,'function editorRetouchBlendPixel','function applyEditorRetouchStrokes','clone/heal blending');
@@ -172,6 +198,14 @@ requireText(html,'editorApplyHomography(homography,warpedU,warpedV)','render map
 requireText(html,'maxRadialFactor=k>0?1+k*.5:1','manual lens distortion avoids sampling beyond the image bounds');
 requireText(html,'const finalPixels=ctx.getImageData(0,0,width,height).data','histogram is calculated from the final composite');
 requireText(html,'applyEditorLocalMasks(ctx,width,height)','local masks are in the shared renderer');
+requireText(html,'createLinearGradient(x1,y1,x2,y2)','linear gradient masks render in the local mask canvas');
+requireText(html,'createRadialGradient(0,0,0,0,0,1)','radial gradient masks render as editable ellipses');
+requireText(html,'mask.type===\'linear\'&&geometry','linear gradient geometry is composed in the mask renderer');
+requireText(html,'mask.type===\'radial\'&&geometry','radial gradient geometry is composed in the mask renderer');
+requireText(html,'localMaskContrast','local contrast adjustment control exists');
+requireText(html,'localMaskWhites','local whites adjustment control exists');
+requireText(html,'localMaskBlacks','local blacks adjustment control exists');
+requireText(html,'drawEditorMaskGuides(ctx)','gradient drag guides are composed after the mask overlay');
 requireText(html,'applyEditorRetouchStrokes(ctx,width,height,retouchGroups)','retouch is in the shared renderer');
 requireText(html,'editorRetouchActive?[...editorRetouchStrokes,editorRetouchActive]:editorRetouchStrokes','live Clone/Heal stroke preview is included in the render');
 requireText(html,'drawEditorMaskOverlay(ctx)','mask overlay is a preview-only visual aid');
@@ -182,4 +216,4 @@ requireText(html,'editorLocalMasks=[];editorLocalMaskSelectedId=null;editorLocal
 requireText(html,'rawDeveloped:!!editorRawDeveloped','RAW development state remains saved');
 requireText(html,'![1,2,3,4,5].includes(recipe.schemaVersion)','older saved edit recipes remain loadable');
 
-console.log('Photo Studio regression checks passed: colour/HSL, tone curve, projective geometry, bounded lens warp, mask feathering/recipe limits, separate clone/heal blends, v5 recipes and workflow integration.');
+console.log('Photo Studio regression checks passed: colour/HSL, tone curve, projective geometry, bounded lens warp, brush/linear/radial masks, local tonal controls, recipe compatibility, separate clone/heal blends and workflow integration.');

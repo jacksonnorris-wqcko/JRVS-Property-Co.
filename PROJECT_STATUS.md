@@ -2,10 +2,10 @@
 
 > This is the durable handover for every JRVS development conversation. Read it at the start of a new chat, then verify the live GitHub branch and files before making changes. The repository is the source of truth for code; this file is the source of truth for the latest recorded work state and next action.
 
-**Last reviewed:** 12 November 2026 (Australia/Sydney)  
+**Last reviewed:** 13 November 2026 (Australia/Sydney)  
 **Repository:** [jacksonnorris-wqcko/JRVS-Property-Co.](https://github.com/jacksonnorris-wqcko/JRVS-Property-Co.)  
 **Active desktop branch:** `desktop-transition`  
-**Current desktop version:** `0.56.0`  
+**Current desktop version:** `0.57.0`  
 **Stable browser/PWA branch:** `main` — keep it unchanged unless the user explicitly requests browser/PWA work.
 
 ## Start here — current position
@@ -57,20 +57,19 @@ The desktop build now runs `npm run handover:check` before building. This valida
 
 ## Current active work and next action
 
-### Current app task — Photo Studio 2.0 Phase 2 linear RAW engine foundation
+### Current app task — Photo Studio Phase 3 gradient masking and local tonal controls
 
-**Implemented in V0.56.0 source:**
-- FlashRaw upgraded to 0.2.0 with local WASM bundling retained.
-- Sensor RAW now decodes to 16-bit half-float linear RGB with auto demosaicing, as-shot white balance, highlight reconstruction and the library's available edge/noise/chromatic-aberration processing.
-- RAW working pixels remain in memory for the editor session; the embedded preview/JPEG is no longer the working master after Develop RAW.
-- Added half-float conversion and complete EXIF orientation mapping; preview and full-resolution rendering use the retained sensor source.
-- RAW exposure is applied in linear light before display conversion. Saved edits continue using recipe schema v5; reopen re-develops the immutable CR2 and restores the saved recipe.
+**Active implementation target: V0.57.0 on desktop-transition.**
 
-**Safety/compatibility:** original files, photo records, IDs, job links and saved recipe schema remain unchanged; no database migration. JPEG editing and embedded preview fallback are preserved.
+- Extend the existing non-destructive mask model with editable linear-gradient and radial/elliptical-gradient mask types, while preserving the existing brush-paint and erase tools.
+- Add direct canvas drag placement, selected-mask overlays and shape guides.
+- Extend local adjustments with contrast, whites and blacks, alongside exposure, highlights, shadows, temperature and saturation.
+- Preserve mask geometry and settings in the current recipe model. Older v1–v5 recipes remain supported; no database migration, original-photo rewrite or recipe schema migration is required.
+- Keep the same local-mask compositor shared by on-screen preview and full-resolution export.
 
-**Known boundary:** output is still an 8-bit sRGB canvas after the linear source stage; the complete adjustment graph is not yet float/wide-gamut. Camera-quality validation needs actual EOS 600D CR2 tests on the user's PC.
+**Known boundaries:** gradients are manually positioned; masks do not yet recognise windows, walls, floors, skies or objects. Semantic AI selection, object segmentation, edge-aware refinement, colour-range masks and a complete float/wide-gamut adjustment graph remain future milestones.
 
-**Next checkpoint:** CI syntax/regression checks, Windows NSIS/MSI build, signed updater publication and then user verification of CR2 quality, edit reopen/export parity and offline operation.
+**Checkpoint:** implementation and regression checks are committed together; the next gate is Windows CI (handover, engine tests, NSIS/MSI build) and signed updater publication. Actual EOS 600D CR2 image quality and gradient UX still require user testing in the installed app.
 
 ### Application task — shared scrolling fix verified
 

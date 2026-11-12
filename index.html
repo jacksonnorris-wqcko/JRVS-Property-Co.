@@ -941,7 +941,7 @@ main{margin:0 auto;align-self:start;min-height:100vh}
 .jrvs-local-mask-row.active{border-color:#899b68;background:#eef2e6}
 .jrvs-local-mask-row span:first-child{flex:1;font-weight:750}
 .jrvs-local-mask-row small{color:#72786d;font-size:10px}
-.jrvs-local-mask-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.jrvs-local-mask-modes{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.jrvs-local-mask-modes button{padding:7px 4px;font-size:10px}.jrvs-local-mask-gradient-control{border-top:1px solid #e1e4d8;padding-top:7px}
 .jrvs-local-mask-modes button.active{background:#899b68!important;color:#fff!important;border-color:#899b68!important}
 .jrvs-local-mask-toggle{display:flex;align-items:center;gap:8px;font-size:11px;color:#47513f}
 .jrvs-local-mask-toggle input{accent-color:#899b68}
@@ -1853,26 +1853,30 @@ input,select,textarea{background:#121612!important;color:#f1efdf!important;borde
 <div class="editor-help" data-editor-group="geometry">Projective keystone correction straightens converging architectural lines. Lens distortion is a manual radial correction; it is not an automatic camera-lens profile.</div>
 
 <section class="jrvs-local-mask-panel" data-editor-group="mask">
- <div class="jrvs-local-mask-head"><div><strong>Local adjustments</strong><div class="editor-help">Paint independent corrections onto selected areas</div></div><span class="jrvs-retouch-tag">MASKS</span></div>
- <div class="editor-tools"><button class="primary" type="button" onclick="addEditorLocalMask()">+ Add brush mask</button><button class="secondary" type="button" onclick="deleteSelectedEditorMask()">Delete selected</button></div>
- <div id="editorLocalMaskList" class="jrvs-local-mask-list"><div class="editor-help">No masks yet. Add a brush mask to begin.</div></div>
- <div class="jrvs-local-mask-modes"><button type="button" class="secondary" data-mask-mode="paint" onclick="setEditorLocalMaskMode('paint')">Paint</button><button type="button" class="secondary" data-mask-mode="erase" onclick="setEditorLocalMaskMode('erase')">Erase</button><button type="button" class="secondary" data-mask-mode="off" onclick="setEditorLocalMaskMode('off')">Move</button></div>
+ <div class="jrvs-local-mask-head"><div><strong>Local adjustments</strong><div class="editor-help">Build precise brush and gradient selections</div></div><span class="jrvs-retouch-tag">MASKS</span></div>
+ <div class="editor-tools"><button class="primary" type="button" onclick="addEditorLocalMask('brush')">+ Brush</button><button class="secondary" type="button" onclick="addEditorLinearMask()">+ Linear</button><button class="secondary" type="button" onclick="addEditorRadialMask()">+ Radial</button><button class="secondary" type="button" onclick="deleteSelectedEditorMask()">Delete</button></div>
+ <div id="editorLocalMaskList" class="jrvs-local-mask-list"><div class="editor-help">No masks yet. Add a brush or gradient mask to begin.</div></div>
+ <div class="jrvs-local-mask-modes"><button type="button" class="secondary" data-mask-mode="paint" onclick="setEditorLocalMaskMode('paint')">Paint</button><button type="button" class="secondary" data-mask-mode="erase" onclick="setEditorLocalMaskMode('erase')">Erase</button><button type="button" class="secondary" data-mask-mode="linear" onclick="setEditorLocalMaskMode('linear')">Linear</button><button type="button" class="secondary" data-mask-mode="radial" onclick="setEditorLocalMaskMode('radial')">Radial</button><button type="button" class="secondary" data-mask-mode="off" onclick="setEditorLocalMaskMode('off')">Move</button></div>
  <label class="jrvs-local-mask-toggle"><input id="editorShowMaskOverlay" type="checkbox" checked onchange="editorShowMaskOverlay=this.checked;drawEditor()"> Show selected mask overlay</label>
- <div class="editor-help" id="editorLocalMaskInstructions">Select a mask and choose Paint, then brush over the photo. Use Erase to subtract from the selected mask.</div>
+ <div class="editor-help" id="editorLocalMaskInstructions">Choose a mask, then paint, erase or drag a gradient directly on the photo.</div>
  <div class="editor-control"><label>Brush size <span id="localMaskBrushSizeValue">76 px</span></label><input id="localMaskBrushSize" type="range" min="8" max="260" value="76" oninput="editorLocalMaskBrushSize=+this.value;document.getElementById('localMaskBrushSizeValue').textContent=this.value+' px'"></div>
- <div class="editor-control"><label>Edge softness <span id="localMaskFeatherValue">70%</span></label><input id="localMaskFeather" type="range" min="0" max="100" value="70" oninput="editorLocalMaskFeather=+this.value/100;document.getElementById('localMaskFeatherValue').textContent=this.value+'%'"></div>
+ <div class="editor-control"><label>Brush edge softness <span id="localMaskFeatherValue">70%</span></label><input id="localMaskFeather" type="range" min="0" max="100" value="70" oninput="editorLocalMaskFeather=+this.value/100;document.getElementById('localMaskFeatherValue').textContent=this.value+'%'"></div>
  <div class="editor-control"><label>Brush flow <span id="localMaskFlowValue">75%</span></label><input id="localMaskFlow" type="range" min="5" max="100" value="75" oninput="editorLocalMaskFlow=+this.value/100;document.getElementById('localMaskFlowValue').textContent=this.value+'%'"></div>
+ <div class="editor-control jrvs-local-mask-gradient-control"><label>Gradient transition <span id="localMaskGradientFeatherValue">65%</span></label><input id="localMaskGradientFeather" type="range" min="5" max="100" value="65" oninput="updateSelectedEditorMaskControl('gradientFeather',this.value)"></div>
  <label class="jrvs-local-mask-toggle"><input id="localMaskEnabled" type="checkbox" checked onchange="updateSelectedEditorMask('enabled',this.checked)"> Enable selected mask</label>
  <label class="jrvs-local-mask-toggle"><input id="localMaskInverted" type="checkbox" onchange="updateSelectedEditorMask('inverted',this.checked)"> Invert selected mask</label>
  <div class="jrvs-local-mask-adjustments"><strong>Selected mask adjustments</strong>
   <div class="editor-control"><label>Exposure <span id="localMaskExposureValue">0.00 EV</span></label><input id="localMaskExposure" type="range" min="-100" max="100" value="0" oninput="updateSelectedEditorMaskControl('exposure',this.value)"></div>
   <div class="editor-control"><label>Highlights <span id="localMaskHighlightsValue">0</span></label><input id="localMaskHighlights" type="range" min="-100" max="100" value="0" oninput="updateSelectedEditorMaskControl('highlights',this.value)"></div>
   <div class="editor-control"><label>Shadows <span id="localMaskShadowsValue">0</span></label><input id="localMaskShadows" type="range" min="-100" max="100" value="0" oninput="updateSelectedEditorMaskControl('shadows',this.value)"></div>
+  <div class="editor-control"><label>Contrast <span id="localMaskContrastValue">0</span></label><input id="localMaskContrast" type="range" min="-100" max="100" value="0" oninput="updateSelectedEditorMaskControl('contrast',this.value)"></div>
+  <div class="editor-control"><label>Whites <span id="localMaskWhitesValue">0</span></label><input id="localMaskWhites" type="range" min="-100" max="100" value="0" oninput="updateSelectedEditorMaskControl('whites',this.value)"></div>
+  <div class="editor-control"><label>Blacks <span id="localMaskBlacksValue">0</span></label><input id="localMaskBlacks" type="range" min="-100" max="100" value="0" oninput="updateSelectedEditorMaskControl('blacks',this.value)"></div>
   <div class="editor-control"><label>Temperature <span id="localMaskTemperatureValue">0</span></label><input id="localMaskTemperature" type="range" min="-100" max="100" value="0" oninput="updateSelectedEditorMaskControl('temperature',this.value)"></div>
   <div class="editor-control"><label>Saturation <span id="localMaskSaturationValue">0</span></label><input id="localMaskSaturation" type="range" min="-100" max="100" value="0" oninput="updateSelectedEditorMaskControl('saturation',this.value)"></div>
  </div>
- <div class="editor-tools"><button class="secondary" type="button" onclick="clearSelectedEditorMask()">Clear strokes</button></div>
- <div class="editor-help">Masks are manual brush regions with soft edges. They are saved with the edit recipe and applied to preview and full-resolution exports. No automatic room/window detection is claimed.</div>
+ <div class="editor-tools"><button class="secondary" type="button" onclick="clearSelectedEditorMask()">Clear mask shape &amp; strokes</button></div>
+ <div class="editor-help">Brush, linear and radial masks are manually placed. Multiple masks can be layered, inverted and refined with local tonal adjustments. All mask geometry and settings remain editable in the saved recipe.</div>
 </section>
 <section class="jrvs-retouch-panel" data-editor-group="retouch">
  <div class="jrvs-retouch-head"><div><strong>Retouch studio</strong><div class="editor-help">Separate sampled Clone and colour-matched Heal tools</div></div><span class="jrvs-retouch-tag">NEW</span></div>
@@ -3457,108 +3461,148 @@ function buildEditorHslControls(){
  host.innerHTML=EDITOR_HSL_CHANNELS.map(ch=>{let html='<details class="editor-section jrvs-hsl-channel"><summary>'+ch.label+'</summary>';['hue','saturation','luminance'].forEach(prop=>{const title=prop==='hue'?'Hue':prop==='saturation'?'Saturation':'Luminance',id='jrvsHsl_'+ch.id+'_'+prop;html+='<div class="editor-control"><label>'+title+' <span id="'+id+'Val">0</span></label><input id="'+id+'" type="range" min="-100" max="100" value="0" oninput="editorHsl.'+ch.id+'.'+prop+'=+this.value;document.getElementById(&quot;'+id+'Val&quot;).textContent=this.value;editorChanged()"></div>'});return html+'</details>'}).join('');
 }
 function editorClamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||0))}
-function createEditorLocalMask(){
- return {id:jrvsNewId('mask'),name:'Mask '+(editorLocalMasks.length+1),enabled:true,inverted:false,exposure:0,highlights:0,shadows:0,temperature:0,saturation:0,strokes:[]};
+function createEditorLocalMask(type='brush'){
+ const kind=type==='linear'||type==='radial'?type:'brush';
+ return {id:jrvsNewId('mask'),name:'Mask '+(editorLocalMasks.length+1),type:kind,geometry:null,gradientFeather:.65,enabled:true,inverted:false,exposure:0,highlights:0,shadows:0,contrast:0,whites:0,blacks:0,temperature:0,saturation:0,strokes:[]};
 }
 function normaliseEditorLocalMasks(masks){
  if(!Array.isArray(masks))return [];
- return masks.slice(0,12).map((mask,index)=>({
-  id:String(mask?.id||jrvsNewId('mask')),name:String(mask?.name||('Mask '+(index+1))).slice(0,40),
-  enabled:mask?.enabled!==false,inverted:!!mask?.inverted,
-  exposure:editorClamp(mask?.exposure,-2,2),highlights:editorClamp(mask?.highlights,-100,100),shadows:editorClamp(mask?.shadows,-100,100),
-  temperature:editorClamp(mask?.temperature,-100,100),saturation:editorClamp(mask?.saturation,-100,100),
-  strokes:(Array.isArray(mask?.strokes)?mask.strokes:[]).slice(0,500).map(stroke=>({
-   mode:stroke?.mode==='erase'?'erase':'paint',opacity:editorClamp(stroke?.opacity,.01,1),feather:editorClamp(stroke?.feather,0,1),
-   dabs:(Array.isArray(stroke?.dabs)?stroke.dabs:[]).slice(0,12000).map(dab=>({x:editorClamp(dab?.x,0,1),y:editorClamp(dab?.y,0,1),radius:editorClamp(dab?.radius,.001,.45)}))
-  }))
- }));
+ return masks.slice(0,12).map((mask,index)=>{
+  const type=mask?.type==='linear'||mask?.type==='radial'?mask.type:'brush',raw=mask?.geometry;
+  let geometry=null;
+  if(type==='linear'&&raw&&[raw.x1,raw.y1,raw.x2,raw.y2].every(value=>Number.isFinite(Number(value))))geometry={x1:editorClamp(raw.x1,0,1),y1:editorClamp(raw.y1,0,1),x2:editorClamp(raw.x2,0,1),y2:editorClamp(raw.y2,0,1)};
+  else if(type==='radial'&&raw&&[raw.cx,raw.cy,raw.rx,raw.ry].every(value=>Number.isFinite(Number(value))))geometry={cx:editorClamp(raw.cx,0,1),cy:editorClamp(raw.cy,0,1),rx:editorClamp(raw.rx,.01,.75),ry:editorClamp(raw.ry,.01,.75)};
+  return {
+   id:String(mask?.id||jrvsNewId('mask')),name:String(mask?.name||('Mask '+(index+1))).slice(0,40),type,geometry,
+   gradientFeather:editorClamp(mask?.gradientFeather??.65,.05,1),enabled:mask?.enabled!==false,inverted:!!mask?.inverted,
+   exposure:editorClamp(mask?.exposure,-2,2),highlights:editorClamp(mask?.highlights,-100,100),shadows:editorClamp(mask?.shadows,-100,100),
+   contrast:editorClamp(mask?.contrast,-100,100),whites:editorClamp(mask?.whites,-100,100),blacks:editorClamp(mask?.blacks,-100,100),
+   temperature:editorClamp(mask?.temperature,-100,100),saturation:editorClamp(mask?.saturation,-100,100),
+   strokes:(Array.isArray(mask?.strokes)?mask.strokes:[]).slice(0,500).map(stroke=>({
+    mode:stroke?.mode==='erase'?'erase':'paint',opacity:editorClamp(stroke?.opacity,.01,1),feather:editorClamp(stroke?.feather,0,1),
+    dabs:(Array.isArray(stroke?.dabs)?stroke.dabs:[]).slice(0,12000).map(dab=>({x:editorClamp(dab?.x,0,1),y:editorClamp(dab?.y,0,1),radius:editorClamp(dab?.radius,.001,.45)}))
+   }))
+  };
+ });
 }
-function cloneEditorLocalMasks(){return JSON.parse(JSON.stringify(editorLocalMasks||[]))}
+ function cloneEditorLocalMasks(){return JSON.parse(JSON.stringify(editorLocalMasks||[]))}
 function selectedEditorLocalMask(){return editorLocalMasks.find(mask=>mask.id===editorLocalMaskSelectedId)||null}
 function renderEditorLocalMaskList(){
  const host=document.getElementById('editorLocalMaskList');if(!host)return;host.replaceChildren();
- if(!editorLocalMasks.length){const note=document.createElement('div');note.className='editor-help';note.textContent='No masks yet. Add a brush mask to begin.';host.appendChild(note);return}
- editorLocalMasks.forEach((mask,index)=>{
+ if(!editorLocalMasks.length){const note=document.createElement('div');note.className='editor-help';note.textContent='No masks yet. Add a brush or gradient mask to begin.';host.appendChild(note);return}
+ editorLocalMasks.forEach(mask=>{
   const row=document.createElement('button');row.type='button';row.className='jrvs-local-mask-row'+(mask.id===editorLocalMaskSelectedId?' active':'');
   const label=document.createElement('span');label.textContent=mask.name;
-  const count=document.createElement('small');count.textContent=mask.enabled?(mask.strokes.length+' stroke'+(mask.strokes.length===1?'':'s')):'Disabled';
+  const count=document.createElement('small');count.textContent=mask.enabled===false?'Disabled':mask.type==='linear'?'Linear gradient':mask.type==='radial'?'Radial gradient':(mask.strokes.length+' brush stroke'+(mask.strokes.length===1?'':'s'));
   row.append(label,count);row.addEventListener('click',()=>selectEditorLocalMask(mask.id));host.appendChild(row);
  });
 }
 function syncEditorLocalMaskControls(){
  const mask=selectedEditorLocalMask(),map={localMaskEnabled:mask?.enabled!==false,localMaskInverted:!!mask?.inverted};
  Object.entries(map).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.checked=value});
- const sliders={localMaskExposure:mask?Math.round(mask.exposure*50):0,localMaskHighlights:mask?.highlights||0,localMaskShadows:mask?.shadows||0,localMaskTemperature:mask?.temperature||0,localMaskSaturation:mask?.saturation||0};
+ const sliders={localMaskExposure:mask?Math.round(mask.exposure*50):0,localMaskHighlights:mask?.highlights||0,localMaskShadows:mask?.shadows||0,localMaskContrast:mask?.contrast||0,localMaskWhites:mask?.whites||0,localMaskBlacks:mask?.blacks||0,localMaskTemperature:mask?.temperature||0,localMaskSaturation:mask?.saturation||0,localMaskGradientFeather:Math.round((mask?.gradientFeather??.65)*100)};
  Object.entries(sliders).forEach(([id,value])=>{const el=document.getElementById(id);if(el){el.value=value;const numeric=el.closest('.editor-control')?.querySelector('.editor-number');if(numeric)numeric.value=value}});
- const labels={localMaskExposureValue:(mask?.exposure||0).toFixed(2)+' EV',localMaskHighlightsValue:String(mask?.highlights||0),localMaskShadowsValue:String(mask?.shadows||0),localMaskTemperatureValue:String(mask?.temperature||0),localMaskSaturationValue:String(mask?.saturation||0)};
+ const labels={localMaskExposureValue:(mask?.exposure||0).toFixed(2)+' EV',localMaskHighlightsValue:String(mask?.highlights||0),localMaskShadowsValue:String(mask?.shadows||0),localMaskContrastValue:String(mask?.contrast||0),localMaskWhitesValue:String(mask?.whites||0),localMaskBlacksValue:String(mask?.blacks||0),localMaskTemperatureValue:String(mask?.temperature||0),localMaskSaturationValue:String(mask?.saturation||0),localMaskGradientFeatherValue:Math.round((mask?.gradientFeather??.65)*100)+'%'};
  Object.entries(labels).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value});
- ['localMaskEnabled','localMaskInverted','localMaskExposure','localMaskHighlights','localMaskShadows','localMaskTemperature','localMaskSaturation'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!mask;const numeric=el?.closest('.editor-control')?.querySelector('.editor-number');if(numeric)numeric.disabled=!mask});
+ const ids=['localMaskEnabled','localMaskInverted','localMaskExposure','localMaskHighlights','localMaskShadows','localMaskContrast','localMaskWhites','localMaskBlacks','localMaskTemperature','localMaskSaturation','localMaskGradientFeather'];
+ ids.forEach(id=>{const el=document.getElementById(id);if(el){el.disabled=!mask||(id==='localMaskGradientFeather'&&mask.type==='brush');const numeric=el.closest('.editor-control')?.querySelector('.editor-number');if(numeric)numeric.disabled=el.disabled}});
  const del=document.querySelector('.jrvs-local-mask-panel button[onclick="deleteSelectedEditorMask()"]');if(del)del.disabled=!mask;
+ const clear=document.querySelector('.jrvs-local-mask-panel button[onclick="clearSelectedEditorMask()"]');if(clear)clear.disabled=!mask;
 }
-function selectEditorLocalMask(id){
- editorLocalMaskSelectedId=editorLocalMasks.some(mask=>mask.id===id)?id:null;renderEditorLocalMaskList();syncEditorLocalMaskControls();drawEditor();
+ function selectEditorLocalMask(id){
+ editorLocalMaskSelectedId=editorLocalMasks.some(mask=>mask.id===id)?id:null;
+ const mask=selectedEditorLocalMask();setEditorLocalMaskMode(mask?.type==='linear'?'linear':mask?.type==='radial'?'radial':'paint');
+ renderEditorLocalMaskList();syncEditorLocalMaskControls();drawEditor();
 }
-function addEditorLocalMask(){
+function addEditorLocalMask(type='brush'){
  if(editorLocalMasks.length>=12){showToast('A photo can contain up to 12 local masks.','info');return}
- const mask=createEditorLocalMask();editorLocalMasks.push(mask);editorLocalMaskSelectedId=mask.id;
- renderEditorLocalMaskList();syncEditorLocalMaskControls();setEditorLocalMaskMode('paint');drawEditor();captureEditorHistory();
+ const mask=createEditorLocalMask(type);editorLocalMasks.push(mask);editorLocalMaskSelectedId=mask.id;
+ renderEditorLocalMaskList();syncEditorLocalMaskControls();setEditorLocalMaskMode(mask.type==='brush'?'paint':mask.type);drawEditor();captureEditorHistory();
 }
-function deleteSelectedEditorMask(){
+function addEditorLinearMask(){addEditorLocalMask('linear')}
+function addEditorRadialMask(){addEditorLocalMask('radial')}
+ function deleteSelectedEditorMask(){
  const mask=selectedEditorLocalMask();if(!mask)return;
  editorLocalMasks=editorLocalMasks.filter(item=>item.id!==mask.id);editorLocalMaskSelectedId=editorLocalMasks[0]?.id||null;
  renderEditorLocalMaskList();syncEditorLocalMaskControls();drawEditor();captureEditorHistory();
 }
 function clearSelectedEditorMask(){
- const mask=selectedEditorLocalMask();if(!mask)return;mask.strokes=[];renderEditorLocalMaskList();drawEditor();captureEditorHistory();
+ const mask=selectedEditorLocalMask();if(!mask)return;mask.strokes=[];mask.geometry=null;renderEditorLocalMaskList();drawEditor();captureEditorHistory();
 }
-function updateSelectedEditorMask(key,value){
+ function updateSelectedEditorMask(key,value){
  const mask=selectedEditorLocalMask();if(!mask)return;
  if(key==='enabled'||key==='inverted')mask[key]=!!value;
  renderEditorLocalMaskList();drawEditor();captureEditorHistory();
 }
 function updateSelectedEditorMaskControl(key,value){
  const mask=selectedEditorLocalMask();if(!mask)return;
- mask[key]=key==='exposure'?editorClamp(value,-100,100)/50:editorClamp(value,-100,100);
+ mask[key]=key==='exposure'?editorClamp(value,-100,100)/50:key==='gradientFeather'?editorClamp(value,5,100)/100:editorClamp(value,-100,100);
  const label=document.getElementById('localMask'+key[0].toUpperCase()+key.slice(1)+'Value');
- if(label)label.textContent=key==='exposure'?mask.exposure.toFixed(2)+' EV':String(mask[key]);
+ if(label)label.textContent=key==='exposure'?mask.exposure.toFixed(2)+' EV':key==='gradientFeather'?Math.round(mask.gradientFeather*100)+'%':String(mask[key]);
  editorChanged();clearTimeout(editorHistoryTimer);editorHistoryTimer=setTimeout(captureEditorHistory,250);
 }
 function setEditorLocalMaskMode(mode){
- editorLocalMaskMode=mode;
- document.querySelectorAll('[data-mask-mode]').forEach(button=>button.classList.toggle('active',button.dataset.maskMode===mode));
- const canvas=document.getElementById('editorCanvas');if(canvas&&editorRetouchMode==='off')canvas.style.cursor=mode==='off'?'default':'none';
+ const allowed=['paint','erase','linear','radial','off'];editorLocalMaskMode=allowed.includes(mode)?mode:'off';
+ const mask=selectedEditorLocalMask();
+ if(mask&&(mode==='linear'||mode==='radial')&&mask.type!==mode){mask.type=mode;mask.geometry=null;renderEditorLocalMaskList();syncEditorLocalMaskControls();captureEditorHistory()}
+ document.querySelectorAll('[data-mask-mode]').forEach(button=>button.classList.toggle('active',button.dataset.maskMode===editorLocalMaskMode));
+ const canvas=document.getElementById('editorCanvas');
+ if(canvas&&editorRetouchMode==='off')canvas.style.cursor=editorLocalMaskMode==='off'?'default':editorLocalMaskMode==='paint'||editorLocalMaskMode==='erase'?'none':'crosshair';
  const note=document.getElementById('editorLocalMaskInstructions');
- if(note)note.textContent=mode==='off'?'Select a mask and choose Paint, then brush over the photo. Use Erase to subtract from the selected mask.':mode==='erase'?'Paint over an area to subtract it from this mask.':'Paint over the photo to add to the selected mask.';
- if(mode==='off')hideEditorBrushCursor();
+ if(note)note.textContent=editorLocalMaskMode==='off'?'Move mode. Select a mask or choose a mask tool to edit it.':editorLocalMaskMode==='erase'?'Paint over an area to subtract it from the selected mask.':editorLocalMaskMode==='linear'?'Drag from the fully selected area towards the area where the gradient should fade away.':editorLocalMaskMode==='radial'?'Drag from the centre of the selected area out to set the elliptical falloff.':'Paint over the photo to add to the selected mask. Use Erase to subtract.';
+ if(editorLocalMaskMode==='off'||editorLocalMaskMode==='linear'||editorLocalMaskMode==='radial')hideEditorBrushCursor();
+ drawEditor();
 }
-function editorMaskPoint(event){
+ function editorMaskPoint(event){
  const canvas=document.getElementById('editorCanvas'),rect=canvas.getBoundingClientRect();
  return {x:editorClamp((event.clientX-rect.left)/Math.max(1,rect.width),0,1),y:editorClamp((event.clientY-rect.top)/Math.max(1,rect.height),0,1),radius:editorLocalMaskBrushSize/Math.max(1,rect.width)};
+}
+function editorMaskGeometryFromDrag(type,start,end){
+ if(!start||!end)return null;
+ if(type==='linear'){
+  if(Math.hypot(end.x-start.x,end.y-start.y)<.012)return null;
+  return {x1:editorClamp(start.x,0,1),y1:editorClamp(start.y,0,1),x2:editorClamp(end.x,0,1),y2:editorClamp(end.y,0,1)};
+ }
+ if(type==='radial')return {cx:editorClamp(start.x,0,1),cy:editorClamp(start.y,0,1),rx:editorClamp(Math.abs(end.x-start.x),.01,.75),ry:editorClamp(Math.abs(end.y-start.y),.01,.75)};
+ return null;
 }
 function editorLocalMaskPointerDown(event){
  if(editorLocalMaskMode==='off'||!selectedEditorLocalMask()||!editorImage||editorCompare)return false;
  event.preventDefault();const point=editorMaskPoint(event),canvas=document.getElementById('editorCanvas');
  if(canvas?.setPointerCapture)canvas.setPointerCapture(event.pointerId);
+ if(editorLocalMaskMode==='linear'||editorLocalMaskMode==='radial'){
+  editorLocalMaskActive={maskId:editorLocalMaskSelectedId,shape:editorLocalMaskMode,start:{x:point.x,y:point.y},last:{x:point.x,y:point.y}};
+  return true;
+ }
  editorLocalMaskActive={maskId:editorLocalMaskSelectedId,mode:editorLocalMaskMode,dabs:[point],last:point,opacity:editorLocalMaskFlow,feather:editorLocalMaskFeather};
  return true;
 }
 function editorLocalMaskPointerMove(event){
  if(!editorLocalMaskActive)return false;
- const point=editorMaskPoint(event),stroke=editorLocalMaskActive,dx=point.x-stroke.last.x,dy=point.y-stroke.last.y,dist=Math.hypot(dx,dy),steps=Math.max(1,Math.ceil(dist/Math.max(.001,point.radius*.2)));
- for(let i=1;i<=steps&&stroke.dabs.length<12000;i++){const t=i/steps;stroke.dabs.push({x:stroke.last.x+dx*t,y:stroke.last.y+dy*t,radius:point.radius})}
- stroke.last=point;scheduleRetouchPreview();return true;
+ const point=editorMaskPoint(event),active=editorLocalMaskActive;
+ if(active.shape){active.last={x:point.x,y:point.y};scheduleRetouchPreview();return true}
+ const dx=point.x-active.last.x,dy=point.y-active.last.y,dist=Math.hypot(dx,dy),steps=Math.max(1,Math.ceil(dist/Math.max(.001,point.radius*.2)));
+ for(let i=1;i<=steps&&active.dabs.length<12000;i++){const t=i/steps;active.dabs.push({x:active.last.x+dx*t,y:active.last.y+dy*t,radius:point.radius})}
+ active.last=point;scheduleRetouchPreview();return true;
 }
 function editorLocalMaskPointerUp(){
  if(!editorLocalMaskActive)return false;
- const stroke=editorLocalMaskActive;editorLocalMaskActive=null;
- const mask=editorLocalMasks.find(item=>item.id===stroke.maskId);
- if(mask){if(mask.strokes.length>=500){showToast('This mask has reached the 500-stroke limit.','info')}else{mask.strokes.push({mode:stroke.mode,opacity:stroke.opacity,feather:stroke.feather,dabs:stroke.dabs.slice(0,12000)});renderEditorLocalMaskList();drawEditor();captureEditorHistory()}}
- return true;
+ const active=editorLocalMaskActive;editorLocalMaskActive=null;
+ const mask=editorLocalMasks.find(item=>item.id===active.maskId);
+ if(mask&&active.shape){
+  const geometry=editorMaskGeometryFromDrag(active.shape,active.start,active.last);
+  if(!geometry)showToast('Drag a little further to create the gradient.','info');
+  else{mask.type=active.shape;mask.geometry=geometry;renderEditorLocalMaskList();syncEditorLocalMaskControls();captureEditorHistory()}
+ }else if(mask){
+  if(mask.strokes.length>=500)showToast('This mask has reached the 500-stroke limit.','info');
+  else{mask.strokes.push({mode:active.mode,opacity:active.opacity,feather:active.feather,dabs:active.dabs.slice(0,12000)});renderEditorLocalMaskList();captureEditorHistory()}
+ }
+ drawEditor();return true;
 }
-function hideEditorBrushCursor(){const cursor=document.getElementById('retouchCursor');if(cursor)cursor.style.display='none'}
+ function hideEditorBrushCursor(){const cursor=document.getElementById('retouchCursor');if(cursor)cursor.style.display='none'}
 function updateEditorBrushCursor(event){
  const cursor=document.getElementById('retouchCursor'),stage=document.getElementById('editorStage');if(!cursor||!stage)return;
- const maskActive=editorActiveTab==='mask'&&editorLocalMaskMode!=='off',retouchActive=editorActiveTab==='retouch'&&editorRetouchMode!=='off';
+ const maskActive=editorActiveTab==='mask'&&(editorLocalMaskMode==='paint'||editorLocalMaskMode==='erase'),retouchActive=editorActiveTab==='retouch'&&editorRetouchMode!=='off';
  if(!maskActive&&!retouchActive){hideEditorBrushCursor();return}
  const rect=stage.getBoundingClientRect(),size=maskActive?editorLocalMaskBrushSize:editorRetouchBrushSize;
  cursor.style.width=size+'px';cursor.style.height=size+'px';cursor.style.left=(event.clientX-rect.left)+'px';cursor.style.top=(event.clientY-rect.top)+'px';cursor.style.display='block';
@@ -3750,52 +3794,103 @@ function editorMaskFalloff(distance,radius,feather){
  if(radius<=0||distance>=radius)return 0;const inner=radius*(1-editorClamp(feather,0,1));if(distance<=inner)return 1;
  const t=editorClamp((distance-inner)/Math.max(1e-9,radius-inner),0,1);return 1-(t*t*(3-2*t));
 }
+function editorGradientMaskAlpha(mask,x,y){
+ const g=mask?.geometry;if(!g)return 0;const feather=editorClamp(mask.gradientFeather??.65,.05,1),start=1-feather;let position=0;
+ if(mask.type==='linear'){
+  const dx=g.x2-g.x1,dy=g.y2-g.y1,length=dx*dx+dy*dy;if(length<1e-8)return 0;
+  position=((x-g.x1)*dx+(y-g.y1)*dy)/length;
+ }else if(mask.type==='radial'){
+  const rx=Math.max(.01,Number(g.rx)||.01),ry=Math.max(.01,Number(g.ry)||.01);
+  position=Math.hypot((x-g.cx)/rx,(y-g.cy)/ry);
+ }else return 0;
+ if(position<=start)return 1;if(position>=1)return 0;
+ const t=editorClamp((position-start)/feather,0,1);return 1-t*t*(3-2*t);
+}
 function buildEditorLocalMaskCanvas(mask,width,height){
  const surface=document.createElement('canvas');surface.width=width;surface.height=height;
- const maskCtx=surface.getContext('2d',{willReadFrequently:true});
+ const maskCtx=surface.getContext('2d',{willReadFrequently:true}),geometry=mask.geometry,feather=editorClamp(mask.gradientFeather??.65,.05,1);
+ if(mask.type==='linear'&&geometry){
+  const x1=geometry.x1*width,y1=geometry.y1*height,x2=geometry.x2*width,y2=geometry.y2*height;
+  if(Math.hypot(x2-x1,y2-y1)>.5){
+   const gradient=maskCtx.createLinearGradient(x1,y1,x2,y2),solid=Math.max(0,1-feather);
+   gradient.addColorStop(0,'rgba(255,255,255,1)');if(solid>.001)gradient.addColorStop(solid,'rgba(255,255,255,1)');
+   gradient.addColorStop(1,'rgba(255,255,255,0)');maskCtx.fillStyle=gradient;maskCtx.fillRect(0,0,width,height);
+  }
+ }else if(mask.type==='radial'&&geometry){
+  const rx=Math.max(.01,geometry.rx),ry=Math.max(.01,geometry.ry),cx=geometry.cx,cy=geometry.cy;
+  maskCtx.save();maskCtx.translate(cx*width,cy*height);maskCtx.scale(rx*width,ry*height);
+  const gradient=maskCtx.createRadialGradient(0,0,0,0,0,1),solid=Math.max(0,1-feather);
+  gradient.addColorStop(0,'rgba(255,255,255,1)');if(solid>.001)gradient.addColorStop(solid,'rgba(255,255,255,1)');
+  gradient.addColorStop(1,'rgba(255,255,255,0)');maskCtx.fillStyle=gradient;maskCtx.fillRect(-cx/rx,-cy/ry,1/rx,1/ry);maskCtx.restore();
+ }
  (mask.strokes||[]).forEach(stroke=>{
   maskCtx.save();maskCtx.globalCompositeOperation=stroke.mode==='erase'?'destination-out':'source-over';
   (stroke.dabs||[]).forEach(dab=>{
-   const x=dab.x*width,y=dab.y*height,r=Math.max(1,dab.radius*width),feather=editorClamp(stroke.feather,0,1),flow=editorClamp(stroke.opacity,.01,1);
+   const x=dab.x*width,y=dab.y*height,r=Math.max(1,dab.radius*width),softness=editorClamp(stroke.feather,0,1),flow=editorClamp(stroke.opacity,.01,1);
    maskCtx.beginPath();maskCtx.arc(x,y,r,0,Math.PI*2);
-   if(feather<=.001){maskCtx.fillStyle='rgba(255,255,255,'+flow+')';maskCtx.fill();return}
-   const inner=r*(1-feather),gradient=maskCtx.createRadialGradient(x,y,inner,x,y,r);
-   [0,.25,.5,.75,1].forEach(t=>{const alpha=flow*editorMaskFalloff(inner+(r-inner)*t,r,feather);gradient.addColorStop(t,'rgba(255,255,255,'+alpha+')')});
-   maskCtx.fillStyle=gradient;maskCtx.fill();
+   if(softness<=.001){maskCtx.fillStyle='rgba(255,255,255,'+flow+')';maskCtx.fill();return}
+   const inner=r*(1-softness),brushGradient=maskCtx.createRadialGradient(x,y,inner,x,y,r);
+   [0,.25,.5,.75,1].forEach(t=>{const alpha=flow*editorMaskFalloff(inner+(r-inner)*t,r,softness);brushGradient.addColorStop(t,'rgba(255,255,255,'+alpha+')')});
+   maskCtx.fillStyle=brushGradient;maskCtx.fill();
   });
   maskCtx.restore();
  });
  return surface;
 }
-function drawEditorMaskOverlay(context){
+ function drawEditorMaskOverlay(context){
  if(!editorShowMaskOverlay||editorActiveTab!=='mask')return;
  const selected=selectedEditorLocalMask();if(!selected||selected.enabled===false)return;
  const preview=JSON.parse(JSON.stringify(selected));
- if(editorLocalMaskActive?.maskId===selected.id)preview.strokes.push({mode:editorLocalMaskActive.mode,opacity:editorLocalMaskActive.opacity,feather:editorLocalMaskActive.feather,dabs:editorLocalMaskActive.dabs});
- if(!preview.strokes.length)return;
+ if(editorLocalMaskActive?.maskId===selected.id){
+  if(editorLocalMaskActive.shape)preview.geometry=editorMaskGeometryFromDrag(editorLocalMaskActive.shape,editorLocalMaskActive.start,editorLocalMaskActive.last);
+  else preview.strokes.push({mode:editorLocalMaskActive.mode,opacity:editorLocalMaskActive.opacity,feather:editorLocalMaskActive.feather,dabs:editorLocalMaskActive.dabs});
+ }
+ if(!preview.geometry&&!preview.strokes.length)return;
  const matte=buildEditorLocalMaskCanvas(preview,context.canvas.width,context.canvas.height),maskContext=matte.getContext('2d',{willReadFrequently:true}),image=maskContext.getImageData(0,0,matte.width,matte.height),pixels=image.data;
  for(let i=0;i<pixels.length;i+=4){const amount=preview.inverted?255-pixels[i+3]:pixels[i+3];pixels[i]=238;pixels[i+1]=82;pixels[i+2]=72;pixels[i+3]=Math.round(amount*.38)}
- maskContext.putImageData(image,0,0);context.save();context.globalCompositeOperation='source-over';if(editorCompare){const split=Math.round(context.canvas.width*editorComparePosition/100);context.beginPath();context.rect(split,0,context.canvas.width-split,context.canvas.height);context.clip()}context.drawImage(matte,0,0);context.restore();
+ maskContext.putImageData(image,0,0);context.save();context.globalCompositeOperation='source-over';
+ if(editorCompare){const split=Math.round(context.canvas.width*editorComparePosition/100);context.beginPath();context.rect(split,0,context.canvas.width-split,context.canvas.height);context.clip()}
+ context.drawImage(matte,0,0);context.restore();
 }
-
+function drawEditorMaskGuides(context){
+ if(editorActiveTab!=='mask'||editorCompare)return;
+ const selected=selectedEditorLocalMask();if(!selected||selected.enabled===false||selected.type==='brush')return;
+ let geometry=selected.geometry;
+ if(editorLocalMaskActive?.maskId===selected.id&&editorLocalMaskActive.shape)geometry=editorMaskGeometryFromDrag(editorLocalMaskActive.shape,editorLocalMaskActive.start,editorLocalMaskActive.last);
+ if(!geometry)return;
+ const width=context.canvas.width,height=context.canvas.height;
+ context.save();context.lineWidth=Math.max(1,width/1500);context.strokeStyle='#f7f1df';context.fillStyle='#899b68';context.setLineDash([7,5]);
+ if(selected.type==='linear'){
+  const x1=geometry.x1*width,y1=geometry.y1*height,x2=geometry.x2*width,y2=geometry.y2*height;
+  context.beginPath();context.moveTo(x1,y1);context.lineTo(x2,y2);context.stroke();context.setLineDash([]);
+  [[x1,y1],[x2,y2]].forEach(([x,y])=>{context.beginPath();context.arc(x,y,Math.max(4,width/180),0,Math.PI*2);context.fill();context.stroke()});
+ }else if(selected.type==='radial'){
+  const cx=geometry.cx*width,cy=geometry.cy*height;context.beginPath();context.ellipse(cx,cy,geometry.rx*width,geometry.ry*height,0,0,Math.PI*2);context.stroke();
+  context.setLineDash([]);context.beginPath();context.arc(cx,cy,Math.max(4,width/180),0,Math.PI*2);context.fill();context.stroke();
+ }
+ context.restore();
+}
 function applyEditorLocalMasks(ctx,width,height){
- const masks=editorLocalMasks.filter(mask=>mask.enabled!==false&&mask.strokes?.length);if(!masks.length)return;
+ const masks=editorLocalMasks.filter(mask=>mask.enabled!==false&&(mask.strokes?.length||mask.geometry));if(!masks.length)return;
  const image=ctx.getImageData(0,0,width,height),data=image.data;
  masks.forEach(mask=>{
   const surface=buildEditorLocalMaskCanvas(mask,width,height),alpha=surface.getContext('2d',{willReadFrequently:true}).getImageData(0,0,width,height).data;
-  const exposure=Number(mask.exposure)||0,highlights=Number(mask.highlights)||0,shadows=Number(mask.shadows)||0,temperature=Number(mask.temperature)||0,saturation=Number(mask.saturation)||0;
+  const exposure=Number(mask.exposure)||0,highlights=Number(mask.highlights)||0,shadows=Number(mask.shadows)||0,contrast=Number(mask.contrast)||0,whites=Number(mask.whites)||0,blacks=Number(mask.blacks)||0,temperature=Number(mask.temperature)||0,saturation=Number(mask.saturation)||0;
   for(let i=0;i<data.length;i+=4){
    let amount=alpha[i+3]/255;if(mask.inverted)amount=1-amount;if(amount<=.001)continue;
    let r=data[i],g=data[i+1],b=data[i+2],lum=.2126*r+.7152*g+.0722*b;
    const tone=(shadows*(1-lum/255)*.28+highlights*(lum/255)*.22)*amount,exp=Math.pow(2,exposure*amount);
    r=(r+tone+temperature*.22*amount)*exp;g=(g+tone)*exp;b=(b+tone-temperature*.22*amount)*exp;
+   if(contrast){const strength=contrast*.55*amount,factor=(259*(255+strength))/(255*(259-strength));r=(r-128)*factor+128;g=(g-128)*factor+128;b=(b-128)*factor+128}
+   const adjustedLum=.2126*r+.7152*g+.0722*b,white=Math.max(0,(adjustedLum-170)/85)*whites*.48*amount,black=Math.max(0,(85-adjustedLum)/85)*blacks*.48*amount;
+   r+=white+black;g+=white+black;b+=white+black;
    if(saturation){const hsl=jrvsRgbToHsl(r,g,b),rgb=jrvsHslToRgb(hsl.h,hsl.s*(1+saturation/100*amount),hsl.l);r=rgb[0];g=rgb[1];b=rgb[2]}
    data[i]=editorClamp(r,0,255);data[i+1]=editorClamp(g,0,255);data[i+2]=editorClamp(b,0,255);
   }
  });
  ctx.putImageData(image,0,0);
 }
-function resetEditorGeometry(){
+ function resetEditorGeometry(){
  ['perspectiveV','perspectiveH','lensDistortion'].forEach(id=>{const input=document.getElementById(id);if(input)input.value=0});
  drawEditor();captureEditorHistory();
 }
@@ -4125,6 +4220,7 @@ function drawEditor(){
   ctx.fillStyle='#f7f1df';ctx.fillRect(split-1,0,2,visible.height);ctx.beginPath();ctx.arc(split,visible.height/2,13,0,Math.PI*2);ctx.fillStyle='#899b68';ctx.fill();ctx.strokeStyle='#f7f1df';ctx.lineWidth=2;ctx.stroke();
  }else ctx.drawImage(rendered.canvas,0,0);
  drawEditorMaskOverlay(ctx);
+ drawEditorMaskGuides(ctx);
  drawEditorHistogram(rendered.hist);
  fitEditorCanvas();
 }
