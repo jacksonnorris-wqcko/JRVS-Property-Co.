@@ -11,4 +11,4 @@
 - No database migration. Original photo bytes, photo IDs, job links, saved edited copies and existing business records remain unchanged.
 - Tonal range refinement is deterministic and local. It narrows a manually created mask using display-referred luminance; it does not automatically detect windows, walls, floors, skies or other objects.
 - The renderer still has an 8-bit sRGB stage. Full float/wide-gamut RAW editing, colour-range selection, edge-aware semantic selections and AI-assisted region selection remain future work.
-- CI and Windows installer verification are required before this candidate can be considered release-ready. Real EOS 600D CR2 and rental-photo interaction tests still require the installed application.
+- GitHub Actions run `43331735884` passed the handover check, Photo Studio regression suite, Windows EXE/MSI build, installer output verification and artifact upload. This remains a development candidate, not a signed updater release. Real EOS 600D CR2 quality, rental-photo interaction, save/reopen, batch isolation and preview/export parity still require testing in the installed application.
