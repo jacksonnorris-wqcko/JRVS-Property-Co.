@@ -1,4 +1,4 @@
-# V0.58.0 Development Notes — Photo Studio Phase 3 tonal range refinement
+# V0.58.0 Release Notes
 
 ## Photo Studio
 - Added per-mask tonal range refinement: All tones, Shadows, Midtones and Highlights.
