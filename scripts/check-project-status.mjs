@@ -74,3 +74,19 @@ if (/window\.open\s*\(/.test(documentPrintSource) || documentPrintSource.include
 if (!source.includes('id="businessDocumentPreviewFrame"') || !source.includes('function printBusinessDocumentPreview()') || !source.includes('frame.srcdoc=html;') || !source.includes('frame.contentWindow.print()')) {
   throw new Error('In-app quote/invoice print preview is incomplete.');
 }
+
+const editorTabs = ['basic','colour','detail','geometry','mask','retouch','export'];
+for (const tab of editorTabs) {
+  if (!source.includes('data-editor-tab="' + tab + '"') || !source.includes('data-editor-group="' + tab + '"')) {
+    throw new Error('Photo Studio 2.0 is missing its ' + tab + ' workspace.');
+  }
+}
+if (!source.includes('class="editor-tool-rail"') || !source.includes('id="editorPanelTitle"') || !source.includes('class="editor-canvas-toolstrip"') || !source.includes('id="editorFilmstripWrap"')) {
+  throw new Error('Photo Studio 2.0 workstation layout is incomplete.');
+}
+for (const action of ["activateEditorMaskTool()", "activateEditorRetouchTool('clone')", "activateEditorRetouchTool('heal')"]) {
+  if (!source.includes(action)) throw new Error('Photo Studio direct canvas action is missing: ' + action);
+}
+for (const preset of ['natural','bright','window','modern']) {
+  if (!source.includes('data-editor-preset="' + preset + '"')) throw new Error('Photo Studio quick look is missing: ' + preset);
+}
