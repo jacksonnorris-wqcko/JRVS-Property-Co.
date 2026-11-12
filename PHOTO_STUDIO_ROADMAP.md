@@ -203,3 +203,24 @@ V0.34.1 is primarily a workbench/interface milestone. It does not claim to provi
 
 ## Honest capability boundary
 V0.57.0 does not claim AI object detection or automatic property-part recognition. Linear and radial gradients are manual, deterministic geometry masks. Validate gradients, local corrections, save/reopen, batch isolation and export parity with actual rental photos before progressing to semantic selection.
+
+
+
+---
+
+# JRVS Photo Studio — Phase 3 tonal range refinement (V0.58.0)
+
+## Implemented in the development candidate
+- Add per-mask tonal range refinement: All tones, Shadows, Midtones or Highlights.
+- Add adjustable softness around the tonal transition boundaries to avoid abrupt selections.
+- Apply range weighting after the existing brush/linear/radial mask geometry and inversion, before the selected mask's local adjustments.
+- Keep the feature deterministic and local; it works on the current rendered image's display-referred luminance and does not use an AI service or upload images.
+- Bump recipe schema to v6. Recipes v1–v5 remain supported; older masks default to All tones. No database migration or original-photo rewrite is required.
+
+## Remaining Phase 3 work
+- Semantic selections for windows/glass, sky, walls, ceilings, floors and furniture.
+- Colour-range selection and edge-aware refinement.
+- AI-assisted region selection, subject boundary refinement and GPU/worker-based mask rendering after real-photo testing.
+
+## Honest capability boundary
+Tonal range refinement narrows an existing manual mask by brightness; it does not discover an object or region. It currently operates on the display-referred sRGB render stage, not a full float/wide-gamut RAW adjustment graph. Validate tone-range transitions on real property images and confirm recipe save/reopen, batch isolation and preview/export parity before progressing to semantic selection.
