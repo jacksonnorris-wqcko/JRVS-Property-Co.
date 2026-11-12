@@ -57,9 +57,22 @@ The desktop build now runs `npm run handover:check` before building. This valida
 
 ## Current active work and next action
 
-### Current app task — Photo Studio 2.0 Phase 1 workstation redesign
+### Current app task — Photo Studio 2.0 Phase 2 processing-engine rebuild
 
-The Phase 1 workspace is being rebuilt around a dedicated left rail, image-first central stage, contextual right inspector, direct canvas tools and persistent project filmstrip. Existing renderer, editing operations, recipes, records and source files are preserved.
+**Active scope:** move the editor's RAW development and shared render path beyond the current 8-bit sRGB/JPEG intermediate. Keep Phase 1's workstation and all existing photo workflows intact.
+
+**Planned implementation layers:**
+- Upgrade the pinned FlashRaw dependency to the current compatible release and use sensor-aware, higher-quality demosaicing plus the decoder's linear high-bit-depth output.
+- Retain the decoded linear RAW frame in memory while editing; do not convert the RAW source to an intermediate JPEG before adjustments.
+- Apply the core RAW develop operations in a linear-light, high-precision path, with a deliberate sRGB display/export conversion at the output boundary.
+- Keep orientation, geometry, existing masks/retouch, Property Finish, preview/export parity and non-destructive recipe restore coherent.
+- Add regression coverage for linear-light math, orientation mapping, high-precision input, renderer dispatch, and existing recipe compatibility.
+
+**Intended files:** `index.html`, `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`, `scripts/check-photo-studio-engine.mjs`, `PHOTO_STUDIO_ROADMAP.md`, versioned release notes and this handover.
+
+**Safety:** preserve source RAW/JPEG bytes, records, IDs, job links and existing recipe schema; no destructive migration. Phase 2 build/CI results will not be described as proof of EOS 600D camera-quality parity until tested with the user's actual CR2 files.
+
+**Next checkpoint:** validate the existing FlashRaw 0.1.0 → target API change, implement and regression-test the linear RAW path, then run the Windows installer and signed updater workflow.
 
 ### Application task — shared scrolling fix verified
 
