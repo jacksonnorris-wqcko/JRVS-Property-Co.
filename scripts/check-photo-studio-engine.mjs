@@ -149,6 +149,10 @@ for(let orientation=1;orientation<=8;orientation++){
 requireText(html,"output:'linear-rgb',sampleType:'f16',demosaic:'auto'",'FlashRaw high-precision linear RAW decode');
 requireText(html,'editorRawLinearFrame=developed','the original decoded linear frame is retained during editing');
 requireText(html,'editorLinearRawToCanvas(rawFrame,maxDimension','preview and export render from the retained linear source');
+requireText(html,'let editorRawCanvasCache=new WeakMap()','linear RAW display previews are cached per immutable frame');
+requireText(html,'let editorLinearSrgbLut=null','linear-to-sRGB transfer is table driven rather than recomputed per pixel');
+requireText(html,'const mappedLum=lum<=.78?lum:.78+.22*(lum-.78)/(lum-.78+.22)','RAW highlight output uses a smooth luminance shoulder');
+
 requireText(html,'exposure=rawFrame?1:Math.pow(2,v.exposure)','RAW exposure is applied before sRGB encoding and is not doubled');
 
 console.log('Linear RAW regression checks passed: half-float decoding, EXIF orientation transforms, sensor-linear decoder wiring and retained-source rendering.');

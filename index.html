@@ -3852,14 +3852,24 @@ function editorLinearToSrgb(value){
  const v=editorClamp(value,0,1);
  return 255*(v<=.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-.055);
 }
+let editorLinearSrgbLut=null;
+function editorGetLinearSrgbLut(){
+ if(editorLinearSrgbLut)return editorLinearSrgbLut;
+ const lut=new Uint8Array(65536);
+ for(let i=0;i<65536;i++)lut[i]=Math.round(editorLinearToSrgb(i/65535));
+ editorLinearSrgbLut=lut;return lut;
+}
+let editorRawCanvasCache=new WeakMap();
 function editorLinearRawToCanvas(frame,maxDimension=EDITOR_PREVIEW_MAX,exposureEV=0){
  if(!frame||!(frame.data instanceof Uint16Array)||frame.dataType!=='f16'||frame.channels!==3)throw new Error('The retained RAW frame is not a linear RGB half-float image.');
  const oriented=editorRawOrientedSize(frame.width,frame.height,frame.orientation);
  const scale=maxDimension>0?Math.min(1,maxDimension/Math.max(oriented.width,oriented.height)):1;
  const width=Math.max(1,Math.round(oriented.width*scale)),height=Math.max(1,Math.round(oriented.height*scale));
+ const key=width+'x'+height+'@'+editorClamp(exposureEV,-5,5).toFixed(4),cache=maxDimension>0?(editorRawCanvasCache.get(frame)||new Map()):null;
+ if(cache?.has(key))return cache.get(key);
  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
  const ctx=canvas.getContext('2d',{willReadFrequently:true});if(!ctx)throw new Error('Could not create the linear RAW display surface.');
- const image=ctx.createImageData(width,height),out=image.data,src=frame.data,lut=editorGetHalfFloatLut(),gain=Math.pow(2,editorClamp(exposureEV,-5,5));
+ const image=ctx.createImageData(width,height),out=image.data,src=frame.data,half=editorGetHalfFloatLut(),srgb=editorGetLinearSrgbLut(),gain=Math.pow(2,editorClamp(exposureEV,-5,5));
  const taps=scale<.5?4:1;
  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
   let r=0,g=0,b=0,count=0;
@@ -3868,12 +3878,26 @@ function editorLinearRawToCanvas(frame,maxDimension=EDITOR_PREVIEW_MAX,exposureE
    const oy=Math.min(oriented.height-1,Math.max(0,Math.floor((y+(sy+.5)/taps)*oriented.height/height)));
    const point=editorRawSensorPointFromOriented(ox,oy,frame.width,frame.height,frame.orientation);
    const index=(point.y*frame.width+point.x)*3;
-   r+=lut[src[index]];g+=lut[src[index+1]];b+=lut[src[index+2]];count++;
+   r+=half[src[index]];g+=half[src[index+1]];b+=half[src[index+2]];count++;
   }
   r=r/count*gain;g=g/count*gain;b=b/count*gain;
-  const i=(y*width+x)*4;out[i]=editorLinearToSrgb(r);out[i+1]=editorLinearToSrgb(g);out[i+2]=editorLinearToSrgb(b);out[i+3]=255;
+  // Soft luminance shoulder plus chroma compression keeps bright whites clean
+  // without independently clipping colour channels and shifting hue.
+  const lum=.2126*r+.7152*g+.0722*b;
+  const mappedLum=lum<=.78?lum:.78+.22*(lum-.78)/(lum-.78+.22);
+  let chromaScale=1;
+  for(const channel of [r,g,b]){
+   const delta=channel-lum;
+   if(delta>0)chromaScale=Math.min(chromaScale,(1-mappedLum)/delta);
+   else if(delta<0)chromaScale=Math.min(chromaScale,mappedLum/-delta);
+  }
+  chromaScale=editorClamp(chromaScale,0,1);
+  r=mappedLum+(r-lum)*chromaScale;g=mappedLum+(g-lum)*chromaScale;b=mappedLum+(b-lum)*chromaScale;
+  const i=(y*width+x)*4;out[i]=srgb[Math.round(editorClamp(r,0,1)*65535)];out[i+1]=srgb[Math.round(editorClamp(g,0,1)*65535)];out[i+2]=srgb[Math.round(editorClamp(b,0,1)*65535)];out[i+3]=255;
  }
- ctx.putImageData(image,0,0);return canvas;
+ ctx.putImageData(image,0,0);
+ if(cache){cache.set(key,canvas);editorRawCanvasCache.set(frame,cache);while(cache.size>6)cache.delete(cache.keys().next().value)}
+ return canvas;
 }
 function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustments=true){
  if((!editorImage&&!editorRawLinearFrame)||!editorPhoto)return null;
