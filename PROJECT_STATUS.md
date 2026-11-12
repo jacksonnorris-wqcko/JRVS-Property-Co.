@@ -5,7 +5,7 @@
 **Last reviewed:** 13 November 2026 (Australia/Sydney)  
 **Repository:** [jacksonnorris-wqcko/JRVS-Property-Co.](https://github.com/jacksonnorris-wqcko/JRVS-Property-Co.)  
 **Active desktop branch:** `desktop-transition`  
-**Current desktop version:** `0.57.0`  
+**Current desktop version:** `0.58.0`  
 **Stable browser/PWA branch:** `main` — keep it unchanged unless the user explicitly requests browser/PWA work.
 
 ## Start here — current position
@@ -57,23 +57,27 @@ The desktop build now runs `npm run handover:check` before building. This valida
 
 ## Current active work and next action
 
-### Current app task — Photo Studio Phase 3 gradient masking and local tonal controls
+### Current app task — Photo Studio Phase 3 tonal range refinement
 
-**Active implementation target: V0.57.0 on desktop-transition.**
+**Active implementation target: V0.58.0 on desktop-transition.**
 
 - Extend the existing non-destructive mask model with editable linear-gradient and radial/elliptical-gradient mask types, while preserving the existing brush-paint and erase tools.
 - Add direct canvas drag placement, selected-mask overlays and shape guides.
 - Extend local adjustments with contrast, whites and blacks, alongside exposure, highlights, shadows, temperature and saturation.
-- Preserve mask geometry and settings in the current recipe model. Older v1–v5 recipes remain supported; no database migration, original-photo rewrite or recipe schema migration is required.
+- Add per-mask tonal range refinement: All tones, Shadows, Midtones or Highlights, with an adjustable softness transition. Compose this after the brush/gradient selection and inversion, before local corrections are applied.
+- Bump the non-destructive recipe schema from v5 to v6 for the new range settings; keep recipe versions 1–5 readable and default their masks to All tones. No database migration or original-photo rewrite is required.
 - Keep the same local-mask compositor shared by on-screen preview and full-resolution export.
 
-**Known boundaries:** gradients are manually positioned; masks do not yet recognise windows, walls, floors, skies or objects. Semantic AI selection, object segmentation, edge-aware refinement, colour-range masks and a complete float/wide-gamut adjustment graph remain future milestones.
+**Known boundaries:** brush and gradient selections remain manual. Tonal range refinement is luminance-based on the current rendered image; it does not recognise windows, walls, floors, skies or objects. Semantic AI selection, object segmentation, edge-aware refinement, colour-range masks, GPU/worker rasterisation and a complete float/wide-gamut adjustment graph remain future milestones.
 
-**Checkpoint — 13 November 2026:** The V0.57.0 Phase 3 candidate is committed at `b243c2e9515bbf37c9eef01bb336321483cd389f`. GitHub Actions run `43328472645` exposed a stale regression assertion: the implementation caps live brush dabs with `active.dabs.length<12000` and caps committed strokes with `active.dabs.slice(0,12000)`, while the test searched for a different, nonexistent expression. The test was corrected to inspect both real safeguards in commit `8697b63e498937fc63f0e0342283a3eafa19dab5`. GitHub Actions run `43329730597` passed both the handover/version check and Photo Studio engine regression checks; the Windows installer build was still running at the time of this checkpoint. This is a development verification commit, not a signed release.
+**Implementation checkpoint — 13 November 2026:** Phase 3 tonal range refinement is implemented in the desktop source. The editor adds per-mask All tones, Shadows, Midtones and Highlights range selection plus adjustable range softness. The renderer weights local-mask strength by display-referred luminance after shape composition/inversion and before tonal corrections. Recipe schema is now v6; versions 1–5 remain loadable and default to All tones. Existing source photos, photo IDs, jobs, quote/invoice records and photo storage are unchanged.
 
-### Next Phase 3 increment — tonal range refinement (planned)
+- Source implementation commit: `5aa02f496741436a12fe762dec6d5f3f97f4af4e`
+- Regression coverage commit: `263c238d3b3000c83d0184603ebde01b87c09132`
+- Desktop version alignment: `0.58.0` in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
+- The earlier V0.57.0 correction was confirmed to pass the handover/version and Photo Studio regression steps. The V0.58.0 tonal-range changes still require their own CI verification.
 
-The user has asked to continue Phase 3. Extend local masks so their adjustment strength can be refined by image luminance: All tones, Shadows, Midtones or Highlights, with an adjustable soft transition. This should compose with existing brush/linear/radial masks and inversion; default existing masks to All tones. Persist the range settings in the non-destructive recipe, retain compatibility with recipe versions 1–5, add focused regression tests, and bump the desktop development version to 0.58.0 consistently. Keep the implementation deterministic and local; do not claim semantic object detection or AI selection. Preserve original photo bytes, IDs, business data and current preview/export parity. Run handover checks, Photo Studio engine checks and Windows installer verification. Do not publish a signed updater or tag a release until the user explicitly asks to ship.
+**Next action:** complete the V0.58.0 regression checks and Windows installer build; inspect any failures rather than weakening tests. Then validate the feature in the installed app with real rental photos, including save/reopen, batch isolation and preview/export parity. Do not publish a signed updater or tag a release until the user explicitly asks to ship.
 
 **Still requires user validation:** EOS 600D CR2 image quality, gradient interaction, tonal-range behaviour on real rental photos, recipe save/reopen, batch isolation, and preview/export parity in the installed Windows app.
 
