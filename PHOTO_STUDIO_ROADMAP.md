@@ -164,3 +164,21 @@ V0.34.1 is primarily a workbench/interface milestone. It does not claim to provi
 - Windows CI covers Phase 1–2 colour/curve and Phase 3–5 geometry/mask/retouch regression checks.
 - The final Windows build, signed updater publication, installed app behaviour and real-camera tests must be recorded separately in `PROJECT_STATUS.md`.
 - Masks remain manual; lens correction has no profile; Heal is not generative; rendering remains 8-bit sRGB; EOS 600D CR2 quality/offline behaviour and in-place upgrade require on-PC validation.
+
+
+---
+
+# JRVS Photo Studio — V0.56.0 Phase 2 processing-engine foundation
+
+## Delivered in source
+- FlashRaw upgraded from 0.1.0 to 0.2.0 and remains bundled locally with its WebAssembly assets.
+- Full RAW develop now requests FlashRaw sensor-aware automatic demosaicing, 16-bit half-float linear RGB, as-shot white balance, highlight reconstruction, noise-aware edge handling and chromatic-aberration correction where supported.
+- The linear RAW frame is retained as the editing source during the Photo Studio session. The embedded JPEG remains a preview/fallback only and is no longer the edited master after Develop RAW.
+- Added half-float conversion and complete EXIF orientation mapping (1–8) to create preview and full-resolution source canvases from the retained sensor frame.
+- Exposure for developed RAW is applied before linear-to-sRGB encoding; existing sRGB controls, local masks and retouch remain available in the established shared render path.
+- Saved recipe schema v5 remains unchanged; reopening a RAW-developed edit re-develops the immutable source CR2 and then restores the existing recipe.
+
+## Phase 2 known boundaries
+- The output stage after linear RAW conversion is still an 8-bit sRGB canvas; some legacy controls, mask composition, geometry, retouch and final JPEG/PNG output still operate on that display-range image.
+- Full float processing for every adjustment stage, wide-gamut editing/output, GPU compute, camera-profile management and end-to-end ICC export are not yet delivered.
+- Actual EOS 600D colour, noise, detail, clipping and full-resolution quality must be checked with the user's CR2 files. CI validates logic and packaging, not camera-image fidelity.

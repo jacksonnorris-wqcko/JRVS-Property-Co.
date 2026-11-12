@@ -131,7 +131,29 @@ assert.ok(!/demosaic\\s*:\\s*[^,}]*['"]auto['"]/.test(rawDecodeAdapter),"FlashRa
 requireText(html,"import('./vendor/flashraw/browser.js')",'local bundled FlashRaw browser entry');
 assert.ok(!html.includes('https://esm.sh/flashraw'),'RAW decoder must not use a runtime CDN');
 for(const file of ["'browser.js'","'flashraw_simd.wasm'","'flashraw.wasm'","'LICENSE-MIT'","'LICENSE-APACHE'"])requireText(prepare,file,`desktop bundle includes ${file}`);
-assert.equal(pkg.dependencies?.flashraw,'0.1.0');
+assert.equal(pkg.dependencies?.flashraw,'0.2.0');
+
+// Linear RAW source conversion: IEEE-754 half-float values and all EXIF orientations.
+const rawMathSource=extract(html,'function editorHalfToFloat','function editorLinearToSrgb','linear RAW math helpers');
+const rawMath=new Function(rawMathSource+'\nreturn {editorHalfToFloat,editorRawOrientedSize,editorRawSensorPointFromOriented};\n')();
+for(const [bits,expected] of [[0x0000,0],[0x3c00,1],[0x3800,.5],[0x4000,2],[0xbc00,-1]])assert.ok(Math.abs(rawMath.editorHalfToFloat(bits)-expected)<1e-8);
+for(let orientation=1;orientation<=8;orientation++){
+ const size=rawMath.editorRawOrientedSize(3,2,orientation),seen=new Set();
+ for(let y=0;y<size.height;y++)for(let x=0;x<size.width;x++){
+  const p=rawMath.editorRawSensorPointFromOriented(x,y,3,2,orientation);
+  assert.ok(p.x>=0&&p.x<3&&p.y>=0&&p.y<2,`Orientation ${orientation} maps outside the RAW frame`);
+  seen.add(p.x+','+p.y);
+ }
+ assert.equal(seen.size,6,`Orientation ${orientation} must map every sensor pixel exactly once`);
+}
+requireText(html,"output:'linear-rgb',sampleType:'f16',demosaic:'auto'",'FlashRaw high-precision linear RAW decode');
+requireText(html,'editorRawLinearFrame=developed','the original decoded linear frame is retained during editing');
+requireText(html,'editorLinearRawToCanvas(rawFrame,maxDimension','preview and export render from the retained linear source');
+requireText(html,'exposure=rawFrame?1:Math.pow(2,v.exposure)','RAW exposure is applied before sRGB encoding and is not doubled');
+
+console.log('Linear RAW regression checks passed: half-float decoding, EXIF orientation transforms, sensor-linear decoder wiring and retained-source rendering.');
+
+assert.equal(pkg.dependencies?.flashraw,'0.2.0');
 
 requireText(html,'schemaVersion:5','current recipe schema');
 requireText(html,'![1,2,3,4,5].includes(recipe.schemaVersion)','legacy recipe versions remain supported');

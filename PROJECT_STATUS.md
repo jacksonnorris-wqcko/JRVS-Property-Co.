@@ -57,22 +57,20 @@ The desktop build now runs `npm run handover:check` before building. This valida
 
 ## Current active work and next action
 
-### Current app task — Photo Studio 2.0 Phase 2 processing-engine rebuild
+### Current app task — Photo Studio 2.0 Phase 2 linear RAW engine foundation
 
-**Active scope:** move the editor's RAW development and shared render path beyond the current 8-bit sRGB/JPEG intermediate. Keep Phase 1's workstation and all existing photo workflows intact.
+**Implemented in V0.56.0 source:**
+- FlashRaw upgraded to 0.2.0 with local WASM bundling retained.
+- Sensor RAW now decodes to 16-bit half-float linear RGB with auto demosaicing, as-shot white balance, highlight reconstruction and the library's available edge/noise/chromatic-aberration processing.
+- RAW working pixels remain in memory for the editor session; the embedded preview/JPEG is no longer the working master after Develop RAW.
+- Added half-float conversion and complete EXIF orientation mapping; preview and full-resolution rendering use the retained sensor source.
+- RAW exposure is applied in linear light before display conversion. Saved edits continue using recipe schema v5; reopen re-develops the immutable CR2 and restores the saved recipe.
 
-**Planned implementation layers:**
-- Upgrade the pinned FlashRaw dependency to the current compatible release and use sensor-aware, higher-quality demosaicing plus the decoder's linear high-bit-depth output.
-- Retain the decoded linear RAW frame in memory while editing; do not convert the RAW source to an intermediate JPEG before adjustments.
-- Apply the core RAW develop operations in a linear-light, high-precision path, with a deliberate sRGB display/export conversion at the output boundary.
-- Keep orientation, geometry, existing masks/retouch, Property Finish, preview/export parity and non-destructive recipe restore coherent.
-- Add regression coverage for linear-light math, orientation mapping, high-precision input, renderer dispatch, and existing recipe compatibility.
+**Safety/compatibility:** original files, photo records, IDs, job links and saved recipe schema remain unchanged; no database migration. JPEG editing and embedded preview fallback are preserved.
 
-**Intended files:** `index.html`, `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`, `scripts/check-photo-studio-engine.mjs`, `PHOTO_STUDIO_ROADMAP.md`, versioned release notes and this handover.
+**Known boundary:** output is still an 8-bit sRGB canvas after the linear source stage; the complete adjustment graph is not yet float/wide-gamut. Camera-quality validation needs actual EOS 600D CR2 tests on the user's PC.
 
-**Safety:** preserve source RAW/JPEG bytes, records, IDs, job links and existing recipe schema; no destructive migration. Phase 2 build/CI results will not be described as proof of EOS 600D camera-quality parity until tested with the user's actual CR2 files.
-
-**Next checkpoint:** validate the existing FlashRaw 0.1.0 → target API change, implement and regression-test the linear RAW path, then run the Windows installer and signed updater workflow.
+**Next checkpoint:** CI syntax/regression checks, Windows NSIS/MSI build, signed updater publication and then user verification of CR2 quality, edit reopen/export parity and offline operation.
 
 ### Application task — shared scrolling fix verified
 

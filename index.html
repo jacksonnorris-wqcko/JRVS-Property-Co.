@@ -2680,13 +2680,46 @@ async function getJrvsRawDecoder(){
  }
  return jrvsRawDecoderPromise;
 }
+async function decodeRawToLinearFrame(rawBlob){
+ let raw=null,frame=null;
+ try{
+  const FlashRaw=await getJrvsRawDecoder();
+  raw=await FlashRaw.open(rawBlob);
+  const metadata=raw.metadata||{};
+  frame=await raw.decode({
+   backend:'cpu-simd',output:'linear-rgb',sampleType:'f16',demosaic:'auto',
+   whiteBalance:'as-shot',highlights:'reconstruct',noiseReduction:'auto',
+   chromaticAberration:true,crop:true,corruptionPolicy:'strict',previewFallback:false
+  });
+  if(!frame||frame.source!=='sensor'||frame.channels!==3||frame.dataType!=='f16'||!(frame.data instanceof Uint16Array)||frame.data.length!==frame.width*frame.height*3){
+   throw new Error('FlashRaw did not return a complete three-channel linear half-float sensor frame.');
+  }
+  const result={
+   width:frame.width,height:frame.height,orientation:frame.orientation||metadata.orientation||1,
+   data:new Uint16Array(frame.data),dataType:frame.dataType,channels:frame.channels,
+   camera:metadata.camera?.name||'Camera RAW',colorSpace:frame.colorSpace||'srgb',
+   iccProfile:frame.iccProfile?new Uint8Array(frame.iccProfile):null,
+   decodeMs:frame.timings?.wallMs||frame.timings?.totalMs||null,
+   demosaic:'auto',whiteBalance:'as-shot',highlights:'reconstruct',
+   noiseReduction:'auto',chromaticAberration:true
+  };
+  jrvsLastRawDecodeInfo={mode:'sensor-raw-linear',camera:result.camera,width:result.width,height:result.height,decodeMs:result.decodeMs,backend:frame.backend?.decode||frame.backend?.kind||'WASM SIMD',whiteBalance:'as-shot',highlightMode:'reconstruct',colourSpace:result.colorSpace,dataType:'f16',demosaic:'auto'};
+  return result;
+ }catch(error){
+  jrvsLastRawDecodeInfo={mode:'linear-raw-failed',reason:error?.message||String(error)};
+  throw error;
+ }finally{
+  try{frame?.free?.()}catch(_){}
+  try{raw?.close?.()}catch(_){}
+ }
+}
 async function decodeRawToJpeg(rawBlob,{halfSize=true,quality=.9}={}){
  let raw=null;
  try{
   const FlashRaw=await getJrvsRawDecoder();
   raw=await FlashRaw.open(rawBlob);
   const meta=raw.metadata||{};
-  const frame=await raw.decode({backend:'cpu-simd',output:'rgba8',demosaic:halfSize?'half-size':'bilinear',whiteBalance:'as-shot',highlights:'reconstruct',crop:true,colorSpace:'srgb',corruptionPolicy:'strict',previewFallback:false});
+  const frame=await raw.decode({backend:'cpu-simd',output:'rgba8',demosaic:halfSize?'half-size':'auto',whiteBalance:'as-shot',highlights:'reconstruct',crop:true,colorSpace:'srgb',corruptionPolicy:'strict',previewFallback:false});
   if(!frame||frame.source==='preview'||!frame.data||!frame.width||!frame.height)throw new Error('RAW decoder did not return developed sensor pixels.');
   const canvas=document.createElement('canvas');canvas.width=frame.width;canvas.height=frame.height;
   const ctx=canvas.getContext('2d');
@@ -3360,7 +3393,7 @@ function editQuote(id){openQuoteForm(id)}
 function changeQuoteStatus(id){const q=data.quotes.find(x=>x.id===id);if(!q)return;const states=['Draft','Sent','Accepted','Declined'];q.status=states[(states.indexOf(q.status)+1)%states.length];if(q.status==='Accepted'&&q.jobId){const job=data.jobs.find(j=>j.id===q.jobId);if(job&&job.status==='Enquiry'){job.status='Booked';job.statusUpdatedAt=new Date().toISOString()}}save();renderQuotes();renderAttention();render()}
 async function deleteQuote(id){if(await showConfirm('Delete this quotation?')){data.quotes=data.quotes.filter(q=>q.id!==id);jrvsTombstone('quotes',id);renderQuotes();renderAttention()}}
 
-let editorPhoto=null,editorSourcePhoto=null,editorImage=null,editorRotation=0,editorBusy=false,editorHistory=[],editorHistoryIndex=-1,editorHistoryTimer=null,editorCompare=false,editorComparePosition=50,editorPreviewFrame=0,editorRawDeveloped=false;
+let editorPhoto=null,editorSourcePhoto=null,editorImage=null,editorRotation=0,editorBusy=false,editorHistory=[],editorHistoryIndex=-1,editorHistoryTimer=null,editorCompare=false,editorComparePosition=50,editorPreviewFrame=0,editorRawDeveloped=false,editorRawLinearFrame=null;
 const EDITOR_PREVIEW_MAX=1600;
 
 // JRVS Photo Studio workspace controls (v0.9.0)
@@ -3600,7 +3633,7 @@ function renderEditorFilmstrip(){
 async function openEditor(id){
  const p=photoRecords.find(x=>String(x.id)===String(id));if(!p)return;
  const linkedOriginal=(String(p.type||'').toLowerCase()==='edited'&&p.sourcePhotoId)?photoRecords.find(x=>String(x.id)===String(p.sourcePhotoId)):null;
- editorPhoto=p;editorSourcePhoto=linkedOriginal||p;editorRotation=0;editorRawDeveloped=false;
+ editorPhoto=p;editorSourcePhoto=linkedOriginal||p;editorRotation=0;editorRawDeveloped=false;editorRawLinearFrame=null;
  ['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','lensDistortion','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>{const el=document.getElementById(k);if(el)el.value=0});
  editorHistory=[];editorHistoryIndex=-1;editorRetouchStrokes=[];editorRetouchSource=null;editorRetouchActive=null;editorLocalMasks=[];editorLocalMaskSelectedId=null;renderEditorLocalMaskList();syncEditorLocalMaskControls();editorLocalBalance=false;editorNaturalCurve=false;editorLastAnalysis=null;resetEditorAdvancedControls();const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value='natural';jrvsRenderFinishReport(null);setEditorRetouchMode('off');editorCompare=false;editorComparePosition=50;toggleEditorCompare(false);
  document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';document.getElementById('editorExportProfile').value='agency';document.getElementById('editorTitle').textContent=p.name;const rawDevelopBtn=document.getElementById('editorRawDevelopBtn');if(rawDevelopBtn)rawDevelopBtn.style.display=editorSourcePhoto.isRaw?'inline-flex':'none';
@@ -3608,7 +3641,7 @@ async function openEditor(id){
  document.getElementById('editorSubtitle').textContent=(editorSourcePhoto.jobName||p.jobName)+(editorSourcePhoto.isRaw?' · RAW source':' · Original source')+(hasRecipe?' · Saved edit recipe restored':' · Original remains unchanged');
  document.getElementById('editorStatus').textContent=hasRecipe?'Restoring your saved non-destructive edit recipe…':'';
  const img=new Image();let editorSourceBlob=editorSourcePhoto.blob,rawRecipeFallback=false;
- if(editorSourcePhoto.isRaw){try{if(hasRecipe&&p.editRecipe?.rawDeveloped){document.getElementById('editorStatus').textContent='Re-developing the original CR2 sensor data…';const developed=await decodeRawToJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});if(jrvsLastRawDecodeInfo?.mode==='sensor-raw'){editorSourceBlob=developed;editorRawDeveloped=true;document.getElementById('editorStatus').textContent='Full-resolution sensor RAW restored · continuing saved edit'}else{editorSourceBlob=await extractEmbeddedRawJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});rawRecipeFallback=true;showToast('This saved edit used sensor RAW development, but the decoder fell back to the camera preview. The original and saved edited copy remain safe.','error')}}else{document.getElementById('editorStatus').textContent='Preparing embedded camera preview…';editorSourceBlob=editorSourcePhoto.previewBlob instanceof Blob?editorSourcePhoto.previewBlob:await extractEmbeddedRawJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});document.getElementById('editorStatus').textContent='CR2 preview ready · optional full sensor development available'}}catch(err){showToast('Could not prepare CR2 image: '+(err?.message||'RAW decode error'),'error');return}}
+ if(editorSourcePhoto.isRaw){try{if(hasRecipe&&p.editRecipe?.rawDeveloped){document.getElementById('editorStatus').textContent='Re-developing the original CR2 into a high-precision linear source…';try{editorRawLinearFrame=await decodeRawToLinearFrame(editorSourcePhoto.blob);const previewCanvas=editorLinearRawToCanvas(editorRawLinearFrame,1600,0);editorSourceBlob=await new Promise((resolve,reject)=>previewCanvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Could not create the RAW display preview.')),'image/jpeg',.94));editorRawDeveloped=true;document.getElementById('editorStatus').textContent='Linear sensor RAW restored · '+editorRawLinearFrame.width+'×'+editorRawLinearFrame.height+' · continuing saved edit'}catch(rawError){editorRawLinearFrame=null;editorSourceBlob=await extractEmbeddedRawJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});rawRecipeFallback=true;showToast('This saved edit could not reopen its linear RAW source. The embedded camera preview is being used; your original CR2 and saved edit remain safe. '+(rawError?.message||''),'error')}}else{document.getElementById('editorStatus').textContent='Preparing embedded camera preview…';editorSourceBlob=editorSourcePhoto.previewBlob instanceof Blob?editorSourcePhoto.previewBlob:await extractEmbeddedRawJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});document.getElementById('editorStatus').textContent='CR2 preview ready · optional full sensor development available'}}catch(err){showToast('Could not prepare CR2 image: '+(err?.message||'RAW decode error'),'error');return}}
  const url=URL.createObjectURL(editorSourceBlob);
  img.onload=()=>{
   if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);
@@ -3621,23 +3654,23 @@ async function openEditor(id){
  img.onerror=()=>{URL.revokeObjectURL(url);showToast(editorSourcePhoto.isRaw?'RAW source preview could not be opened. Original CR2 remains safe.':'This image could not be opened in the editor.')};
  img.src=url;
 }
-async function developEditorRawSource(){
+async async function developEditorRawSource(){
  if(!editorSourcePhoto?.isRaw||!(editorSourcePhoto.blob instanceof Blob)){showToast('Select an original CR2 photo to develop RAW.','error');return}
  const btn=document.getElementById('editorRawDevelopBtn'),status=document.getElementById('editorStatus');
  if(btn){btn.disabled=true;btn.textContent='Developing RAW…'}
- if(status)status.textContent='RAW sensor development running. Your original CR2 remains unchanged.';
+ if(status)status.textContent='Developing full-resolution sensor data into a retained 16-bit linear working source…';
  try{
-  const developed=await decodeRawToJpeg(editorSourcePhoto.blob,{halfSize:false,quality:.98});
-  const info=jrvsLastRawDecodeInfo;
-  if(info?.mode!=='sensor-raw')throw new Error('The RAW decoder did not produce sensor-developed pixels. The current editor image has been kept unchanged. '+(info?.reason||''));
-  const url=URL.createObjectURL(developed),img=new Image();
-  await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Developed RAW image could not be opened.'));img.src=url});
+  const developed=await decodeRawToLinearFrame(editorSourcePhoto.blob);
+  const previewCanvas=editorLinearRawToCanvas(developed,1600,0);
+  const previewBlob=await new Promise((resolve,reject)=>previewCanvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Could not create the RAW preview.')),'image/jpeg',.94));
+  const url=URL.createObjectURL(previewBlob),img=new Image();
+  await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Developed RAW preview could not be opened.'));img.src=url});
   if(editorImage?._url)URL.revokeObjectURL(editorImage._url);
-  editorImage=img;editorImage._url=url;
+  editorImage=img;editorImage._url=url;editorRawLinearFrame=developed;
   editorRawDeveloped=true;editorHistory=[];editorHistoryIndex=-1;captureEditorHistory();
   drawEditor();requestAnimationFrame(fitEditorCanvas);
-  if(status)status.textContent=`RAW sensor developed · ${info.camera} · ${info.width}×${info.height}`;
-  showToast('RAW sensor development applied to the editor. Original CR2 preserved.');
+  if(status)status.textContent=`Linear RAW active · ${developed.camera} · ${developed.width}×${developed.height} · half-float source`;
+  showToast('Linear RAW development is active. The source CR2 remains unchanged.');
  }catch(err){
   if(status)status.textContent='RAW development unavailable · '+(err?.message||'decoder error');
   showToast('RAW development failed; your current edit is unchanged. '+(err?.message||''),'error');
@@ -3645,7 +3678,7 @@ async function developEditorRawSource(){
   if(btn){btn.disabled=false;btn.textContent='Develop RAW'}
  }
 }
-function closeEditor(){if(editorFitObserver)editorFitObserver.disconnect();clearEditorFilmstripUrls();document.getElementById('editorBackdrop').classList.remove('show');if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=null;editorPhoto=null;editorSourcePhoto=null}
+function closeEditor(){if(editorFitObserver)editorFitObserver.disconnect();clearEditorFilmstripUrls();document.getElementById('editorBackdrop').classList.remove('show');if(editorImage&&editorImage._url)URL.revokeObjectURL(editorImage._url);editorImage=null;editorRawLinearFrame=null;editorPhoto=null;editorSourcePhoto=null}
 function rotateEditor(deg){editorRotation=(editorRotation+deg+360)%360;drawEditor();captureEditorHistory()}
 function resetEditor(){['brightness','contrast','saturation','warmth','highlights','shadows','perspectiveV','perspectiveH','lensDistortion','exposure','whites','blacks','temperature','tint','vibrance','clarity','sharpening','vignette'].forEach(k=>document.getElementById(k).value=0);document.getElementById('cropRatio').value='original';document.getElementById('editorPreset').value='none';editorRotation=0;editorRetouchActive=null;editorLocalMaskActive=null;editorLocalMaskMode='off';editorLocalBalance=false;editorNaturalCurve=false;editorLocalMasks=[];editorLocalMaskSelectedId=null;editorRetouchStrokes=[];editorRetouchSource=null;renderEditorLocalMaskList();syncEditorLocalMaskControls();setEditorLocalMaskMode('off');editorLastAnalysis=null;resetEditorAdvancedControls();const finishIntent=document.getElementById('jrvsFinishIntent');if(finishIntent)finishIntent.value='natural';jrvsRenderFinishReport(null);drawEditor();captureEditorHistory()}
 function editorChanged(){
@@ -3786,9 +3819,66 @@ function editorApplyGeometryWarp(sourceCanvas,destinationCanvas,vertical,horizon
  destCtx.putImageData(output,0,0);
 }
 
+function editorHalfToFloat(bits){
+ const sign=(bits&0x8000)?-1:1,exponent=(bits>>10)&31,fraction=bits&1023;
+ if(exponent===0)return sign*Math.pow(2,-14)*(fraction/1024);
+ if(exponent===31)return fraction?NaN:sign*Infinity;
+ return sign*Math.pow(2,exponent-15)*(1+fraction/1024);
+}
+let editorHalfFloatLut=null;
+function editorGetHalfFloatLut(){
+ if(editorHalfFloatLut)return editorHalfFloatLut;
+ const lut=new Float32Array(65536);
+ for(let i=0;i<65536;i++)lut[i]=editorHalfToFloat(i);
+ editorHalfFloatLut=lut;return lut;
+}
+function editorRawOrientedSize(width,height,orientation){
+ const swap=[5,6,7,8].includes(Number(orientation));
+ return {width:swap?height:width,height:swap?width:height};
+}
+function editorRawSensorPointFromOriented(x,y,width,height,orientation){
+ switch(Number(orientation)||1){
+  case 2:return {x:width-1-x,y};
+  case 3:return {x:width-1-x,y:height-1-y};
+  case 4:return {x,y:height-1-y};
+  case 5:return {x:y,y:x};
+  case 6:return {x:y,y:height-1-x};
+  case 7:return {x:width-1-y,y:height-1-x};
+  case 8:return {x:width-1-y,y:x};
+  default:return {x,y};
+ }
+}
+function editorLinearToSrgb(value){
+ const v=editorClamp(value,0,1);
+ return 255*(v<=.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-.055);
+}
+function editorLinearRawToCanvas(frame,maxDimension=EDITOR_PREVIEW_MAX,exposureEV=0){
+ if(!frame||!(frame.data instanceof Uint16Array)||frame.dataType!=='f16'||frame.channels!==3)throw new Error('The retained RAW frame is not a linear RGB half-float image.');
+ const oriented=editorRawOrientedSize(frame.width,frame.height,frame.orientation);
+ const scale=maxDimension>0?Math.min(1,maxDimension/Math.max(oriented.width,oriented.height)):1;
+ const width=Math.max(1,Math.round(oriented.width*scale)),height=Math.max(1,Math.round(oriented.height*scale));
+ const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+ const ctx=canvas.getContext('2d',{willReadFrequently:true});if(!ctx)throw new Error('Could not create the linear RAW display surface.');
+ const image=ctx.createImageData(width,height),out=image.data,src=frame.data,lut=editorGetHalfFloatLut(),gain=Math.pow(2,editorClamp(exposureEV,-5,5));
+ const taps=scale<.5?4:1;
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+  let r=0,g=0,b=0,count=0;
+  for(let sy=0;sy<taps;sy++)for(let sx=0;sx<taps;sx++){
+   const ox=Math.min(oriented.width-1,Math.max(0,Math.floor((x+(sx+.5)/taps)*oriented.width/width)));
+   const oy=Math.min(oriented.height-1,Math.max(0,Math.floor((y+(sy+.5)/taps)*oriented.height/height)));
+   const point=editorRawSensorPointFromOriented(ox,oy,frame.width,frame.height,frame.orientation);
+   const index=(point.y*frame.width+point.x)*3;
+   r+=lut[src[index]];g+=lut[src[index+1]];b+=lut[src[index+2]];count++;
+  }
+  r=r/count*gain;g=g/count*gain;b=b/count*gain;
+  const i=(y*width+x)*4;out[i]=editorLinearToSrgb(r);out[i+1]=editorLinearToSrgb(g);out[i+2]=editorLinearToSrgb(b);out[i+3]=255;
+ }
+ ctx.putImageData(image,0,0);return canvas;
+}
 function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustments=true){
- if(!editorImage||!editorPhoto)return null;
- const sw0=editorImage.naturalWidth,sh0=editorImage.naturalHeight;
+ if((!editorImage&&!editorRawLinearFrame)||!editorPhoto)return null;
+ const rawFrame=editorRawLinearFrame,rawSize=rawFrame?editorRawOrientedSize(rawFrame.width,rawFrame.height,rawFrame.orientation):null;
+ const sw0=rawFrame?rawSize.width:editorImage.naturalWidth,sh0=rawFrame?rawSize.height:editorImage.naturalHeight;
  const scale=maxDimension>0?Math.min(1,maxDimension/Math.max(sw0,sh0)):1;
  const sw=Math.max(1,Math.round(sw0*scale)),sh=Math.max(1,Math.round(sh0*scale));
  const rot=editorRotation*Math.PI/180,swapped=editorRotation%180!==0;
@@ -3797,14 +3887,14 @@ function createEditorRenderCanvas(maxDimension=EDITOR_PREVIEW_MAX,applyAdjustmen
  const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(rw));canvas.height=Math.max(1,Math.round(rh));
  const ctx=canvas.getContext('2d',{willReadFrequently:true});
  const temp=document.createElement('canvas');temp.width=swapped?sh:sw;temp.height=swapped?sw:sh;
- const t=temp.getContext('2d');t.translate(temp.width/2,temp.height/2);t.rotate(rot);t.drawImage(editorImage,-sw/2,-sh/2,sw,sh);
+ const t=temp.getContext('2d');t.translate(temp.width/2,temp.height/2);t.rotate(rot);const rawBase=rawFrame?editorLinearRawToCanvas(rawFrame,maxDimension,applyAdjustments?+(document.getElementById('exposure')?.value||0):0):null;t.drawImage(rawBase||editorImage,-sw/2,-sh/2,sw,sh);
  const pv=+document.getElementById('perspectiveV').value,ph=+document.getElementById('perspectiveH').value,distortion=+document.getElementById('lensDistortion').value;
  editorApplyGeometryWarp(temp,canvas,pv,ph,distortion);
  if(!applyAdjustments)return {canvas,hist:new Uint32Array(64)};
  const image=ctx.getImageData(0,0,canvas.width,canvas.height),d=image.data;
  const v=Object.fromEntries(EDITOR_KEYS.map(k=>[k,+document.getElementById(k).value]));
  Object.keys(v).forEach(k=>{const el=document.getElementById(k+'Val');if(el)el.textContent=v[k]>0?'+'+v[k]:v[k]});
- const c=(259*(v.contrast+255))/(255*(259-v.contrast)),exposure=Math.pow(2,v.exposure),hist=new Uint32Array(64),width=canvas.width,height=canvas.height,toneCurveLut=buildEditorToneCurveLut(),hslSettings=editorHslSnapshot(),hslActive=EDITOR_HSL_CHANNELS.some(ch=>['hue','saturation','luminance'].some(prop=>hslSettings[ch.id][prop]!==0)),hslAdjustmentLut=hslActive?buildEditorHslAdjustmentLut():null;
+ const c=(259*(v.contrast+255))/(255*(259-v.contrast)),exposure=rawFrame?1:Math.pow(2,v.exposure),hist=new Uint32Array(64),width=canvas.width,height=canvas.height,toneCurveLut=buildEditorToneCurveLut(),hslSettings=editorHslSnapshot(),hslActive=EDITOR_HSL_CHANNELS.some(ch=>['hue','saturation','luminance'].some(prop=>hslSettings[ch.id][prop]!==0)),hslAdjustmentLut=hslActive?buildEditorHslAdjustmentLut():null;
  for(let i=0;i<d.length;i+=4){
   let r=d[i],g=d[i+1],b=d[i+2],lum=.2126*r+.7152*g+.0722*b,shadow=1-lum/255,high=lum/255,tone=v.brightness+v.shadows*shadow*.75+v.highlights*high*.75;
   r=((r-128)*c+128+tone+v.warmth*.65+v.temperature*.42+v.tint*.12)*exposure;g=((g-128)*c+128+tone+v.tint*.28)*exposure;b=((b-128)*c+128+tone-v.warmth*.65-v.temperature*.42)*exposure;
