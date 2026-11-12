@@ -3654,7 +3654,7 @@ async function openEditor(id){
  img.onerror=()=>{URL.revokeObjectURL(url);showToast(editorSourcePhoto.isRaw?'RAW source preview could not be opened. Original CR2 remains safe.':'This image could not be opened in the editor.')};
  img.src=url;
 }
-async async function developEditorRawSource(){
+async function developEditorRawSource(){
  if(!editorSourcePhoto?.isRaw||!(editorSourcePhoto.blob instanceof Blob)){showToast('Select an original CR2 photo to develop RAW.','error');return}
  const btn=document.getElementById('editorRawDevelopBtn'),status=document.getElementById('editorStatus');
  if(btn){btn.disabled=true;btn.textContent='Developing RAW…'}
