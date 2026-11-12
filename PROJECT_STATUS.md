@@ -5,7 +5,7 @@
 **Last reviewed:** 12 November 2026 (Australia/Sydney)  
 **Repository:** [jacksonnorris-wqcko/JRVS-Property-Co.](https://github.com/jacksonnorris-wqcko/JRVS-Property-Co.)  
 **Active desktop branch:** `desktop-transition`  
-**Current desktop version:** `0.55.0`  
+**Current desktop version:** `0.56.0`  
 **Stable browser/PWA branch:** `main` — keep it unchanged unless the user explicitly requests browser/PWA work.
 
 ## Start here — current position
@@ -44,16 +44,16 @@ The desktop build now runs `npm run handover:check` before building. This valida
 
 **Outcome:** V0.54.2 was published successfully with signed in-app quote/invoice preview; quote and invoice records, numbering and document content remain unchanged.
 
-## V0.55.0 Photo Studio 2.0 — Phase 1 workstation redesign — 12 November 2026
+## V0.55.0 Photo Studio 2.0 — Phase 1 workstation redesign — released 12 November 2026
 
-- Current task: replace the narrow, tabbed Photo Studio control column with a dedicated editing workstation while retaining the existing processing engine and recipe model.
+- Delivered the dedicated editing workstation, replacing the narrow tabbed control column while retaining the existing processing engine and recipe model.
 - Three-zone desktop layout: workspace rail, large image stage and contextual right inspector; persistent project filmstrip beneath the workspace.
 - Direct canvas toolbar launches existing local brush mask, Clone and Heal tools, plus rotate and geometry reset actions.
 - Develop now contains Property Finish, quick-look buttons, tone/lighting controls and histogram. Colour, Detail, Geometry, Masks, Retouch and Export each have separate focused workspaces and contextual headings.
 - Removed the duplicate in-panel history row in favour of the established top toolbar; preserved keyboard shortcuts, before/after compare, RAW develop and Save Copy.
 - No image renderer, edit recipe schema, original photo bytes, photo record IDs or business data are migrated or replaced.
 
-**Immediate next action:** run handover/version checks, Photo Studio regression checks and the Windows Tauri build; verify Phase 1 workspace structure and tool wiring in CI, then publish signed `desktop-v0.55.0`.
+**Outcome:** signed `desktop-v0.55.0` published successfully after the Windows build and installer verification. Phase 1 workstation is carried forward into V0.56.0.
 
 ## Current active work and next action
 
@@ -112,7 +112,7 @@ The shared desktop scrolling fix was committed on 11 November 2026:
 **Non-negotiables:** preserve source bytes, IDs, metadata, job links and existing edits; no destructive recipe migrations; keep Property Finish/Smart Finish and prior controls; develop only on `desktop-transition`; never touch `main`.
 ## Latest confirmed application functionality
 
-The desktop branch's latest completed release is **V0.54.2**. V0.54.1 fixed the RAW demosaic setting; V0.54.2 added in-app quote/invoice PDF preview; V0.55.0 introduces Photo Studio 2.0 Phase 1.
+The latest completed desktop release before the active Phase 2 build was **V0.55.0**. V0.54.1 fixed the RAW demosaic setting; V0.54.2 added in-app quote/invoice PDF preview; V0.55.0 delivered Photo Studio 2.0 Phase 1. V0.56.0 adds the Phase 2 linear RAW engine foundation and is awaiting CI/release verification.
 
 ### Photo editing
 - JRVS Property Finish replaces the earlier Rental Auto Enhance workflow.
