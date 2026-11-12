@@ -75,7 +75,7 @@ The desktop build now runs `npm run handover:check` before building. This valida
 - Source implementation commit: `5aa02f496741436a12fe762dec6d5f3f97f4af4e`
 - Regression coverage commit: `263c238d3b3000c83d0184603ebde01b87c09132`
 - Desktop version alignment: `0.58.0` in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
-- The earlier V0.57.0 correction was confirmed to pass the handover/version and Photo Studio regression steps. The V0.58.0 tonal-range changes still require their own CI verification.
+- The earlier V0.57.0 correction was confirmed to pass the handover/version and Photo Studio regression steps. For V0.58.0, GitHub Actions run `43331735884` on commit `fdcffc32edacf209a58b7d3daff8cbbcc40acc08` has passed both the handover/version check and Photo Studio engine regression checks. The Windows installer build is still reported as in progress; installer verification and upload have not started. [Workflow run](https://github.com/jacksonnorris-wqcko/JRVS-Property-Co./actions/runs/43331735884).
 
 **Next action:** complete the V0.58.0 regression checks and Windows installer build; inspect any failures rather than weakening tests. Then validate the feature in the installed app with real rental photos, including save/reopen, batch isolation and preview/export parity. Do not publish a signed updater or tag a release until the user explicitly asks to ship.
 
