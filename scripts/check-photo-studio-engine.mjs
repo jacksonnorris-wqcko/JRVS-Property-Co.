@@ -243,6 +243,6 @@ requireText(html,'editorLocalMasks=normaliseEditorLocalMasks(s.localMasks)','und
 requireText(html,'localMasks:cloneEditorLocalMasks(),localMaskSelectedId:editorLocalMaskSelectedId','exact look batch retains mask state');
 requireText(html,'editorLocalMasks=[];editorLocalMaskSelectedId=null;editorLocalMaskActive=null','batch preset/Smart Finish isolates photo masks');
 requireText(html,'rawDeveloped:!!editorRawDeveloped','RAW development state remains saved');
-requireText(html,'![1,2,3,4,5].includes(recipe.schemaVersion)','older saved edit recipes remain loadable');
+requireText(html,'![1,2,3,4,5,6].includes(recipe.schemaVersion)','older saved edit recipes remain loadable');
 
 console.log('Photo Studio regression checks passed: colour/HSL, tone curve, projective geometry, bounded lens warp, brush/linear/radial masks, local tonal controls, recipe compatibility, separate clone/heal blends and workflow integration.');
