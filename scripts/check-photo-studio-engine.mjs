@@ -55,7 +55,7 @@ assert.equal(orangeLut[120].hue,0);
 const geometryHelpers=extract(html,'function editorBuildGeometryQuad','function buildEditorLocalMaskCanvas','projective geometry and mask falloff');
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,Number(value)||0));
 const geometry=new Function('editorClamp',`${geometryHelpers}
-return {editorBuildGeometryQuad,editorBuildHomography,editorInvertHomography,editorApplyHomography,editorProjectiveMap,editorProjectiveInverseMap,editorMapGeometryPoint,editorMaskFalloff,editorGradientMaskAlpha};
+return {editorBuildGeometryQuad,editorBuildHomography,editorInvertHomography,editorApplyHomography,editorProjectiveMap,editorProjectiveInverseMap,editorMapGeometryPoint,editorMaskFalloff,editorGradientMaskAlpha,editorToneRangeWeight};
 `)(clamp);
 const identityQuad=geometry.editorBuildGeometryQuad(0,0);
 const identityMatrix=geometry.editorBuildHomography(identityQuad);
@@ -103,6 +103,22 @@ assert.equal(geometry.editorGradientMaskAlpha(radialMask,.375,.5),1);
 assert.ok(Math.abs(geometry.editorGradientMaskAlpha(radialMask,.3125,.5)-.5)<1e-9);
 assert.equal(geometry.editorGradientMaskAlpha(radialMask,.25,.5),0);
 assert.equal(geometry.editorGradientMaskAlpha({...radialMask,geometry:null},.5,.5),0);
+
+// Luminance range weights: All, Shadows, Midtones and Highlights are bounded and selective.
+const rangeWeight=geometry.editorToneRangeWeight;
+assert.equal(rangeWeight(128,'all',32),1);
+assert.ok(rangeWeight(20,'shadows',32)>.99);
+assert.ok(rangeWeight(235,'shadows',32)<.01);
+assert.ok(rangeWeight(20,'highlights',32)<.01);
+assert.ok(rangeWeight(235,'highlights',32)>.99);
+assert.ok(rangeWeight(128,'midtones',32)>.99);
+assert.ok(rangeWeight(0,'midtones',32)<.01);
+assert.ok(rangeWeight(255,'midtones',32)<.01);
+let priorShadow=1;
+for(let lum=0;lum<=255;lum+=5){const current=rangeWeight(lum,'shadows',32);assert.ok(current<=priorShadow+1e-9,'Shadow selection must fade monotonically towards highlights');priorShadow=current}
+let priorHighlight=0;
+for(let lum=0;lum<=255;lum+=5){const current=rangeWeight(lum,'highlights',32);assert.ok(current+1e-9>=priorHighlight,'Highlight selection must rise monotonically from shadows');priorHighlight=current}
+assert.equal(rangeWeight(128,'unknown',32),1);
 const maskGeometrySource=extract(html,'function editorMaskGeometryFromDrag','function editorLocalMaskPointerDown','gradient drag geometry');
 const maskGeometryEngine=new Function('editorClamp',maskGeometrySource+'\nreturn editorMaskGeometryFromDrag;\n')(clamp);
 assert.deepEqual(maskGeometryEngine('linear',{x:.1,y:.2},{x:.9,y:.7}),{x1:.1,y1:.2,x2:.9,y2:.7});
@@ -128,13 +144,21 @@ assert.equal(overLimitMask.strokes[0].dabs.length,12000);
 assert.equal(overLimitMask.strokes[0].dabs[0].x,1);
 assert.equal(overLimitMask.strokes[0].dabs[0].y,0);
 assert.equal(overLimitMask.strokes[0].dabs[0].radius,.45);
-const gradientNormalised=normaliseMasks([{type:'radial',geometry:{cx:.5,cy:.4,rx:.9,ry:.2},gradientFeather:0,contrast:140,whites:-120,blacks:30}])[0];
+const gradientNormalised=normaliseMasks([{type:'radial',geometry:{cx:.5,cy:.4,rx:.9,ry:.2},gradientFeather:0,contrast:140,whites:-120,blacks:30,toneRange:'highlights',toneRangeFeather:140}])[0];
 assert.equal(gradientNormalised.type,'radial');
 assert.deepEqual(gradientNormalised.geometry,{cx:.5,cy:.4,rx:.75,ry:.2});
 assert.equal(gradientNormalised.gradientFeather,.05);
 assert.equal(gradientNormalised.contrast,100);
 assert.equal(gradientNormalised.whites,-100);
 assert.equal(gradientNormalised.blacks,30);
+assert.equal(gradientNormalised.toneRange,'highlights');
+assert.equal(gradientNormalised.toneRangeFeather,100);
+const legacyMaskDefaults=normaliseMasks([{type:'brush',strokes:[]}])[0];
+assert.equal(legacyMaskDefaults.toneRange,'all');
+assert.equal(legacyMaskDefaults.toneRangeFeather,32);
+const invalidRangeDefaults=normaliseMasks([{type:'brush',toneRange:'objects',toneRangeFeather:-20}])[0];
+assert.equal(invalidRangeDefaults.toneRange,'all');
+assert.equal(invalidRangeDefaults.toneRangeFeather,0);
 
 // Clone and Heal must produce different blends for different source/destination colour fields.
 const retouchHelpers=extract(html,'function editorRetouchBlendPixel','function applyEditorRetouchStrokes','clone/heal blending');
@@ -185,9 +209,11 @@ console.log('Linear RAW regression checks passed: half-float decoding, EXIF orie
 
 assert.equal(pkg.dependencies?.flashraw,'0.2.0');
 
-requireText(html,'schemaVersion:5','current recipe schema');
-requireText(html,'![1,2,3,4,5].includes(recipe.schemaVersion)','legacy recipe versions remain supported');
+requireText(html,'schemaVersion:6','current recipe schema');
+requireText(html,'![1,2,3,4,5,6].includes(recipe.schemaVersion)','legacy recipe versions remain supported');
 requireText(html,'localMasks:cloneEditorLocalMasks()','masks persist in the non-destructive recipe');
+requireText(html,"toneRange:['all','shadows','midtones','highlights'].includes(mask?.toneRange)?mask.toneRange:'all'",'tonal range settings normalise with legacy-safe defaults');
+requireText(html,'amount*=editorToneRangeWeight(lum,toneRange,toneRangeFeather)','local mask compositor applies luminance range refinement');
 requireText(html,'normaliseEditorLocalMasks(recipe.localMasks)','masks restore from recipe');
 requireText(html,'mask.strokes.length>=500','mask stroke limit is enforced during painting');
 const maskPointerMove=extract(html,'function editorLocalMaskPointerMove','function editorLocalMaskPointerUp','brush mask pointer move');
